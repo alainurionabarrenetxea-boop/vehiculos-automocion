@@ -375,6 +375,7 @@
             color: value(r["Kolorea"]),
             vin: value(r["VIN"]),
             fitxaTeknika: value(r["Fitxa teknika"]),
+            revistaTeknika: value(r["Revista teknika"]),
             egokitua: value(r["Egokitua"]),
             erabilpena: value(r["Erabilpena"]),
             estado: value(r["Egoera"]),
@@ -536,6 +537,7 @@
           </div>
 
           ${renderFichaTecnica(vehicle.fitxaTeknika)}
+          ${renderRevistaTecnica(vehicle.revistaTeknika)}
         </div>
       `;
     }
@@ -559,19 +561,21 @@
         piztuBeharDu: piztuBeharDuInput.value
       };
 
+      const url =
+        SAVE_API_URL +
+        "?usuario=" + encodeURIComponent(payload.usuario) +
+        "&idVehiculo=" + encodeURIComponent(payload.idVehiculo) +
+        "&estado=" + encodeURIComponent(payload.estado) +
+        "&observaciones=" + encodeURIComponent(payload.observaciones) +
+        "&piztenDu=" + encodeURIComponent(payload.piztenDu) +
+        "&piztuBeharDu=" + encodeURIComponent(payload.piztuBeharDu);
+
       appMessage.textContent = "Guardando cambios...";
       appMessage.className = "msg info";
       appMessage.classList.remove("hidden");
 
       try {
-        const response = await fetch(SAVE_API_URL, {
-          method: "POST",
-          headers: {
-            "Content-Type": "text/plain;charset=utf-8"
-          },
-          body: JSON.stringify(payload)
-        });
-
+        const response = await fetch(url);
         const result = await response.json();
 
         if (!result.ok) {
@@ -629,6 +633,21 @@
           <strong>Ficha técnica</strong><br><br>
           <a class="button-link" href="${ruta}" target="_blank" rel="noopener">
             <button type="button" class="small-btn">Ver ficha técnica</button>
+          </a>
+        </div>
+      `;
+    }
+
+    function renderRevistaTecnica(revistaTeknika) {
+      if (!revistaTeknika) {
+        return "";
+      }
+
+      return `
+        <div class="ficha-box">
+          <strong>Revista técnica</strong><br><br>
+          <a class="button-link" href="${escapeAttr(revistaTeknika)}" target="_blank" rel="noopener">
+            <button type="button" class="small-btn">Ver revista técnica</button>
           </a>
         </div>
       `;
