@@ -12,14 +12,16 @@
       color: #1f2937;
     }
 
-    .hidden { display: none !important; }
+    .hidden {
+      display: none !important;
+    }
 
     .box {
       max-width: 1050px;
       margin: 24px auto;
       background: white;
       border-radius: 16px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
       overflow: hidden;
     }
 
@@ -98,6 +100,10 @@
       margin-bottom: 0;
     }
 
+    .button-link {
+      text-decoration: none;
+    }
+
     .vehicle-card {
       border: 1px solid #e5e7eb;
       border-radius: 16px;
@@ -137,7 +143,8 @@
       word-break: break-word;
     }
 
-    .notes, .ficha-box {
+    .notes,
+    .ficha-box {
       margin-top: 14px;
       padding: 14px;
       border-radius: 12px;
@@ -154,16 +161,6 @@
       font-weight: bold;
       background: #e5e7eb;
       color: #374151;
-    }
-
-    .ficha-box img {
-      max-width: 100%;
-      height: auto;
-      display: block;
-      margin-top: 12px;
-      border-radius: 10px;
-      border: 1px solid #e5e7eb;
-      background: white;
     }
 
     .table-wrap {
@@ -285,8 +282,11 @@
 
     function logout() {
       sessionStorage.removeItem("automocion_user");
+      vehicles = [];
+
       document.getElementById("appView").classList.add("hidden");
       document.getElementById("loginView").classList.remove("hidden");
+
       document.getElementById("username").value = "";
       document.getElementById("password").value = "";
       document.getElementById("vehicleDetail").innerHTML = "";
@@ -294,6 +294,7 @@
       document.getElementById("tableContainer").classList.add("hidden");
       document.getElementById("showAllBtn").classList.add("hidden");
       document.getElementById("appMessage").classList.add("hidden");
+      document.getElementById("appMessage").textContent = "";
     }
 
     function showAllVehicles() {
@@ -478,45 +479,22 @@
     }
 
     function renderFichaTecnica(fitxaTeknika) {
-  if (!fitxaTeknika) {
-    return `
-      <div class="ficha-box">
-        <strong>Ficha técnica</strong><br>
-        No disponible.
-      </div>
-    `;
-  }
-
-  // Si ya viene una URL completa
-  if (fitxaTeknika.startsWith("http://") || fitxaTeknika.startsWith("https://")) {
-    return `
-      <div class="ficha-box">
-        <strong>Ficha técnica</strong><br><br>
-        <a href="${escapeAttr(fitxaTeknika)}" target="_blank" rel="noopener">
-          <button type="button" class="small-btn">Ver ficha técnica</button>
-        </a>
-      </div>
-    `;
-  }
-
-  // Si es un nombre de archivo dentro de /fichas/
-  const ruta = `fichas/${encodeURIComponent(fitxaTeknika)}`;
-
-  return `
-    <div class="ficha-box">
-      <strong>Ficha técnica</strong><br><br>
-      <a href="${ruta}" target="_blank" rel="noopener">
-        <button type="button" class="small-btn">Ver ficha técnica</button>
-      </a>
-    </div>
-  `;
-}
+      if (!fitxaTeknika) {
+        return `
+          <div class="ficha-box">
+            <strong>Ficha técnica</strong><br>
+            No disponible.
+          </div>
+        `;
+      }
 
       if (fitxaTeknika.startsWith("http://") || fitxaTeknika.startsWith("https://")) {
         return `
           <div class="ficha-box">
-            <strong>Ficha técnica</strong><br>
-            <a href="${escapeAttr(fitxaTeknika)}" target="_blank" rel="noopener">Abrir ficha técnica</a>
+            <strong>Ficha técnica</strong><br><br>
+            <a class="button-link" href="${escapeAttr(fitxaTeknika)}" target="_blank" rel="noopener">
+              <button type="button" class="small-btn">Ver ficha técnica</button>
+            </a>
           </div>
         `;
       }
@@ -525,14 +503,10 @@
 
       return `
         <div class="ficha-box">
-          <strong>Ficha técnica</strong><br>
-          Archivo: ${escapeHtml(fitxaTeknika)}
-          <img src="${ruta}" alt="Ficha técnica"
-               onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-          <div style="display:none; margin-top:10px;">
-            No se ha encontrado la ficha en la carpeta <strong>fichas</strong>.<br>
-            Sube el archivo al repositorio dentro de <strong>/fichas</strong>.
-          </div>
+          <strong>Ficha técnica</strong><br><br>
+          <a class="button-link" href="${ruta}" target="_blank" rel="noopener">
+            <button type="button" class="small-btn">Ver ficha técnica</button>
+          </a>
         </div>
       `;
     }
