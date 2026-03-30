@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vehículos Automoción</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background: #f5f7fb;
+      color: #1f2937;
+    }
+
+    .hidden { display: none !important; }
+
+    .box {
+      max-width: 1200px;
+      margin: 30px auto;
+      background: white;
+      border-radius: 14px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+      overflow: hidden;
+    }
+
+    .header {
+      background: #2563eb;
+      color: white;
+      padding: 20px;
+    }
+
+    .content {
+      padding: 20px;
+    }
+
+    input, button {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 10px;
+      border-radius: 10px;
+      border: 1px solid #d1d5db;
+      font-size: 15px;
+    }
+
+    button {
+      background: #2563eb;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    button:hover {
+      background: #1d4ed8;
+    }
+
+    .msg {
+      padding: 12px;
+      border-radius: 10px;
+      margin-bottom: 15px;
+      white-space: pre-wrap;
+    }
+
+    .error {
+      background: #fef2f2;
+      color: #b91c1c;
+      border: 1px solid #fecaca;
+    }
+
+    .info {
+      background: #eff6ff;
+      color: #1d4ed8;
+      border: 1px solid #bfdbfe;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+    }
+
+    .small-btn {
+      width: auto;
+      min-width: 150px;
+      margin-bottom: 0;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      min-width: 900px;
+    }
+
+    th, td {
+      border-bottom: 1px solid #e5e7eb;
+      padding: 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: #f9fafb;
+    }
+
+    .vehicle-card {
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      padding: 20px;
+      background: #fafafa;
+    }
+
+    .vehicle-title {
+      margin: 0 0 20px;
+      font-size: 28px;
+      color: #111827;
+    }
+
+    .vehicle-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .field {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 12px;
+    }
+
+    .field-label {
+      font-size: 12px;
+      color: #6b7280;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .field-value {
+      font-size: 15px;
+      font-weight: 600;
+      word-break: break-word;
+    }
+
+    .notes {
+      margin-top: 14px;
+      padding: 14px;
+      border-radius: 12px;
+      background: white;
+      border: 1px solid #e5e7eb;
+      white-space: pre-wrap;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: bold;
+      background: #e5e7eb;
+      color: #374151;
+    }
+
+    @media (max-width: 700px) {
+      .vehicle-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="loginView" class="box">
+    <div class="header">
+      <h2>Acceso Automoción</h2>
+    </div>
+    <div class="content">
+      <input id="username" type="text" placeholder="Usuario" />
+      <input id="password" type="password" placeholder="Contraseña" />
+      <button onclick="login()">Entrar</button>
+      <div id="loginError" class="msg error hidden"></div>
+    </div>
+  </div>
+
+  <div id="appView" class="box hidden">
+    <div class="header">
+      <h2>Vehículos del Taller</h2>
+      <div id="welcomeText"></div>
+    </div>
+    <div class="content">
+      <div class="topbar">
+        <div id="viewModeText">Datos de Google Sheets</div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <button class="small-btn" onclick="showAllVehicles()">Ver todos</button>
+          <button class="small-btn" onclick="logout()">Cerrar sesión</button>
+        </div>
+      </div>
+
+      <div id="appMessage" class="msg info hidden"></div>
+      <div id="debugBox" class="msg info hidden"></div>
+
+      <div id="vehicleDetail" class="hidden"></div>
+
+      <div id="tableContainer" class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>N.º</th>
+              <th>Vehículo</th>
+              <th>Color</th>
+              <th>VIN</th>
+              <th>Estado</th>
+              <th>QR</th>
+              <th>Observaciones</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+            <tr><td colspan="7">Sin datos todavía</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const USERS = [
+      { username: "profesor", password: "auto2026", role: "profesor", name: "Profesorado" },
+      { username: "alumno1", password: "auto2026", role: "alumno", name: "Alumno 1" },
+      { username: "alumno2", password: "auto2026", role: "alumno", name: "Alumno 2" }
+    ];
+
+    const SHEET_ID = "1sf2TS8gCKachrkz66S6E_zQuafVpu7F_AhSLdhi-W-g";
+    const SHEET_GID = "0";
+
+    let vehicles = [];
+
+    function login() {
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value.trim();
+      const loginError = document.getElementById("loginError");
+
+      loginError.classList.add("hidden");
+      loginError.textContent = "";
+
+      const user = USERS.find(u => u.username === username && u.password === password);
+
+      if (!user) {
+        loginError.textContent = "Usuario o contraseña incorrectos.";
+        loginError.classList.remove("hidden");
+        return;
+      }
+
+      sessionStorage.setItem("automocion_user", JSON.stringify(user));
+      document.getElementById("loginView").classList.add("hidden");
+      document.getElementById("appView").classList.remove("hidden");
+      document.getElementById("welcomeText").textContent = "Bienvenido, " + user.name;
+
+      loadVehiclesJSONP();
+    }
+
+    function logout() {
+      sessionStorage.removeItem("automocion_user");
+      document.getElementById("appView").classList.add("hidden");
+      document.getElementById("loginView").classList.remove("hidden");
+      document.getElementById("username").value = "";
+      document.getElementById("password").value = "";
+      document.getElementById("vehicleDetail").innerHTML = "";
+      document.getElementById("vehicleDetail").classList.add("hidden");
+      document.getElementById("tableContainer").classList.remove("hidden");
+    }
+
+    function showAllVehicles() {
+      document.getElementById("vehicleDetail").classList.add("hidden");
+      document.getElementById("tableContainer").classList.remove("hidden");
+      document.getElementById("viewModeText").textContent = "Datos de Google Sheets";
+    }
+
+    function loadVehiclesJSONP() {
+      const appMessage = document.getElementById("appMessage");
+      const debugBox = document.getElementById("debugBox");
+      const tableBody = document.getElementById("tableBody");
+
+      appMessage.classList.add("hidden");
+      debugBox.classList.add("hidden");
+      appMessage.textContent = "";
+      debugBox.textContent = "";
+      tableBody.innerHTML = '<tr><td colspan="7">Cargando datos...</td></tr>';
+
+      const old = document.getElementById("sheetJsonpScript");
+      if (old) old.remove();
+
+      window.handleSheetData = function(response) {
+        try {
+          const cols = response.table.cols.map((col, index) => {
+            const label = (col.label || "").trim();
+            return label || `Columna ${index + 1}`;
+          });
+
+          const rows = response.table.rows.map(row => {
+            const obj = {};
+            cols.forEach((colName, index) => {
+              obj[colName] = row.c[index] && row.c[index].v != null ? row.c[index].v : "";
+            });
+            return obj;
+          });
+
+          debugBox.textContent =
+            "Columnas detectadas:\n" + cols.join(" | ") +
+            "\n\nFilas detectadas: " + rows.length +
+            "\n\nPrimera fila:\n" + JSON.stringify(rows[0] || {}, null, 2);
+          debugBox.className = "msg info";
+          debugBox.classList.remove("hidden");
+
+          vehicles = rows.map(r => ({
+            id: value(r["ID"]),
+            qr: value(r["QR"]),
+            tailerra: value(r["TAILERRA"]),
+            autoa: value(r["Autoa"]),
+            color: value(r["Kolorea"]),
+            vin: value(r["VIN"]),
+            fitxaTeknika: value(r["Fitxa teknika"]),
+            egokitua: value(r["Egokitua"]),
+            erabilpena: value(r["Erabilpena"]),
+            estado: value(r["Egoera"]),
+            piztenDu: value(r["Pizten du"]),
+            piztuBeharDu: value(r["Piztu behar du"]),
+            observaciones: value(r["Oharrak"])
+          })).filter(v => v.id !== "");
+
+          appMessage.textContent = "Vehículos encontrados: " + vehicles.length;
+          appMessage.className = "msg info";
+          appMessage.classList.remove("hidden");
+
+          if (!vehicles.length) {
+            tableBody.innerHTML = '<tr><td colspan="7">Se ha leído la hoja, pero no se han detectado vehículos válidos.</td></tr>';
+            return;
+          }
+
+          renderVehiclesTable();
+          getVehicleFromURL();
+        } catch (error) {
+          appMessage.textContent = "Error procesando la hoja:\n" + error.message;
+          appMessage.className = "msg error";
+          appMessage.classList.remove("hidden");
+          tableBody.innerHTML = '<tr><td colspan="7">Error al procesar datos</td></tr>';
+        }
+      };
+
+      const script = document.createElement("script");
+      script.id = "sheetJsonpScript";
+      script.src = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?gid=${SHEET_GID}&tqx=responseHandler:handleSheetData`;
+      script.onerror = function() {
+        appMessage.textContent = "No se ha podido cargar la hoja desde Google Sheets.";
+        appMessage.className = "msg error";
+        appMessage.classList.remove("hidden");
+        tableBody.innerHTML = '<tr><td colspan="7">Error al cargar datos</td></tr>';
+      };
+
+      document.body.appendChild(script);
+    }
+
+    function renderVehiclesTable() {
+      const tableBody = document.getElementById("tableBody");
+
+      tableBody.innerHTML = vehicles.map(v => `
+        <tr>
+          <td>${escapeHtml(v.id)}</td>
+          <td>${escapeHtml(v.autoa)}</td>
+          <td>${escapeHtml(v.color)}</td>
+          <td>${escapeHtml(v.vin)}</td>
+          <td>${escapeHtml(v.estado)}</td>
+          <td>${v.qr ? "Sí" : "No"}</td>
+          <td>${escapeHtml(v.observaciones)}</td>
+        </tr>
+      `).join("");
+    }
+
+    function getVehicleFromURL() {
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get("id");
+
+      if (!id) return;
+
+      const vehicle = vehicles.find(v => String(v.id) === String(id));
+
+      if (!vehicle) return;
+
+      renderVehicleDetail(vehicle);
+    }
+
+    function renderVehicleDetail(vehicle) {
+      const detail = document.getElementById("vehicleDetail");
+      const tableContainer = document.getElementById("tableContainer");
+      const viewModeText = document.getElementById("viewModeText");
+
+      viewModeText.textContent = "Ficha del vehículo escaneado";
+      tableContainer.classList.add("hidden");
+      detail.classList.remove("hidden");
+
+      detail.innerHTML = `
+        <div class="vehicle-card">
+          <h2 class="vehicle-title">${escapeHtml(vehicle.autoa || "Vehículo")}</h2>
+
+          <div class="vehicle-grid">
+            <div class="field">
+              <div class="field-label">ID</div>
+              <div class="field-value">${escapeHtml(vehicle.id)}</div>
+            </div>
+
+            <div class="field">
+              <div class="field-label">Tallerra</div>
+              <div class="field-value">${escapeHtml(vehicle.tailerra)}</div>
+            </div>
+
+            <div class="field">
+              <div class="field-label">Kolorea</div>
+              <div class="field-value">${escapeHtml(vehicle.color)}</div>
+            </div>
+
+            <div class="field">
+              <div class="field-label">VIN</div>
+              <div class="field-value">${escapeHtml(vehicle.vin)}</div>
+            </div>
+
+            <div class="field">
+              <div class="field-label">Fitxa teknika</div>
+              <div class="field-value">${escapeHtml(vehicle.fitxaTeknika)}</div>
+            </div>
+
+            <div class="field">
+              <div class="field-label">Egokitua</div>
+              <div class="field-value">${escapeHtml(vehicle.egokitua)}</div>
+            </div>
+
+            <div class="field">
+              <div class="field-label">Erabilpena</div>
+              <div class="field-value">${escapeHtml(vehicle.erabilpena)}</div>
+            </div>
+
+            <div class="field">
+              <div class="field-label">Egoera</div>
+              <div class="field-value"><span class="badge">${escapeHtml(vehicle.estado)}</span></div>
+            </div>
+
+            <div class="field">
+              <div class="field-label">Pizten du</div>
+              <div class="field-value">${escapeHtml(vehicle.piztenDu)}</div>
+            </div>
+
+            <div class="field">
+              <div class="field-label">Piztu behar du</div>
+              <div class="field-value">${escapeHtml(vehicle.piztuBeharDu)}</div>
+            </div>
+
+            <div class="field">
+              <div class="field-label">QR</div>
+              <div class="field-value">${vehicle.qr ? "Disponible" : "Sin enlace"}</div>
+            </div>
+          </div>
+
+          <div class="notes">
+            <strong>Oharrak / Observaciones</strong><br>
+            ${escapeHtml(vehicle.observaciones || "Sin observaciones.")}
+          </div>
+        </div>
+      `;
+    }
+
+    function value(v) {
+      if (v === undefined || v === null) return "";
+      return String(v).trim();
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+  </script>
+</body>
+</html>
