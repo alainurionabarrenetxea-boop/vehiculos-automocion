@@ -44,7 +44,7 @@
       padding: 20px;
     }
 
-    input, button {
+    input, button, textarea, select {
       width: 100%;
       padding: 12px;
       margin-bottom: 10px;
@@ -52,6 +52,12 @@
       border: 1px solid #d1d5db;
       font-size: 15px;
       box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+
+    textarea {
+      min-height: 120px;
+      resize: vertical;
     }
 
     button {
@@ -64,6 +70,14 @@
 
     button:hover {
       background: #1d4ed8;
+    }
+
+    .secondary-btn {
+      background: #6b7280;
+    }
+
+    .secondary-btn:hover {
+      background: #4b5563;
     }
 
     .msg {
@@ -83,6 +97,12 @@
       background: #eff6ff;
       color: #1d4ed8;
       border: 1px solid #bfdbfe;
+    }
+
+    .success {
+      background: #ecfdf5;
+      color: #047857;
+      border: 1px solid #a7f3d0;
     }
 
     .topbar {
@@ -144,7 +164,8 @@
     }
 
     .notes,
-    .ficha-box {
+    .ficha-box,
+    .edit-box {
       margin-top: 14px;
       padding: 14px;
       border-radius: 12px;
@@ -185,8 +206,22 @@
       background: #f9fafb;
     }
 
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
     @media (max-width: 700px) {
-      .vehicle-grid {
+      .vehicle-grid,
+      .form-grid {
         grid-template-columns: 1fr;
       }
     }
@@ -218,7 +253,7 @@
         <div id="viewModeText">Consulta de vehículo</div>
         <div style="display:flex; gap:10px; flex-wrap:wrap;">
           <button id="showAllBtn" class="small-btn hidden" onclick="showAllVehicles()">Ver todos</button>
-          <button class="small-btn" onclick="logout()">Cerrar sesión</button>
+          <button class="small-btn secondary-btn" onclick="logout()">Cerrar sesión</button>
         </div>
       </div>
 
@@ -255,6 +290,7 @@
     const SHEET_GID = "0";
 
     let vehicles = [];
+    let currentUser = null;
 
     function login() {
       const username = document.getElementById("username").value.trim();
@@ -272,6 +308,7 @@
         return;
       }
 
+      currentUser = user;
       sessionStorage.setItem("automocion_user", JSON.stringify(user));
       document.getElementById("loginView").classList.add("hidden");
       document.getElementById("appView").classList.remove("hidden");
@@ -282,6 +319,7 @@
 
     function logout() {
       sessionStorage.removeItem("automocion_user");
+      currentUser = null;
       vehicles = [];
 
       document.getElementById("appView").classList.add("hidden");
@@ -339,8 +377,8 @@
             egokitua: value(r["Egokitua"]),
             erabilpena: value(r["Erabilpena"]),
             estado: value(r["Egoera"]),
-            piztenDu: value(r["Pizten du"]),
-            piztuBeharDu: value(r["Piztu behar du"]),
+            piztenDu: normalizeYesNo(value(r["Pizten du"])),
+            piztuBeharDu: normalizeYesNo(value(r["Piztu behar du"])),
             observaciones: value(r["Oharrak"])
           })).filter(v => v.id !== "");
 
@@ -418,7 +456,12 @@
 
       viewModeText.textContent = "Ficha del vehículo";
       tableContainer.classList.add("hidden");
-      showAllBtn.classList.remove("hidden");
+
+      if (currentUser && currentUser.role === "profesor") {
+        showAllBtn.classList.remove("hidden");
+      } else {
+        showAllBtn.classList.add("hidden");
+      }
 
       detail.innerHTML = `
         <div class="vehicle-card">
@@ -454,28 +497,75 @@
               <div class="field-label">Erabilpena</div>
               <div class="field-value">${escapeHtml(vehicle.erabilpena)}</div>
             </div>
-
-            <div class="field">
-              <div class="field-label">Estado</div>
-              <div class="field-value"><span class="badge">${escapeHtml(vehicle.estado)}</span></div>
-            </div>
-
-            <div class="field">
-              <div class="field-label">Pizten du</div>
-              <div class="field-value">${escapeHtml(vehicle.piztenDu)}</div>
-            </div>
-
-            <div class="field">
-              <div class="field-label">Piztu behar du</div>
-              <div class="field-value">${escapeHtml(vehicle.piztuBeharDu)}</div>
-            </div>
           </div>
 
-          <div class="notes"><strong>Observaciones</strong><br>${escapeHtml(vehicle.observaciones || "Sin observaciones.")}</div>
+          <div class="edit-box">
+            <div class="form-grid">
+              <div>
+                <label for="estadoInput"><strong>Estado / Egoera</strong></label>
+                <textarea id="estadoInput">${escapeHtml(vehicle.estado)}</textarea>
+              </div>
+
+              <div>
+                <label for="observacionesInput"><strong>Observaciones / Oharrak</strong></label>
+                <textarea id="observacionesInput">${escapeHtml(vehicle.observaciones || "")}</textarea>
+              </div>
+
+              <div>
+                <label for="piztenDuInput"><strong>Pizten du</strong></label>
+                <select id="piztenDuInput">
+                  <option value="Bai" ${vehicle.piztenDu === "Bai" ? "selected" : ""}>Sí</option>
+                  <option value="Ez" ${vehicle.piztenDu === "Ez" ? "selected" : ""}>No</option>
+                </select>
+              </div>
+
+              <div>
+                <label for="piztuBeharDuInput"><strong>Piztu behar du</strong></label>
+                <select id="piztuBeharDuInput">
+                  <option value="Bai" ${vehicle.piztuBeharDu === "Bai" ? "selected" : ""}>Sí</option>
+                  <option value="Ez" ${vehicle.piztuBeharDu === "Ez" ? "selected" : ""}>No</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="button" class="small-btn" onclick="saveVehicleChanges('${escapeJs(vehicle.id)}')">Guardar cambios</button>
+              <button type="button" class="small-btn secondary-btn" onclick="resetVehicleForm('${escapeJs(vehicle.id)}')">Restablecer</button>
+            </div>
+          </div>
 
           ${renderFichaTecnica(vehicle.fitxaTeknika)}
         </div>
       `;
+    }
+
+    function saveVehicleChanges(vehicleId) {
+      const vehicle = vehicles.find(v => String(v.id) === String(vehicleId));
+      if (!vehicle) return;
+
+      const estadoInput = document.getElementById("estadoInput");
+      const observacionesInput = document.getElementById("observacionesInput");
+      const piztenDuInput = document.getElementById("piztenDuInput");
+      const piztuBeharDuInput = document.getElementById("piztuBeharDuInput");
+      const appMessage = document.getElementById("appMessage");
+
+      vehicle.estado = estadoInput.value.trim();
+      vehicle.observaciones = observacionesInput.value.trim();
+      vehicle.piztenDu = piztenDuInput.value;
+      vehicle.piztuBeharDu = piztuBeharDuInput.value;
+
+      appMessage.textContent =
+        "Los cambios se han actualizado en pantalla.\n\n" +
+        "Todavía NO se están guardando en Google Sheets.\n" +
+        "El siguiente paso será conectar este botón con el sistema de guardado.";
+      appMessage.className = "msg success";
+      appMessage.classList.remove("hidden");
+    }
+
+    function resetVehicleForm(vehicleId) {
+      const vehicle = vehicles.find(v => String(v.id) === String(vehicleId));
+      if (!vehicle) return;
+      renderVehicleDetail(vehicle);
     }
 
     function renderFichaTecnica(fitxaTeknika) {
@@ -511,6 +601,13 @@
       `;
     }
 
+    function normalizeYesNo(value) {
+      const v = String(value || "").trim().toLowerCase();
+      if (v === "bai" || v === "si" || v === "sí" || v === "yes") return "Bai";
+      if (v === "ez" || v === "no") return "Ez";
+      return "Ez";
+    }
+
     function value(v) {
       if (v === undefined || v === null) return "";
       return String(v).trim();
@@ -527,6 +624,13 @@
 
     function escapeAttr(value) {
       return escapeHtml(value);
+    }
+
+    function escapeJs(value) {
+      return String(value ?? "")
+        .replace(/\\/g, "\\\\")
+        .replace(/'/g, "\\'")
+        .replace(/"/g, '\\"');
     }
   </script>
 </body>
