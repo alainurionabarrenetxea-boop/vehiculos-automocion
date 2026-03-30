@@ -478,14 +478,39 @@
     }
 
     function renderFichaTecnica(fitxaTeknika) {
-      if (!fitxaTeknika) {
-        return `
-          <div class="ficha-box">
-            <strong>Ficha técnica</strong><br>
-            No disponible.
-          </div>
-        `;
-      }
+  if (!fitxaTeknika) {
+    return `
+      <div class="ficha-box">
+        <strong>Ficha técnica</strong><br>
+        No disponible.
+      </div>
+    `;
+  }
+
+  // Si ya viene una URL completa
+  if (fitxaTeknika.startsWith("http://") || fitxaTeknika.startsWith("https://")) {
+    return `
+      <div class="ficha-box">
+        <strong>Ficha técnica</strong><br><br>
+        <a href="${escapeAttr(fitxaTeknika)}" target="_blank" rel="noopener">
+          <button type="button" class="small-btn">Ver ficha técnica</button>
+        </a>
+      </div>
+    `;
+  }
+
+  // Si es un nombre de archivo dentro de /fichas/
+  const ruta = `fichas/${encodeURIComponent(fitxaTeknika)}`;
+
+  return `
+    <div class="ficha-box">
+      <strong>Ficha técnica</strong><br><br>
+      <a href="${ruta}" target="_blank" rel="noopener">
+        <button type="button" class="small-btn">Ver ficha técnica</button>
+      </a>
+    </div>
+  `;
+}
 
       if (fitxaTeknika.startsWith("http://") || fitxaTeknika.startsWith("https://")) {
         return `
