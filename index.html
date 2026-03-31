@@ -56,7 +56,7 @@
     }
 
     textarea {
-      min-height: 120px;
+      min-height: 100px;
       resize: vertical;
     }
 
@@ -109,6 +109,16 @@
       background: #fff7ed;
       color: #c2410c;
       border: 1px solid #fdba74;
+    }
+
+    .danger-banner {
+      background: #b91c1c;
+      color: white;
+      padding: 14px;
+      border-radius: 12px;
+      margin-bottom: 14px;
+      font-weight: bold;
+      white-space: pre-wrap;
     }
 
     .topbar {
@@ -169,7 +179,6 @@
       word-break: break-word;
     }
 
-    .notes,
     .ficha-box,
     .edit-box {
       margin-top: 14px;
@@ -178,16 +187,6 @@
       background: white;
       border: 1px solid #e5e7eb;
       white-space: pre-wrap;
-    }
-
-    .badge {
-      display: inline-block;
-      padding: 6px 10px;
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: bold;
-      background: #e5e7eb;
-      color: #374151;
     }
 
     .table-wrap {
@@ -250,7 +249,6 @@
       <input id="password" type="password" placeholder="Contraseña" />
       <button onclick="login()">Entrar</button>
       <div id="loginError" class="msg error hidden"></div>
-      <div id="entryInfo" class="msg info hidden"></div>
     </div>
   </div>
 
@@ -270,7 +268,6 @@
       </div>
 
       <div id="appMessage" class="msg info hidden"></div>
-
       <div id="vehicleDetail"></div>
 
       <div id="tableContainer" class="table-wrap hidden">
@@ -317,12 +314,9 @@
       const username = document.getElementById("username").value.trim();
       const password = document.getElementById("password").value.trim();
       const loginError = document.getElementById("loginError");
-      const entryInfo = document.getElementById("entryInfo");
 
       loginError.classList.add("hidden");
       loginError.textContent = "";
-      entryInfo.classList.add("hidden");
-      entryInfo.textContent = "";
 
       const user = USERS.find(u => u.username === username && u.password === password);
 
@@ -341,8 +335,6 @@
       }
 
       currentUser = user;
-      sessionStorage.setItem("automocion_user", JSON.stringify(user));
-
       document.getElementById("loginView").classList.add("hidden");
       document.getElementById("appView").classList.remove("hidden");
       document.getElementById("welcomeText").textContent = `Bienvenido, ${user.name} · Rol: ${user.role}`;
@@ -351,7 +343,6 @@
     }
 
     function logout() {
-      sessionStorage.removeItem("automocion_user");
       currentUser = null;
       vehicles = [];
 
@@ -415,15 +406,12 @@
             estado: value(r["Egoera"]),
             piztenDu: normalizeYesNo(value(r["Pizten du"])),
             piztuBeharDu: normalizeYesNo(value(r["Piztu behar du"])),
-            observaciones: value(r["Oharrak"])
+            observaciones: value(r["Oharrak"]),
+            blokatuta: normalizeYesNo(value(r["BLOKATUTA"])),
+            idBlokeoa: value(r["ID BLOKEOA"]),
+            blokeoData: value(r["BLOKEO DATA"]),
+            blokeoZergatia: value(r["BLOKEO ZERGATIA"])
           })).filter(v => v.id !== "");
-
-          if (!vehicles.length) {
-            appMessage.textContent = "No se han encontrado vehículos válidos.";
-            appMessage.className = "msg error";
-            appMessage.classList.remove("hidden");
-            return;
-          }
 
           routeAfterLoad();
         } catch (error) {
@@ -437,6 +425,7 @@
       script.id = "sheetJsonpScript";
       script.src = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?gid=${SHEET_GID}&tqx=responseHandler:handleSheetData`;
       script.onerror = function() {
+        const appMessage = document.getElementById("appMessage");
         appMessage.textContent = "No se ha podido cargar la hoja desde Google Sheets.";
         appMessage.className = "msg error";
         appMessage.classList.remove("hidden");
@@ -464,13 +453,6 @@
           return;
         }
 
-        if (entry.trabajo) {
-          appMessage.textContent = "La ficha de trabajo todavía no está implementada.";
-          appMessage.className = "msg warning";
-          appMessage.classList.remove("hidden");
-          return;
-        }
-
         document.getElementById("viewModeText").textContent = "Panel general de profesor";
         document.getElementById("tableContainer").classList.remove("hidden");
         renderVehiclesTable();
@@ -487,13 +469,6 @@
             return;
           }
           renderVehicleDetail(vehicle);
-          return;
-        }
-
-        if (entry.trabajo) {
-          appMessage.textContent = "La ficha de trabajo todavía no está implementada.";
-          appMessage.className = "msg warning";
-          appMessage.classList.remove("hidden");
           return;
         }
 
@@ -533,19 +508,26 @@
       const viewModeText = document.getElementById("viewModeText");
       const showAllBtn = document.getElementById("showAllBtn");
 
-      viewModeText.textContent = currentUser && currentUser.role === "profesor"
-        ? "Ficha de vehículo"
-        : "Ficha asignada por QR";
+      const isProfesor = currentUser && currentUser.role === "profesor";
+      const isBlockedForStudent = !isProfesor && vehicle.blokatuta === "Bai";
 
+      viewModeText.textContent = isProfesor ? "Ficha de vehículo" : "Ficha asignada por QR";
       tableContainer.classList.add("hidden");
 
-      if (currentUser && currentUser.role === "profesor") {
+      if (isProfesor) {
         showAllBtn.classList.remove("hidden");
       } else {
         showAllBtn.classList.add("hidden");
       }
 
       detail.innerHTML = `
+        ${vehicle.blokatuta === "Bai" ? `
+          <div class="danger-banner">🚫 VEHÍCULO BLOQUEADO
+${vehicle.idBlokeoa ? "Bloqueado por: " + escapeHtml(vehicle.idBlokeoa) : ""}
+${vehicle.blokeoData ? "\nFecha: " + escapeHtml(vehicle.blokeoData) : ""}
+${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : ""}</div>
+        ` : ""}
+
         <div class="vehicle-card">
           <h2 class="vehicle-title">${escapeHtml(vehicle.autoa || "Vehículo")}</h2>
 
@@ -585,17 +567,17 @@
             <div class="form-grid">
               <div>
                 <label for="estadoInput"><strong>Estado / Egoera</strong></label>
-                <textarea id="estadoInput">${escapeHtml(vehicle.estado)}</textarea>
+                <textarea id="estadoInput" ${isBlockedForStudent ? "disabled" : ""}>${escapeHtml(vehicle.estado)}</textarea>
               </div>
 
               <div>
                 <label for="observacionesInput"><strong>Observaciones / Oharrak</strong></label>
-                <textarea id="observacionesInput">${escapeHtml(vehicle.observaciones || "")}</textarea>
+                <textarea id="observacionesInput" ${isBlockedForStudent ? "disabled" : ""}>${escapeHtml(vehicle.observaciones || "")}</textarea>
               </div>
 
               <div>
                 <label for="piztenDuInput"><strong>Pizten du</strong></label>
-                <select id="piztenDuInput">
+                <select id="piztenDuInput" ${isBlockedForStudent ? "disabled" : ""}>
                   <option value="Bai" ${vehicle.piztenDu === "Bai" ? "selected" : ""}>Bai</option>
                   <option value="Ez" ${vehicle.piztenDu === "Ez" ? "selected" : ""}>Ez</option>
                 </select>
@@ -603,17 +585,34 @@
 
               <div>
                 <label for="piztuBeharDuInput"><strong>Piztu behar du</strong></label>
-                <select id="piztuBeharDuInput">
+                <select id="piztuBeharDuInput" ${isBlockedForStudent ? "disabled" : ""}>
                   <option value="Bai" ${vehicle.piztuBeharDu === "Bai" ? "selected" : ""}>Bai</option>
                   <option value="Ez" ${vehicle.piztuBeharDu === "Ez" ? "selected" : ""}>Ez</option>
                 </select>
               </div>
+
+              ${isProfesor ? `
+              <div>
+                <label for="blokatutaInput"><strong>BLOKATUTA</strong></label>
+                <select id="blokatutaInput">
+                  <option value="Bai" ${vehicle.blokatuta === "Bai" ? "selected" : ""}>Bai</option>
+                  <option value="Ez" ${vehicle.blokatuta === "Ez" ? "selected" : ""}>Ez</option>
+                </select>
+              </div>
+
+              <div>
+                <label for="blokeoZergatiaInput"><strong>BLOKEO ZERGATIA</strong></label>
+                <textarea id="blokeoZergatiaInput">${escapeHtml(vehicle.blokeoZergatia || "")}</textarea>
+              </div>
+              ` : ""}
             </div>
 
+            ${!isBlockedForStudent ? `
             <div class="form-actions">
               <button type="button" class="small-btn" onclick="saveVehicleChanges('${escapeJs(vehicle.id)}')">Guardar cambios</button>
               <button type="button" class="small-btn secondary-btn" onclick="resetVehicleForm('${escapeJs(vehicle.id)}')">Restablecer</button>
             </div>
+            ` : ""}
           </div>
 
           ${renderFichaTecnica(vehicle.fitxaTeknika)}
@@ -626,29 +625,37 @@
       const vehicle = vehicles.find(v => String(v.id) === String(vehicleId));
       if (!vehicle || !currentUser) return;
 
-      const estadoInput = document.getElementById("estadoInput");
-      const observacionesInput = document.getElementById("observacionesInput");
-      const piztenDuInput = document.getElementById("piztenDuInput");
-      const piztuBeharDuInput = document.getElementById("piztuBeharDuInput");
       const appMessage = document.getElementById("appMessage");
 
       const payload = {
         usuario: currentUser.username,
+        rol: currentUser.role,
         idVehiculo: vehicle.id,
-        estado: estadoInput.value.trim(),
-        observaciones: observacionesInput.value.trim(),
-        piztenDu: piztenDuInput.value,
-        piztuBeharDu: piztuBeharDuInput.value
+        autoa: vehicle.autoa,
+        estado: document.getElementById("estadoInput").value.trim(),
+        observaciones: document.getElementById("observacionesInput").value.trim(),
+        piztenDu: document.getElementById("piztenDuInput").value,
+        piztuBeharDu: document.getElementById("piztuBeharDuInput").value,
+        blokeado: currentUser.role === "profesor"
+          ? document.getElementById("blokatutaInput").value
+          : vehicle.blokatuta,
+        motivo: currentUser.role === "profesor"
+          ? document.getElementById("blokeoZergatiaInput").value.trim()
+          : vehicle.blokeoZergatia
       };
 
       const url =
         SAVE_API_URL +
         "?usuario=" + encodeURIComponent(payload.usuario) +
+        "&rol=" + encodeURIComponent(payload.rol) +
         "&idVehiculo=" + encodeURIComponent(payload.idVehiculo) +
+        "&autoa=" + encodeURIComponent(payload.autoa) +
         "&estado=" + encodeURIComponent(payload.estado) +
         "&observaciones=" + encodeURIComponent(payload.observaciones) +
         "&piztenDu=" + encodeURIComponent(payload.piztenDu) +
-        "&piztuBeharDu=" + encodeURIComponent(payload.piztuBeharDu);
+        "&piztuBeharDu=" + encodeURIComponent(payload.piztuBeharDu) +
+        "&blokeado=" + encodeURIComponent(payload.blokeado) +
+        "&motivo=" + encodeURIComponent(payload.motivo);
 
       appMessage.textContent = "Guardando cambios...";
       appMessage.className = "msg info";
@@ -659,13 +666,25 @@
         const result = await response.json();
 
         if (!result.ok) {
-          throw new Error(result.message || "No se pudieron guardar los cambios");
+          throw new Error(result.msg || result.message || "No se pudieron guardar los cambios");
         }
 
         vehicle.estado = payload.estado;
         vehicle.observaciones = payload.observaciones;
         vehicle.piztenDu = payload.piztenDu;
         vehicle.piztuBeharDu = payload.piztuBeharDu;
+        vehicle.blokatuta = payload.blokeado;
+        vehicle.blokeoZergatia = payload.motivo;
+
+        if (currentUser.role === "profesor") {
+          if (payload.blokeado === "Bai") {
+            vehicle.idBlokeoa = currentUser.username;
+          } else {
+            vehicle.idBlokeoa = "";
+            vehicle.blokeoData = "";
+            vehicle.blokeoZergatia = "";
+          }
+        }
 
         appMessage.textContent = "Cambios guardados correctamente.";
         appMessage.className = "msg success";
@@ -685,40 +704,29 @@
       renderVehicleDetail(vehicle);
     }
 
-    function renderFichaTecnica(fitxaTeknika) {
-      if (!fitxaTeknika) {
-        return `
-          <div class="ficha-box">
-            <strong>Ficha técnica</strong><br>
-            No disponible.
-          </div>
-        `;
-      }
-
+    function renderFichaTecnica(link) {
+      if (!link) return "";
       return `
         <div class="ficha-box">
           <strong>Ficha técnica</strong><br><br>
-          <a class="button-link" href="${escapeAttr(fitxaTeknika)}" target="_blank" rel="noopener">
+          <a class="button-link" href="${escapeAttr(link)}" target="_blank" rel="noopener">
             <button type="button" class="small-btn">Ver ficha técnica</button>
           </a>
         </div>
       `;
     }
 
-    function renderRTA(rta) {
-  if (!rta) {
-    return "";
-  }
-
-  return `
-    <div class="ficha-box">
-      <strong>RTA</strong><br><br>
-      <a class="button-link" href="${escapeAttr(rta)}" target="_blank" rel="noopener">
-        <button type="button" class="small-btn">Ver RTA</button>
-      </a>
-    </div>
-  `;
-}
+    function renderRTA(link) {
+      if (!link) return "";
+      return `
+        <div class="ficha-box">
+          <strong>RTA</strong><br><br>
+          <a class="button-link" href="${escapeAttr(link)}" target="_blank" rel="noopener">
+            <button type="button" class="small-btn">Ver RTA</button>
+          </a>
+        </div>
+      `;
+    }
 
     function normalizeYesNo(value) {
       const v = String(value || "").trim().toLowerCase();
@@ -728,8 +736,7 @@
     }
 
     function value(v) {
-      if (v === undefined || v === null) return "";
-      return String(v).trim();
+      return v == null ? "" : String(v).trim();
     }
 
     function escapeHtml(value) {
