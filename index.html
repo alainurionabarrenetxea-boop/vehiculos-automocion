@@ -705,20 +705,20 @@
       `;
     }
 
-    function renderRevistaTecnica(revistaTeknika) {
-      if (!revistaTeknika) {
-        return "";
-      }
+    function renderRTA(rta) {
+  if (!rta) {
+    return "";
+  }
 
-      return `
-        <div class="ficha-box">
-          <strong>Revista técnica</strong><br><br>
-          <a class="button-link" href="${escapeAttr(revistaTeknika)}" target="_blank" rel="noopener">
-            <button type="button" class="small-btn">Ver revista técnica</button>
-          </a>
-        </div>
-      `;
-    }
+  return `
+    <div class="ficha-box">
+      <strong>RTA</strong><br><br>
+      <a class="button-link" href="${escapeAttr(rta)}" target="_blank" rel="noopener">
+        <button type="button" class="small-btn">Ver RTA</button>
+      </a>
+    </div>
+  `;
+}
 
     function normalizeYesNo(value) {
       const v = String(value || "").trim().toLowerCase();
