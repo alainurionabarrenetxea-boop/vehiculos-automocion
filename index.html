@@ -639,35 +639,59 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
       );
     }
 
-    async function saveVehicleChanges(vehicleId) {
-      if (autoSaveInProgress) return;
+   function saveVehicleChanges(vehicleId) {
 
-      const vehicle = vehicles.find(v => String(v.id) === String(vehicleId));
-      if (!vehicle || !currentUser) return;
+  const vehicle = vehicles.find(v => String(v.id) === String(vehicleId));
+  if (!vehicle || !currentUser) return;
 
-      const estadoInput = document.getElementById("estadoInput");
-      const observacionesInput = document.getElementById("observacionesInput");
-      const piztenDuInput = document.getElementById("piztenDuInput");
-      const piztuBeharDuInput = document.getElementById("piztuBeharDuInput");
+  const estado = document.getElementById("estadoInput").value.trim();
+  const obs = document.getElementById("observacionesInput").value.trim();
+  const pizten = document.getElementById("piztenDuInput").value;
+  const piztu = document.getElementById("piztuBeharDuInput").value;
 
-      if (!estadoInput || !observacionesInput || !piztenDuInput || !piztuBeharDuInput) return;
+  let bloqueado = vehicle.blokatuta;
+  let motivo = vehicle.blokeoZergatia;
 
-      const payload = {
-        usuario: currentUser.username,
-        rol: currentUser.role,
-        idVehiculo: vehicle.id,
-        autoa: vehicle.autoa,
-        estado: estadoInput.value.trim(),
-        observaciones: observacionesInput.value.trim(),
-        piztenDu: piztenDuInput.value,
-        piztuBeharDu: piztuBeharDuInput.value,
-        blokeado: currentUser.role === "profesor" && document.getElementById("blokatutaInput")
-          ? document.getElementById("blokatutaInput").value
-          : vehicle.blokatuta,
-        motivo: currentUser.role === "profesor" && document.getElementById("blokeoZergatiaInput")
-          ? document.getElementById("blokeoZergatiaInput").value.trim()
-          : vehicle.blokeoZergatia
-      };
+  if (currentUser.role === "profesor") {
+    const blok = document.getElementById("blokatutaInput");
+    const mot = document.getElementById("blokeoZergatiaInput");
+
+    if (blok) bloqueado = blok.value;
+    if (mot) motivo = mot.value.trim();
+  }
+
+  setAutoSaveStatus("Guardando cambios...", "saving");
+
+  const url =
+    SAVE_API_URL +
+    "?usuario=" + encodeURIComponent(currentUser.username) +
+    "&rol=" + encodeURIComponent(currentUser.role) +
+    "&idVehiculo=" + encodeURIComponent(vehicle.id) +
+    "&autoa=" + encodeURIComponent(vehicle.autoa) +
+    "&estado=" + encodeURIComponent(estado) +
+    "&observaciones=" + encodeURIComponent(obs) +
+    "&piztenDu=" + encodeURIComponent(pizten) +
+    "&piztuBeharDu=" + encodeURIComponent(piztu) +
+    "&blokeado=" + encodeURIComponent(bloqueado) +
+    "&motivo=" + encodeURIComponent(motivo);
+
+  const old = document.getElementById("saveScript");
+  if (old) old.remove();
+
+  const script = document.createElement("script");
+  script.id = "saveScript";
+  script.src = url;
+
+  script.onload = function () {
+    setAutoSaveStatus("Cambios guardados automáticamente.", "saved");
+  };
+
+  script.onerror = function () {
+    setAutoSaveStatus("Error al guardar cambios.", "error");
+  };
+
+  document.body.appendChild(script);
+}
 
       const url =
         SAVE_API_URL +
