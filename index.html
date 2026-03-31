@@ -520,8 +520,10 @@
 
     function openVehicleAsProfessor(vehicleId) {
       if (!currentUser || currentUser.role !== "profesor") return;
+
       const vehicle = vehicles.find(v => String(v.id) === String(vehicleId));
       if (!vehicle) return;
+
       renderVehicleDetail(vehicle);
     }
 
