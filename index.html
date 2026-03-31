@@ -12,9 +12,7 @@
       color: #1f2937;
     }
 
-    .hidden {
-      display: none !important;
-    }
+    .hidden { display: none !important; }
 
     .box {
       max-width: 1100px;
@@ -222,11 +220,27 @@
       gap: 12px;
     }
 
-    .form-actions {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-top: 10px;
+    .status-inline {
+      font-size: 13px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      display: inline-block;
+    }
+
+    .status-saving {
+      background: #eff6ff;
+      color: #1d4ed8;
+    }
+
+    .status-saved {
+      background: #ecfdf5;
+      color: #047857;
+    }
+
+    .status-error {
+      background: #fef2f2;
+      color: #b91c1c;
     }
 
     @media (max-width: 700px) {
@@ -297,10 +311,13 @@
 
     const SHEET_ID = "1sf2TS8gCKachrkz66S6E_zQuafVpu7F_AhSLdhi-W-g";
     const SHEET_GID = "0";
-    const SAVE_API_URL = "https://script.google.com/macros/s/AKfycby2MIw0Yh3GDaf4SUOHze4wkSXFo6GIMJnNHOE9UPSagNlL-fyw8daxxShtHzlbamKhIg/exec";
+    const SAVE_API_URL = "https://script.google.com/macros/s/AKfycbwggUaHxijt27ZeKOMIi2BqsTXzt9KfrLKtmmW7iGWB4KNO4ss5vzx7xiZ-FWjg3ohbhQ/exec";
 
     let vehicles = [];
     let currentUser = null;
+    let autoSaveTimer = null;
+    let autoSaveInProgress = false;
+    let currentVehicleId = null;
 
     function getEntryParams() {
       const params = new URLSearchParams(window.location.search);
@@ -345,10 +362,11 @@
     function logout() {
       currentUser = null;
       vehicles = [];
+      currentVehicleId = null;
+      clearTimeout(autoSaveTimer);
 
       document.getElementById("appView").classList.add("hidden");
       document.getElementById("loginView").classList.remove("hidden");
-
       document.getElementById("username").value = "";
       document.getElementById("password").value = "";
       document.getElementById("vehicleDetail").innerHTML = "";
@@ -415,9 +433,7 @@
 
           routeAfterLoad();
         } catch (error) {
-          appMessage.textContent = "Error procesando la hoja:\n" + error.message;
-          appMessage.className = "msg error";
-          appMessage.classList.remove("hidden");
+          showGlobalMessage("Error procesando la hoja:\n" + error.message, "error");
         }
       };
 
@@ -425,10 +441,7 @@
       script.id = "sheetJsonpScript";
       script.src = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?gid=${SHEET_GID}&tqx=responseHandler:handleSheetData`;
       script.onerror = function() {
-        const appMessage = document.getElementById("appMessage");
-        appMessage.textContent = "No se ha podido cargar la hoja desde Google Sheets.";
-        appMessage.className = "msg error";
-        appMessage.classList.remove("hidden");
+        showGlobalMessage("No se ha podido cargar la hoja desde Google Sheets.", "error");
       };
 
       document.body.appendChild(script);
@@ -436,7 +449,6 @@
 
     function routeAfterLoad() {
       const entry = getEntryParams();
-      const appMessage = document.getElementById("appMessage");
 
       if (!currentUser) return;
 
@@ -444,9 +456,7 @@
         if (entry.id) {
           const vehicle = vehicles.find(v => String(v.id) === String(entry.id));
           if (!vehicle) {
-            appMessage.textContent = "No se ha encontrado ningún vehículo con ese ID.";
-            appMessage.className = "msg error";
-            appMessage.classList.remove("hidden");
+            showGlobalMessage("No se ha encontrado ningún vehículo con ese ID.", "error");
             return;
           }
           renderVehicleDetail(vehicle);
@@ -463,18 +473,14 @@
         if (entry.id) {
           const vehicle = vehicles.find(v => String(v.id) === String(entry.id));
           if (!vehicle) {
-            appMessage.textContent = "No se ha encontrado ningún vehículo con ese ID.";
-            appMessage.className = "msg error";
-            appMessage.classList.remove("hidden");
+            showGlobalMessage("No se ha encontrado ningún vehículo con ese ID.", "error");
             return;
           }
           renderVehicleDetail(vehicle);
           return;
         }
 
-        appMessage.textContent = "Acceso denegado. El alumnado solo puede entrar desde QR o ficha de trabajo.";
-        appMessage.className = "msg error";
-        appMessage.classList.remove("hidden");
+        showGlobalMessage("Acceso denegado. El alumnado solo puede entrar desde QR o ficha de trabajo.", "error");
       }
     }
 
@@ -495,10 +501,8 @@
 
     function openVehicleAsProfessor(vehicleId) {
       if (!currentUser || currentUser.role !== "profesor") return;
-
       const vehicle = vehicles.find(v => String(v.id) === String(vehicleId));
       if (!vehicle) return;
-
       renderVehicleDetail(vehicle);
     }
 
@@ -508,17 +512,16 @@
       const viewModeText = document.getElementById("viewModeText");
       const showAllBtn = document.getElementById("showAllBtn");
 
+      currentVehicleId = vehicle.id;
+
       const isProfesor = currentUser && currentUser.role === "profesor";
       const isBlockedForStudent = !isProfesor && vehicle.blokatuta === "Bai";
 
       viewModeText.textContent = isProfesor ? "Ficha de vehículo" : "Ficha asignada por QR";
       tableContainer.classList.add("hidden");
 
-      if (isProfesor) {
-        showAllBtn.classList.remove("hidden");
-      } else {
-        showAllBtn.classList.add("hidden");
-      }
+      if (isProfesor) showAllBtn.classList.remove("hidden");
+      else showAllBtn.classList.add("hidden");
 
       detail.innerHTML = `
         ${vehicle.blokatuta === "Bai" ? `
@@ -532,38 +535,17 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
           <h2 class="vehicle-title">${escapeHtml(vehicle.autoa || "Vehículo")}</h2>
 
           <div class="vehicle-grid">
-            <div class="field">
-              <div class="field-label">ID</div>
-              <div class="field-value">${escapeHtml(vehicle.id)}</div>
-            </div>
-
-            <div class="field">
-              <div class="field-label">Taller</div>
-              <div class="field-value">${escapeHtml(vehicle.tailerra)}</div>
-            </div>
-
-            <div class="field">
-              <div class="field-label">Color</div>
-              <div class="field-value">${escapeHtml(vehicle.color)}</div>
-            </div>
-
-            <div class="field">
-              <div class="field-label">VIN</div>
-              <div class="field-value">${escapeHtml(vehicle.vin)}</div>
-            </div>
-
-            <div class="field">
-              <div class="field-label">Egokitua</div>
-              <div class="field-value">${escapeHtml(vehicle.egokitua)}</div>
-            </div>
-
-            <div class="field">
-              <div class="field-label">Erabilpena</div>
-              <div class="field-value">${escapeHtml(vehicle.erabilpena)}</div>
-            </div>
+            <div class="field"><div class="field-label">ID</div><div class="field-value">${escapeHtml(vehicle.id)}</div></div>
+            <div class="field"><div class="field-label">Taller</div><div class="field-value">${escapeHtml(vehicle.tailerra)}</div></div>
+            <div class="field"><div class="field-label">Color</div><div class="field-value">${escapeHtml(vehicle.color)}</div></div>
+            <div class="field"><div class="field-label">VIN</div><div class="field-value">${escapeHtml(vehicle.vin)}</div></div>
+            <div class="field"><div class="field-label">Egokitua</div><div class="field-value">${escapeHtml(vehicle.egokitua)}</div></div>
+            <div class="field"><div class="field-label">Erabilpena</div><div class="field-value">${escapeHtml(vehicle.erabilpena)}</div></div>
           </div>
 
           <div class="edit-box">
+            <div id="autoSaveStatus" class="status-inline status-saved">Formulario cargado.</div>
+
             <div class="form-grid">
               <div>
                 <label for="estadoInput"><strong>Estado / Egoera</strong></label>
@@ -606,40 +588,83 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
               </div>
               ` : ""}
             </div>
-
-            ${!isBlockedForStudent ? `
-            <div class="form-actions">
-              <button type="button" class="small-btn" onclick="saveVehicleChanges('${escapeJs(vehicle.id)}')">Guardar cambios</button>
-              <button type="button" class="small-btn secondary-btn" onclick="resetVehicleForm('${escapeJs(vehicle.id)}')">Restablecer</button>
-            </div>
-            ` : ""}
           </div>
 
           ${renderFichaTecnica(vehicle.fitxaTeknika)}
           ${renderRTA(vehicle.rta)}
         </div>
       `;
+
+      attachAutoSaveListeners(vehicle.id, isBlockedForStudent);
+    }
+
+    function attachAutoSaveListeners(vehicleId, isBlockedForStudent) {
+      if (isBlockedForStudent) return;
+
+      const ids = [
+        "estadoInput",
+        "observacionesInput",
+        "piztenDuInput",
+        "piztuBeharDuInput"
+      ];
+
+      if (currentUser && currentUser.role === "profesor") {
+        ids.push("blokatutaInput", "blokeoZergatiaInput");
+      }
+
+      ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+
+        const eventName = (el.tagName === "SELECT") ? "change" : "input";
+        el.addEventListener(eventName, () => scheduleAutoSave(vehicleId));
+      });
+    }
+
+    function scheduleAutoSave(vehicleId) {
+      clearTimeout(autoSaveTimer);
+      setAutoSaveStatus("Guardando cambios...", "saving");
+      autoSaveTimer = setTimeout(() => saveVehicleChanges(vehicleId), 700);
+    }
+
+    function setAutoSaveStatus(text, type) {
+      const status = document.getElementById("autoSaveStatus");
+      if (!status) return;
+
+      status.textContent = text;
+      status.className = "status-inline " + (
+        type === "saving" ? "status-saving" :
+        type === "error" ? "status-error" :
+        "status-saved"
+      );
     }
 
     async function saveVehicleChanges(vehicleId) {
+      if (autoSaveInProgress) return;
+
       const vehicle = vehicles.find(v => String(v.id) === String(vehicleId));
       if (!vehicle || !currentUser) return;
 
-      const appMessage = document.getElementById("appMessage");
+      const estadoInput = document.getElementById("estadoInput");
+      const observacionesInput = document.getElementById("observacionesInput");
+      const piztenDuInput = document.getElementById("piztenDuInput");
+      const piztuBeharDuInput = document.getElementById("piztuBeharDuInput");
+
+      if (!estadoInput || !observacionesInput || !piztenDuInput || !piztuBeharDuInput) return;
 
       const payload = {
         usuario: currentUser.username,
         rol: currentUser.role,
         idVehiculo: vehicle.id,
         autoa: vehicle.autoa,
-        estado: document.getElementById("estadoInput").value.trim(),
-        observaciones: document.getElementById("observacionesInput").value.trim(),
-        piztenDu: document.getElementById("piztenDuInput").value,
-        piztuBeharDu: document.getElementById("piztuBeharDuInput").value,
-        blokeado: currentUser.role === "profesor"
+        estado: estadoInput.value.trim(),
+        observaciones: observacionesInput.value.trim(),
+        piztenDu: piztenDuInput.value,
+        piztuBeharDu: piztuBeharDuInput.value,
+        blokeado: currentUser.role === "profesor" && document.getElementById("blokatutaInput")
           ? document.getElementById("blokatutaInput").value
           : vehicle.blokatuta,
-        motivo: currentUser.role === "profesor"
+        motivo: currentUser.role === "profesor" && document.getElementById("blokeoZergatiaInput")
           ? document.getElementById("blokeoZergatiaInput").value.trim()
           : vehicle.blokeoZergatia
       };
@@ -657,9 +682,8 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
         "&blokeado=" + encodeURIComponent(payload.blokeado) +
         "&motivo=" + encodeURIComponent(payload.motivo);
 
-      appMessage.textContent = "Guardando cambios...";
-      appMessage.className = "msg info";
-      appMessage.classList.remove("hidden");
+      autoSaveInProgress = true;
+      setAutoSaveStatus("Guardando cambios...", "saving");
 
       try {
         const response = await fetch(url);
@@ -679,6 +703,7 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
         if (currentUser.role === "profesor") {
           if (payload.blokeado === "Bai") {
             vehicle.idBlokeoa = currentUser.username;
+            vehicle.blokeoData = new Date().toLocaleString();
           } else {
             vehicle.idBlokeoa = "";
             vehicle.blokeoData = "";
@@ -686,22 +711,13 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
           }
         }
 
-        appMessage.textContent = "Cambios guardados correctamente.";
-        appMessage.className = "msg success";
-        appMessage.classList.remove("hidden");
-
-        renderVehicleDetail(vehicle);
+        setAutoSaveStatus("Cambios guardados automáticamente.", "saved");
       } catch (error) {
-        appMessage.textContent = "Error al guardar:\n" + error.message;
-        appMessage.className = "msg error";
-        appMessage.classList.remove("hidden");
+        setAutoSaveStatus("Error al guardar automáticamente: " + error.message, "error");
+        showGlobalMessage("Error al guardar:\n" + error.message, "error");
+      } finally {
+        autoSaveInProgress = false;
       }
-    }
-
-    function resetVehicleForm(vehicleId) {
-      const vehicle = vehicles.find(v => String(v.id) === String(vehicleId));
-      if (!vehicle) return;
-      renderVehicleDetail(vehicle);
     }
 
     function renderFichaTecnica(link) {
@@ -726,6 +742,13 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
           </a>
         </div>
       `;
+    }
+
+    function showGlobalMessage(text, type) {
+      const appMessage = document.getElementById("appMessage");
+      appMessage.textContent = text;
+      appMessage.className = "msg " + (type || "info");
+      appMessage.classList.remove("hidden");
     }
 
     function normalizeYesNo(value) {
