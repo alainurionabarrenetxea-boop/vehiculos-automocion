@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Automoción - Ficha de vehículo</title>
+  <title>Automoción - Gestión de vehículos</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -17,7 +17,7 @@
     }
 
     .box {
-      max-width: 1050px;
+      max-width: 1100px;
       margin: 24px auto;
       background: white;
       border-radius: 16px;
@@ -103,6 +103,12 @@
       background: #ecfdf5;
       color: #047857;
       border: 1px solid #a7f3d0;
+    }
+
+    .warning {
+      background: #fff7ed;
+      color: #c2410c;
+      border: 1px solid #fdba74;
     }
 
     .topbar {
@@ -206,6 +212,11 @@
       background: #f9fafb;
     }
 
+    tr.clickable-row:hover {
+      background: #eff6ff;
+      cursor: pointer;
+    }
+
     .form-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -239,12 +250,13 @@
       <input id="password" type="password" placeholder="Contraseña" />
       <button onclick="login()">Entrar</button>
       <div id="loginError" class="msg error hidden"></div>
+      <div id="entryInfo" class="msg info hidden"></div>
     </div>
   </div>
 
   <div id="appView" class="box hidden">
     <div class="header">
-      <h2>Ficha de vehículo</h2>
+      <h2>Gestión de vehículos</h2>
       <p id="welcomeText"></p>
     </div>
 
@@ -293,13 +305,24 @@
     let vehicles = [];
     let currentUser = null;
 
+    function getEntryParams() {
+      const params = new URLSearchParams(window.location.search);
+      return {
+        id: params.get("id"),
+        trabajo: params.get("trabajo")
+      };
+    }
+
     function login() {
       const username = document.getElementById("username").value.trim();
       const password = document.getElementById("password").value.trim();
       const loginError = document.getElementById("loginError");
+      const entryInfo = document.getElementById("entryInfo");
 
       loginError.classList.add("hidden");
       loginError.textContent = "";
+      entryInfo.classList.add("hidden");
+      entryInfo.textContent = "";
 
       const user = USERS.find(u => u.username === username && u.password === password);
 
@@ -309,11 +332,20 @@
         return;
       }
 
+      const entry = getEntryParams();
+
+      if (user.role === "alumno" && !entry.id && !entry.trabajo) {
+        loginError.textContent = "Acceso solo permitido mediante QR del coche o ficha de trabajo.";
+        loginError.classList.remove("hidden");
+        return;
+      }
+
       currentUser = user;
       sessionStorage.setItem("automocion_user", JSON.stringify(user));
+
       document.getElementById("loginView").classList.add("hidden");
       document.getElementById("appView").classList.remove("hidden");
-      document.getElementById("welcomeText").textContent = "Bienvenido, " + user.name;
+      document.getElementById("welcomeText").textContent = `Bienvenido, ${user.name} · Rol: ${user.role}`;
 
       loadVehiclesJSONP();
     }
@@ -337,6 +369,8 @@
     }
 
     function showAllVehicles() {
+      if (!currentUser || currentUser.role !== "profesor") return;
+
       document.getElementById("viewModeText").textContent = "Listado completo de vehículos";
       document.getElementById("vehicleDetail").innerHTML = "";
       document.getElementById("tableContainer").classList.remove("hidden");
@@ -391,7 +425,7 @@
             return;
           }
 
-          getVehicleFromURL();
+          routeAfterLoad();
         } catch (error) {
           appMessage.textContent = "Error procesando la hoja:\n" + error.message;
           appMessage.className = "msg error";
@@ -411,35 +445,69 @@
       document.body.appendChild(script);
     }
 
-    function getVehicleFromURL() {
-      const params = new URLSearchParams(window.location.search);
-      const id = params.get("id");
+    function routeAfterLoad() {
+      const entry = getEntryParams();
+      const appMessage = document.getElementById("appMessage");
 
-      if (!id) {
-        document.getElementById("viewModeText").textContent = "Listado completo de vehículos";
+      if (!currentUser) return;
+
+      if (currentUser.role === "profesor") {
+        if (entry.id) {
+          const vehicle = vehicles.find(v => String(v.id) === String(entry.id));
+          if (!vehicle) {
+            appMessage.textContent = "No se ha encontrado ningún vehículo con ese ID.";
+            appMessage.className = "msg error";
+            appMessage.classList.remove("hidden");
+            return;
+          }
+          renderVehicleDetail(vehicle);
+          return;
+        }
+
+        if (entry.trabajo) {
+          appMessage.textContent = "La ficha de trabajo todavía no está implementada.";
+          appMessage.className = "msg warning";
+          appMessage.classList.remove("hidden");
+          return;
+        }
+
+        document.getElementById("viewModeText").textContent = "Panel general de profesor";
         document.getElementById("tableContainer").classList.remove("hidden");
         renderVehiclesTable();
         return;
       }
 
-      const vehicle = vehicles.find(v => String(v.id) === String(id));
+      if (currentUser.role === "alumno") {
+        if (entry.id) {
+          const vehicle = vehicles.find(v => String(v.id) === String(entry.id));
+          if (!vehicle) {
+            appMessage.textContent = "No se ha encontrado ningún vehículo con ese ID.";
+            appMessage.className = "msg error";
+            appMessage.classList.remove("hidden");
+            return;
+          }
+          renderVehicleDetail(vehicle);
+          return;
+        }
 
-      if (!vehicle) {
-        const appMessage = document.getElementById("appMessage");
-        appMessage.textContent = "No se ha encontrado ningún vehículo con ese ID.";
+        if (entry.trabajo) {
+          appMessage.textContent = "La ficha de trabajo todavía no está implementada.";
+          appMessage.className = "msg warning";
+          appMessage.classList.remove("hidden");
+          return;
+        }
+
+        appMessage.textContent = "Acceso denegado. El alumnado solo puede entrar desde QR o ficha de trabajo.";
         appMessage.className = "msg error";
         appMessage.classList.remove("hidden");
-        return;
       }
-
-      renderVehicleDetail(vehicle);
     }
 
     function renderVehiclesTable() {
       const tableBody = document.getElementById("tableBody");
 
       tableBody.innerHTML = vehicles.map(v => `
-        <tr>
+        <tr class="clickable-row" onclick="openVehicleAsProfessor('${escapeJs(v.id)}')">
           <td>${escapeHtml(v.id)}</td>
           <td>${escapeHtml(v.autoa)}</td>
           <td>${escapeHtml(v.color)}</td>
@@ -450,13 +518,23 @@
       `).join("");
     }
 
+    function openVehicleAsProfessor(vehicleId) {
+      if (!currentUser || currentUser.role !== "profesor") return;
+      const vehicle = vehicles.find(v => String(v.id) === String(vehicleId));
+      if (!vehicle) return;
+      renderVehicleDetail(vehicle);
+    }
+
     function renderVehicleDetail(vehicle) {
       const detail = document.getElementById("vehicleDetail");
       const tableContainer = document.getElementById("tableContainer");
       const viewModeText = document.getElementById("viewModeText");
       const showAllBtn = document.getElementById("showAllBtn");
 
-      viewModeText.textContent = "Ficha del vehículo";
+      viewModeText.textContent = currentUser && currentUser.role === "profesor"
+        ? "Ficha de vehículo"
+        : "Ficha asignada por QR";
+
       tableContainer.classList.add("hidden");
 
       if (currentUser && currentUser.role === "profesor") {
@@ -615,23 +693,10 @@
         `;
       }
 
-      if (fitxaTeknika.startsWith("http://") || fitxaTeknika.startsWith("https://")) {
-        return `
-          <div class="ficha-box">
-            <strong>Ficha técnica</strong><br><br>
-            <a class="button-link" href="${escapeAttr(fitxaTeknika)}" target="_blank" rel="noopener">
-              <button type="button" class="small-btn">Ver ficha técnica</button>
-            </a>
-          </div>
-        `;
-      }
-
-      const ruta = `fichas/${encodeURIComponent(fitxaTeknika)}`;
-
       return `
         <div class="ficha-box">
           <strong>Ficha técnica</strong><br><br>
-          <a class="button-link" href="${ruta}" target="_blank" rel="noopener">
+          <a class="button-link" href="${escapeAttr(fitxaTeknika)}" target="_blank" rel="noopener">
             <button type="button" class="small-btn">Ver ficha técnica</button>
           </a>
         </div>
