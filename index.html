@@ -12,9 +12,7 @@
       color: #1f2937;
     }
 
-    .hidden {
-      display: none !important;
-    }
+    .hidden { display: none !important; }
 
     .box {
       max-width: 1100px;
@@ -228,7 +226,6 @@
       border-radius: 8px;
       margin-bottom: 12px;
       display: inline-block;
-      white-space: pre-wrap;
     }
 
     .status-saving {
@@ -305,6 +302,8 @@
     </div>
   </div>
 
+  <iframe id="saveFrame" name="saveFrame" style="display:none;"></iframe>
+
   <script>
     const USERS = [
       { username: "profesor", password: "auto2026", role: "profesor", name: "Profesorado" },
@@ -319,7 +318,7 @@
     let vehicles = [];
     let currentUser = null;
     let autoSaveTimer = null;
-    let autoSaveInProgress = false;
+    let saveTimeout = null;
     let currentVehicleId = null;
 
     function getEntryParams() {
@@ -347,6 +346,7 @@
       }
 
       const entry = getEntryParams();
+
       if (user.role === "alumno" && !entry.id && !entry.trabajo) {
         loginError.textContent = "Acceso solo permitido mediante QR del coche o ficha de trabajo.";
         loginError.classList.remove("hidden");
@@ -366,6 +366,7 @@
       vehicles = [];
       currentVehicleId = null;
       clearTimeout(autoSaveTimer);
+      clearTimeout(saveTimeout);
 
       document.getElementById("appView").classList.add("hidden");
       document.getElementById("loginView").classList.remove("hidden");
@@ -429,7 +430,7 @@
             observaciones: value(r["Oharrak"]),
             blokatuta: normalizeYesNo(value(r["BLOKATUTA"])),
             idBlokeoa: value(r["ID BLOKEOA"]),
-            blokeoData: formatSheetDate(value(r["BLOKEO DATA"])),
+            blokeoData: formatBlockDate(value(r["BLOKEO DATA"])),
             blokeoZergatia: value(r["BLOKEO ZERGATIA"])
           })).filter(v => v.id !== "");
 
@@ -626,7 +627,7 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
     function scheduleAutoSave(vehicleId) {
       clearTimeout(autoSaveTimer);
       setAutoSaveStatus("Guardando cambios...", "saving");
-      autoSaveTimer = setTimeout(() => saveVehicleChanges(vehicleId), 700);
+      autoSaveTimer = setTimeout(() => saveVehicleChanges(vehicleId), 800);
     }
 
     function setAutoSaveStatus(text, type) {
@@ -643,65 +644,73 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
 
     function saveVehicleChanges(vehicleId) {
       const vehicle = vehicles.find(v => String(v.id) === String(vehicleId));
-      if (!vehicle || !currentUser || autoSaveInProgress) return;
+      if (!vehicle || !currentUser) return;
 
-      const estado = document.getElementById("estadoInput")?.value.trim() || "";
-      const obs = document.getElementById("observacionesInput")?.value.trim() || "";
-      const pizten = document.getElementById("piztenDuInput")?.value || "Ez";
-      const piztu = document.getElementById("piztuBeharDuInput")?.value || "Ez";
+      const estadoInput = document.getElementById("estadoInput");
+      const observacionesInput = document.getElementById("observacionesInput");
+      const piztenDuInput = document.getElementById("piztenDuInput");
+      const piztuBeharDuInput = document.getElementById("piztuBeharDuInput");
 
-      let bloqueado = vehicle.blokatuta;
-      let motivo = vehicle.blokeoZergatia;
+      if (!estadoInput || !observacionesInput || !piztenDuInput || !piztuBeharDuInput) return;
 
-      if (currentUser.role === "profesor") {
-        const blok = document.getElementById("blokatutaInput");
-        const mot = document.getElementById("blokeoZergatiaInput");
-        if (blok) bloqueado = blok.value;
-        if (mot) motivo = mot.value.trim();
-      }
+      const payload = {
+        usuario: currentUser.username,
+        rol: currentUser.role,
+        idVehiculo: vehicle.id,
+        autoa: vehicle.autoa,
+        estado: estadoInput.value.trim(),
+        observaciones: observacionesInput.value.trim(),
+        piztenDu: piztenDuInput.value,
+        piztuBeharDu: piztuBeharDuInput.value,
+        blokeado: currentUser.role === "profesor" && document.getElementById("blokatutaInput")
+          ? document.getElementById("blokatutaInput").value
+          : vehicle.blokatuta,
+        motivo: currentUser.role === "profesor" && document.getElementById("blokeoZergatiaInput")
+          ? document.getElementById("blokeoZergatiaInput").value.trim()
+          : vehicle.blokeoZergatia
+      };
 
-      setAutoSaveStatus("Guardando cambios...", "saving");
-      autoSaveInProgress = true;
-
-      const callbackName = "handleSaveResponse";
       const url =
         SAVE_API_URL +
-        "?callback=" + encodeURIComponent(callbackName) +
-        "&usuario=" + encodeURIComponent(currentUser.username) +
-        "&rol=" + encodeURIComponent(currentUser.role) +
-        "&idVehiculo=" + encodeURIComponent(vehicle.id) +
-        "&autoa=" + encodeURIComponent(vehicle.autoa) +
-        "&estado=" + encodeURIComponent(estado) +
-        "&observaciones=" + encodeURIComponent(obs) +
-        "&piztenDu=" + encodeURIComponent(pizten) +
-        "&piztuBeharDu=" + encodeURIComponent(piztu) +
-        "&blokeado=" + encodeURIComponent(bloqueado) +
-        "&motivo=" + encodeURIComponent(motivo);
+        "?usuario=" + encodeURIComponent(payload.usuario) +
+        "&rol=" + encodeURIComponent(payload.rol) +
+        "&idVehiculo=" + encodeURIComponent(payload.idVehiculo) +
+        "&autoa=" + encodeURIComponent(payload.autoa) +
+        "&estado=" + encodeURIComponent(payload.estado) +
+        "&observaciones=" + encodeURIComponent(payload.observaciones) +
+        "&piztenDu=" + encodeURIComponent(payload.piztenDu) +
+        "&piztuBeharDu=" + encodeURIComponent(payload.piztuBeharDu) +
+        "&blokeado=" + encodeURIComponent(payload.blokeado) +
+        "&motivo=" + encodeURIComponent(payload.motivo);
 
-      const old = document.getElementById("saveScript");
-      if (old) old.remove();
+      const frame = document.getElementById("saveFrame");
+      if (!frame) {
+        setAutoSaveStatus("No existe el iframe de guardado.", "error");
+        showGlobalMessage("Error al guardar:\nNo existe el iframe de guardado.", "error");
+        return;
+      }
 
-      window.handleSaveResponse = function(result) {
-        autoSaveInProgress = false;
+      clearTimeout(saveTimeout);
+      setAutoSaveStatus("Guardando cambios...", "saving");
 
-        if (!result || !result.ok) {
-          const msg = result && result.msg ? result.msg : "Error desconocido al guardar";
-          setAutoSaveStatus("Error al guardar automáticamente: " + msg, "error");
-          showGlobalMessage("Error al guardar:\n" + msg, "error");
-          return;
-        }
+      frame.onload = null;
 
-        vehicle.estado = estado;
-        vehicle.observaciones = obs;
-        vehicle.piztenDu = pizten;
-        vehicle.piztuBeharDu = piztu;
-        vehicle.blokatuta = bloqueado;
-        vehicle.blokeoZergatia = motivo;
+      let confirmed = false;
+
+      frame.onload = function () {
+        confirmed = true;
+
+        vehicle.estado = payload.estado;
+        vehicle.observaciones = payload.observaciones;
+        vehicle.piztenDu = payload.piztenDu;
+        vehicle.piztuBeharDu = payload.piztuBeharDu;
+        vehicle.blokatuta = payload.blokeado;
+        vehicle.blokeoZergatia = payload.motivo;
 
         if (currentUser.role === "profesor") {
-          if (bloqueado === "Bai") {
+          if (payload.blokeado === "Bai") {
             vehicle.idBlokeoa = currentUser.username;
-            vehicle.blokeoData = new Date().toLocaleString();
+            vehicle.blokeoData = new Date().toLocaleString("es-ES");
           } else {
             vehicle.idBlokeoa = "";
             vehicle.blokeoData = "";
@@ -712,17 +721,14 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
         setAutoSaveStatus("Cambios guardados automáticamente.", "saved");
       };
 
-      const script = document.createElement("script");
-      script.id = "saveScript";
-      script.src = url;
+      saveTimeout = setTimeout(() => {
+        if (!confirmed) {
+          setAutoSaveStatus("No se pudo conectar con el servicio de guardado.", "error");
+          showGlobalMessage("Error al guardar:\nNo se pudo conectar con el servicio de guardado.", "error");
+        }
+      }, 5000);
 
-      script.onerror = function() {
-        autoSaveInProgress = false;
-        setAutoSaveStatus("Error al guardar automáticamente: no se pudo conectar", "error");
-        showGlobalMessage("Error al guardar:\nNo se pudo conectar con el servicio de guardado.", "error");
-      };
-
-      document.body.appendChild(script);
+      frame.src = url;
     }
 
     function renderFichaTecnica(link) {
@@ -756,26 +762,6 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
       appMessage.classList.remove("hidden");
     }
 
-    function formatSheetDate(value) {
-      const text = String(value || "").trim();
-      if (!text) return "";
-
-      const match = text.match(/Date\((\d+),(\d+),(\d+)(?:,(\d+),(\d+),(\d+))?\)/);
-      if (match) {
-        const year = Number(match[1]);
-        const month = Number(match[2]);
-        const day = Number(match[3]);
-        const hour = Number(match[4] || 0);
-        const min = Number(match[5] || 0);
-        const sec = Number(match[6] || 0);
-
-        const d = new Date(year, month, day, hour, min, sec);
-        return d.toLocaleString("es-ES");
-      }
-
-      return text;
-    }
-
     function normalizeYesNo(value) {
       const v = String(value || "").trim().toLowerCase();
       if (v === "bai" || v === "si" || v === "sí" || v === "yes") return "Bai";
@@ -785,6 +771,13 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
 
     function value(v) {
       return v == null ? "" : String(v).trim();
+    }
+
+    function formatBlockDate(v) {
+      const s = value(v);
+      if (!s) return "";
+      if (s.startsWith("Date(")) return s;
+      return s;
     }
 
     function escapeHtml(value) {
