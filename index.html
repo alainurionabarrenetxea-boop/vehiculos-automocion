@@ -12,7 +12,9 @@
       color: #1f2937;
     }
 
-    .hidden { display: none !important; }
+    .hidden {
+      display: none !important;
+    }
 
     .box {
       max-width: 1100px;
@@ -302,8 +304,6 @@
     </div>
   </div>
 
-  <iframe id="saveFrame" name="saveFrame" style="display:none;"></iframe>
-
   <script>
     const USERS = [
       { username: "profesor", password: "auto2026", role: "profesor", name: "Profesorado" },
@@ -318,8 +318,6 @@
     let vehicles = [];
     let currentUser = null;
     let autoSaveTimer = null;
-    let saveTimeout = null;
-    let currentVehicleId = null;
 
     function getEntryParams() {
       const params = new URLSearchParams(window.location.search);
@@ -364,9 +362,7 @@
     function logout() {
       currentUser = null;
       vehicles = [];
-      currentVehicleId = null;
       clearTimeout(autoSaveTimer);
-      clearTimeout(saveTimeout);
 
       document.getElementById("appView").classList.add("hidden");
       document.getElementById("loginView").classList.remove("hidden");
@@ -515,8 +511,6 @@
       const viewModeText = document.getElementById("viewModeText");
       const showAllBtn = document.getElementById("showAllBtn");
 
-      currentVehicleId = vehicle.id;
-
       const isProfesor = currentUser && currentUser.role === "profesor";
       const isBlockedForStudent = !isProfesor && vehicle.blokatuta === "Bai";
 
@@ -643,78 +637,32 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
     }
 
     async function saveVehicleChanges(vehicleId) {
-  const vehicle = vehicles.find(v => String(v.id) === String(vehicleId));
-  if (!vehicle || !currentUser) return;
+      const vehicle = vehicles.find(v => String(v.id) === String(vehicleId));
+      if (!vehicle || !currentUser) return;
 
-  const estadoInput = document.getElementById("estadoInput");
-  const observacionesInput = document.getElementById("observacionesInput");
-  const piztenDuInput = document.getElementById("piztenDuInput");
-  const piztuBeharDuInput = document.getElementById("piztuBeharDuInput");
+      const estadoInput = document.getElementById("estadoInput");
+      const observacionesInput = document.getElementById("observacionesInput");
+      const piztenDuInput = document.getElementById("piztenDuInput");
+      const piztuBeharDuInput = document.getElementById("piztuBeharDuInput");
 
-  if (!estadoInput || !observacionesInput || !piztenDuInput || !piztuBeharDuInput) return;
+      if (!estadoInput || !observacionesInput || !piztenDuInput || !piztuBeharDuInput) return;
 
-  const payload = {
-    usuario: currentUser.username,
-    rol: currentUser.role,
-    idVehiculo: vehicle.id,
-    autoa: vehicle.autoa,
-    estado: estadoInput.value.trim(),
-    observaciones: observacionesInput.value.trim(),
-    piztenDu: piztenDuInput.value,
-    piztuBeharDu: piztuBeharDuInput.value,
-    blokeado: currentUser.role === "profesor" && document.getElementById("blokatutaInput")
-      ? document.getElementById("blokatutaInput").value
-      : vehicle.blokatuta,
-    motivo: currentUser.role === "profesor" && document.getElementById("blokeoZergatiaInput")
-      ? document.getElementById("blokeoZergatiaInput").value.trim()
-      : vehicle.blokeoZergatia
-  };
-
-  const url =
-    SAVE_API_URL +
-    "?usuario=" + encodeURIComponent(payload.usuario) +
-    "&rol=" + encodeURIComponent(payload.rol) +
-    "&idVehiculo=" + encodeURIComponent(payload.idVehiculo) +
-    "&autoa=" + encodeURIComponent(payload.autoa) +
-    "&estado=" + encodeURIComponent(payload.estado) +
-    "&observaciones=" + encodeURIComponent(payload.observaciones) +
-    "&piztenDu=" + encodeURIComponent(payload.piztenDu) +
-    "&piztuBeharDu=" + encodeURIComponent(payload.piztuBeharDu) +
-    "&blokeado=" + encodeURIComponent(payload.blokeado) +
-    "&motivo=" + encodeURIComponent(payload.motivo);
-
-  setAutoSaveStatus("Guardando cambios...", "saving");
-
-  try {
-    await fetch(url, {
-      method: "GET",
-      mode: "no-cors"
-    });
-
-    vehicle.estado = payload.estado;
-    vehicle.observaciones = payload.observaciones;
-    vehicle.piztenDu = payload.piztenDu;
-    vehicle.piztuBeharDu = payload.piztuBeharDu;
-    vehicle.blokatuta = payload.blokeado;
-    vehicle.blokeoZergatia = payload.motivo;
-
-    if (currentUser.role === "profesor") {
-      if (payload.blokeado === "Bai") {
-        vehicle.idBlokeoa = currentUser.username;
-        vehicle.blokeoData = new Date().toLocaleString("es-ES");
-      } else {
-        vehicle.idBlokeoa = "";
-        vehicle.blokeoData = "";
-        vehicle.blokeoZergatia = "";
-      }
-    }
-
-    setAutoSaveStatus("Cambios enviados automáticamente.", "saved");
-  } catch (error) {
-    setAutoSaveStatus("Error al enviar cambios: " + error.message, "error");
-    showGlobalMessage("Error al guardar:\n" + error.message, "error");
-  }
-}
+      const payload = {
+        usuario: currentUser.username,
+        rol: currentUser.role,
+        idVehiculo: vehicle.id,
+        autoa: vehicle.autoa,
+        estado: estadoInput.value.trim(),
+        observaciones: observacionesInput.value.trim(),
+        piztenDu: piztenDuInput.value,
+        piztuBeharDu: piztuBeharDuInput.value,
+        blokeado: currentUser.role === "profesor" && document.getElementById("blokatutaInput")
+          ? document.getElementById("blokatutaInput").value
+          : vehicle.blokatuta,
+        motivo: currentUser.role === "profesor" && document.getElementById("blokeoZergatiaInput")
+          ? document.getElementById("blokeoZergatiaInput").value.trim()
+          : vehicle.blokeoZergatia
+      };
 
       const url =
         SAVE_API_URL +
@@ -729,22 +677,13 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
         "&blokeado=" + encodeURIComponent(payload.blokeado) +
         "&motivo=" + encodeURIComponent(payload.motivo);
 
-      const frame = document.getElementById("saveFrame");
-      if (!frame) {
-        setAutoSaveStatus("No existe el iframe de guardado.", "error");
-        showGlobalMessage("Error al guardar:\nNo existe el iframe de guardado.", "error");
-        return;
-      }
-
-      clearTimeout(saveTimeout);
       setAutoSaveStatus("Guardando cambios...", "saving");
 
-      frame.onload = null;
-
-      let confirmed = false;
-
-      frame.onload = function () {
-        confirmed = true;
+      try {
+        await fetch(url, {
+          method: "GET",
+          mode: "no-cors"
+        });
 
         vehicle.estado = payload.estado;
         vehicle.observaciones = payload.observaciones;
@@ -764,17 +703,11 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
           }
         }
 
-        setAutoSaveStatus("Cambios guardados automáticamente.", "saved");
-      };
-
-      saveTimeout = setTimeout(() => {
-        if (!confirmed) {
-          setAutoSaveStatus("No se pudo conectar con el servicio de guardado.", "error");
-          showGlobalMessage("Error al guardar:\nNo se pudo conectar con el servicio de guardado.", "error");
-        }
-      }, 5000);
-
-      frame.src = url;
+        setAutoSaveStatus("Cambios enviados automáticamente.", "saved");
+      } catch (error) {
+        setAutoSaveStatus("Error al enviar cambios: " + error.message, "error");
+        showGlobalMessage("Error al guardar:\n" + error.message, "error");
+      }
     }
 
     function renderFichaTecnica(link) {
@@ -822,7 +755,6 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
     function formatBlockDate(v) {
       const s = value(v);
       if (!s) return "";
-      if (s.startsWith("Date(")) return s;
       return s;
     }
 
