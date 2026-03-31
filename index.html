@@ -642,33 +642,79 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
       );
     }
 
-    function saveVehicleChanges(vehicleId) {
-      const vehicle = vehicles.find(v => String(v.id) === String(vehicleId));
-      if (!vehicle || !currentUser) return;
+    async function saveVehicleChanges(vehicleId) {
+  const vehicle = vehicles.find(v => String(v.id) === String(vehicleId));
+  if (!vehicle || !currentUser) return;
 
-      const estadoInput = document.getElementById("estadoInput");
-      const observacionesInput = document.getElementById("observacionesInput");
-      const piztenDuInput = document.getElementById("piztenDuInput");
-      const piztuBeharDuInput = document.getElementById("piztuBeharDuInput");
+  const estadoInput = document.getElementById("estadoInput");
+  const observacionesInput = document.getElementById("observacionesInput");
+  const piztenDuInput = document.getElementById("piztenDuInput");
+  const piztuBeharDuInput = document.getElementById("piztuBeharDuInput");
 
-      if (!estadoInput || !observacionesInput || !piztenDuInput || !piztuBeharDuInput) return;
+  if (!estadoInput || !observacionesInput || !piztenDuInput || !piztuBeharDuInput) return;
 
-      const payload = {
-        usuario: currentUser.username,
-        rol: currentUser.role,
-        idVehiculo: vehicle.id,
-        autoa: vehicle.autoa,
-        estado: estadoInput.value.trim(),
-        observaciones: observacionesInput.value.trim(),
-        piztenDu: piztenDuInput.value,
-        piztuBeharDu: piztuBeharDuInput.value,
-        blokeado: currentUser.role === "profesor" && document.getElementById("blokatutaInput")
-          ? document.getElementById("blokatutaInput").value
-          : vehicle.blokatuta,
-        motivo: currentUser.role === "profesor" && document.getElementById("blokeoZergatiaInput")
-          ? document.getElementById("blokeoZergatiaInput").value.trim()
-          : vehicle.blokeoZergatia
-      };
+  const payload = {
+    usuario: currentUser.username,
+    rol: currentUser.role,
+    idVehiculo: vehicle.id,
+    autoa: vehicle.autoa,
+    estado: estadoInput.value.trim(),
+    observaciones: observacionesInput.value.trim(),
+    piztenDu: piztenDuInput.value,
+    piztuBeharDu: piztuBeharDuInput.value,
+    blokeado: currentUser.role === "profesor" && document.getElementById("blokatutaInput")
+      ? document.getElementById("blokatutaInput").value
+      : vehicle.blokatuta,
+    motivo: currentUser.role === "profesor" && document.getElementById("blokeoZergatiaInput")
+      ? document.getElementById("blokeoZergatiaInput").value.trim()
+      : vehicle.blokeoZergatia
+  };
+
+  const url =
+    SAVE_API_URL +
+    "?usuario=" + encodeURIComponent(payload.usuario) +
+    "&rol=" + encodeURIComponent(payload.rol) +
+    "&idVehiculo=" + encodeURIComponent(payload.idVehiculo) +
+    "&autoa=" + encodeURIComponent(payload.autoa) +
+    "&estado=" + encodeURIComponent(payload.estado) +
+    "&observaciones=" + encodeURIComponent(payload.observaciones) +
+    "&piztenDu=" + encodeURIComponent(payload.piztenDu) +
+    "&piztuBeharDu=" + encodeURIComponent(payload.piztuBeharDu) +
+    "&blokeado=" + encodeURIComponent(payload.blokeado) +
+    "&motivo=" + encodeURIComponent(payload.motivo);
+
+  setAutoSaveStatus("Guardando cambios...", "saving");
+
+  try {
+    await fetch(url, {
+      method: "GET",
+      mode: "no-cors"
+    });
+
+    vehicle.estado = payload.estado;
+    vehicle.observaciones = payload.observaciones;
+    vehicle.piztenDu = payload.piztenDu;
+    vehicle.piztuBeharDu = payload.piztuBeharDu;
+    vehicle.blokatuta = payload.blokeado;
+    vehicle.blokeoZergatia = payload.motivo;
+
+    if (currentUser.role === "profesor") {
+      if (payload.blokeado === "Bai") {
+        vehicle.idBlokeoa = currentUser.username;
+        vehicle.blokeoData = new Date().toLocaleString("es-ES");
+      } else {
+        vehicle.idBlokeoa = "";
+        vehicle.blokeoData = "";
+        vehicle.blokeoZergatia = "";
+      }
+    }
+
+    setAutoSaveStatus("Cambios enviados automáticamente.", "saved");
+  } catch (error) {
+    setAutoSaveStatus("Error al enviar cambios: " + error.message, "error");
+    showGlobalMessage("Error al guardar:\n" + error.message, "error");
+  }
+}
 
       const url =
         SAVE_API_URL +
