@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Automoción - Gestión de vehículos</title>
   <style>
     body {
@@ -12,9 +12,7 @@
       color: #1f2937;
     }
 
-    .hidden {
-      display: none !important;
-    }
+    .hidden { display: none !important; }
 
     .box {
       max-width: 1100px;
@@ -173,7 +171,8 @@
       word-break: break-word;
     }
 
-    .ficha-box, .edit-box {
+    .ficha-box,
+    .edit-box {
       margin-top: 14px;
       padding: 14px;
       border-radius: 12px;
@@ -215,31 +214,9 @@
       gap: 12px;
     }
 
-    .save-status {
-      font-size: 13px;
-      margin-bottom: 12px;
-      padding: 10px;
-      border-radius: 8px;
-      display: inline-block;
-    }
-
-    .save-status.info {
-      background: #eff6ff;
-      color: #1d4ed8;
-    }
-
-    .save-status.success {
-      background: #ecfdf5;
-      color: #047857;
-    }
-
-    .save-status.error {
-      background: #fef2f2;
-      color: #b91c1c;
-    }
-
     @media (max-width: 700px) {
-      .vehicle-grid, .form-grid {
+      .vehicle-grid,
+      .form-grid {
         grid-template-columns: 1fr;
       }
     }
@@ -308,9 +285,6 @@
     const SAVE_API_URL = "https://script.google.com/macros/s/AKfycby2MIw0Yh3GDaf4SUOHze4wkSXFo6GIMJnNHOE9UPSagNlL-fyw8daxxShtHzlbamKhIg/exec";
 
     let vehicles = [];
-    let currentUser = null;
-    let cambiosPendientes = false;
-    let autoSaveTimer = null;
 
     function showLoginError(text) {
       const el = document.getElementById("loginError");
@@ -335,13 +309,6 @@
       const el = document.getElementById("appMessage");
       el.textContent = "";
       el.classList.add("hidden");
-    }
-
-    function setSaveStatus(text, type) {
-      const el = document.getElementById("saveStatus");
-      if (!el) return;
-      el.textContent = text;
-      el.className = "save-status " + type;
     }
 
     function value(v) {
@@ -402,7 +369,7 @@
         return;
       }
 
-      currentUser = user;
+      window.currentUser = user;
 
       document.getElementById("loginView").classList.add("hidden");
       document.getElementById("appView").classList.remove("hidden");
@@ -413,10 +380,8 @@
     }
 
     function logout() {
-      currentUser = null;
+      window.currentUser = null;
       vehicles = [];
-      cambiosPendientes = false;
-      clearTimeout(autoSaveTimer);
 
       document.getElementById("appView").classList.add("hidden");
       document.getElementById("loginView").classList.remove("hidden");
@@ -490,6 +455,7 @@
 
     function routeAfterLoad() {
       const entry = getEntryParams();
+      const currentUser = window.currentUser;
 
       if (!currentUser) return;
 
@@ -526,6 +492,7 @@
     }
 
     function showAllVehicles() {
+      const currentUser = window.currentUser;
       if (!currentUser || currentUser.role !== "profesor") return;
 
       document.getElementById("viewModeText").textContent = "Listado completo de vehículos";
@@ -550,13 +517,16 @@
     }
 
     function openVehicleAsProfessor(vehicleId) {
+      const currentUser = window.currentUser;
       if (!currentUser || currentUser.role !== "profesor") return;
+
       const vehicle = vehicles.find(v => String(v.id) === String(vehicleId));
       if (!vehicle) return;
       renderVehicleDetail(vehicle);
     }
 
     function renderVehicleDetail(vehicle) {
+      const currentUser = window.currentUser;
       const detail = document.getElementById("vehicleDetail");
       const tableContainer = document.getElementById("tableContainer");
       const viewModeText = document.getElementById("viewModeText");
@@ -592,8 +562,6 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
           </div>
 
           <div class="edit-box">
-            <div id="saveStatus" class="save-status info">Modifica y se guardará automáticamente.</div>
-
             <div class="form-grid">
               <div>
                 <label for="estadoInput"><strong>Estado / Egoera</strong></label>
@@ -636,47 +604,20 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
               </div>
               ` : ""}
             </div>
+
+            ${!isBlockedForStudent ? `
+            <button onclick="saveVehicleChanges('${escapeJs(vehicle.id)}')">Guardar cambios</button>
+            ` : ""}
           </div>
 
           ${renderFichaTecnica(vehicle.fitxaTeknika)}
           ${renderRTA(vehicle.rta)}
         </div>
       `;
-
-      if (!isBlockedForStudent) {
-        activarAutoGuardado(vehicle.id);
-      }
-    }
-
-    function activarAutoGuardado(vehicleId) {
-      const ids = [
-        "estadoInput",
-        "observacionesInput",
-        "piztenDuInput",
-        "piztuBeharDuInput",
-        "blokatutaInput",
-        "blokeoZergatiaInput"
-      ];
-
-      ids.forEach(id => {
-        const el = document.getElementById(id);
-        if (!el) return;
-
-        const evento = el.tagName === "SELECT" ? "change" : "input";
-
-        el.addEventListener(evento, () => {
-          cambiosPendientes = true;
-          setSaveStatus("Hay cambios pendientes...", "info");
-
-          clearTimeout(autoSaveTimer);
-          autoSaveTimer = setTimeout(() => {
-            saveVehicleChanges(vehicleId);
-          }, 700);
-        });
-      });
     }
 
     function saveVehicleChanges(vehicleId) {
+      const currentUser = window.currentUser;
       const vehicle = vehicles.find(v => String(v.id) === String(vehicleId));
       if (!vehicle || !currentUser) return;
 
@@ -707,15 +648,12 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
           : vehicle.blokeoZergatia
       };
 
-      setSaveStatus("Guardando cambios...", "info");
-
       const callbackName = "handleSaveResponse_" + Date.now();
 
       window[callbackName] = function(result) {
         try {
           if (!result || !result.ok) {
             const msg = result && result.msg ? result.msg : "No se pudieron guardar los cambios";
-            setSaveStatus("Error al guardar.", "error");
             showMessage("Error al guardar:\n" + msg, "error");
             return;
           }
@@ -738,8 +676,7 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
             }
           }
 
-          cambiosPendientes = false;
-          setSaveStatus("Cambios guardados correctamente.", "success");
+          showMessage("Cambios guardados correctamente.", "success");
         } finally {
           const script = document.getElementById(callbackName);
           if (script) script.remove();
@@ -765,7 +702,6 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
       script.id = callbackName;
       script.src = url;
       script.onerror = function() {
-        setSaveStatus("Error de conexión al guardar.", "error");
         showMessage("Error al conectar con el servicio de guardado.", "error");
         script.remove();
         delete window[callbackName];
@@ -797,12 +733,6 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
         </div>
       `;
     }
-
-    window.addEventListener("beforeunload", function(e) {
-      if (!cambiosPendientes) return;
-      e.preventDefault();
-      e.returnValue = "";
-    });
 
     document.getElementById("password").addEventListener("keydown", function(e) {
       if (e.key === "Enter") login();
