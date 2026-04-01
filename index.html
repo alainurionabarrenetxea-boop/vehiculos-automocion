@@ -295,7 +295,7 @@
 
     const SHEET_ID = "1sf2TS8gCKachrkz66S6E_zQuafVpu7F_AhSLdhi-W-g";
     const SHEET_GID = "0";
-    const SAVE_API_URL = "https://script.google.com/macros/s/AKfycby2MIw0Yh3GDaf4SUOHze4wkSXFo6GIMJnNHOE9UPSagNlL-fyw8daxxShtHzlbamKhIg/exec";
+    https://script.google.com/macros/s/AKfycby2MIw0Yh3GDaf4SUOHze4wkSXFo6GIMJnNHOE9UPSagNlL-fyw8daxxShtHzlbamKhIg/exec;
 
     let vehicles = [];
     let currentUser = null;
@@ -625,18 +625,94 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
     }
 
     function saveVehicleChanges(vehicleId) {
-      const vehicle = vehicles.find(v => String(v.id) === String(vehicleId));
-      if (!vehicle || !currentUser) return;
+  const vehicle = vehicles.find(v => String(v.id) === String(vehicleId));
+  if (!vehicle || !currentUser) return;
 
-      const estadoInput = document.getElementById("estadoInput");
-      const observacionesInput = document.getElementById("observacionesInput");
-      const piztenDuInput = document.getElementById("piztenDuInput");
-      const piztuBeharDuInput = document.getElementById("piztuBeharDuInput");
+  const estadoInput = document.getElementById("estadoInput");
+  const observacionesInput = document.getElementById("observacionesInput");
+  const piztenDuInput = document.getElementById("piztenDuInput");
+  const piztuBeharDuInput = document.getElementById("piztuBeharDuInput");
 
-      if (!estadoInput || !observacionesInput || !piztenDuInput || !piztuBeharDuInput) {
-        showMessage("No se han encontrado los campos del formulario.", "error");
+  if (!estadoInput || !observacionesInput || !piztenDuInput || !piztuBeharDuInput) return;
+
+  const payload = {
+    usuario: currentUser.username,
+    rol: currentUser.role,
+    idVehiculo: vehicle.id,
+    autoa: vehicle.autoa,
+    estado: estadoInput.value.trim(),
+    observaciones: observacionesInput.value.trim(),
+    piztenDu: piztenDuInput.value,
+    piztuBeharDu: piztuBeharDuInput.value,
+    blokeado: currentUser.role === "profesor" && document.getElementById("blokatutaInput")
+      ? document.getElementById("blokatutaInput").value
+      : vehicle.blokatuta,
+    motivo: currentUser.role === "profesor" && document.getElementById("blokeoZergatiaInput")
+      ? document.getElementById("blokeoZergatiaInput").value.trim()
+      : vehicle.blokeoZergatia
+  };
+
+  const callbackName = "handleSaveResponse_" + Date.now();
+
+  window[callbackName] = function(result) {
+    try {
+      if (!result || !result.ok) {
+        const msg = result && result.msg ? result.msg : "No se pudieron guardar los cambios";
+        showMessage("Error al guardar:\n" + msg, "error");
         return;
       }
+
+      vehicle.estado = payload.estado;
+      vehicle.observaciones = payload.observaciones;
+      vehicle.piztenDu = payload.piztenDu;
+      vehicle.piztuBeharDu = payload.piztuBeharDu;
+      vehicle.blokatuta = payload.blokeado;
+      vehicle.blokeoZergatia = payload.motivo;
+
+      if (currentUser.role === "profesor") {
+        if (payload.blokeado === "Bai") {
+          vehicle.idBlokeoa = currentUser.username;
+          vehicle.blokeoData = new Date().toLocaleString("es-ES");
+        } else {
+          vehicle.idBlokeoa = "";
+          vehicle.blokeoData = "";
+          vehicle.blokeoZergatia = "";
+        }
+      }
+
+      showMessage("Cambios guardados correctamente.", "success");
+    } finally {
+      const script = document.getElementById(callbackName);
+      if (script) script.remove();
+      delete window[callbackName];
+    }
+  };
+
+  const url =
+    SAVE_API_URL +
+    "?callback=" + encodeURIComponent(callbackName) +
+    "&usuario=" + encodeURIComponent(payload.usuario) +
+    "&rol=" + encodeURIComponent(payload.rol) +
+    "&idVehiculo=" + encodeURIComponent(payload.idVehiculo) +
+    "&autoa=" + encodeURIComponent(payload.autoa) +
+    "&estado=" + encodeURIComponent(payload.estado) +
+    "&observaciones=" + encodeURIComponent(payload.observaciones) +
+    "&piztenDu=" + encodeURIComponent(payload.piztenDu) +
+    "&piztuBeharDu=" + encodeURIComponent(payload.piztuBeharDu) +
+    "&blokeado=" + encodeURIComponent(payload.blokeado) +
+    "&motivo=" + encodeURIComponent(payload.motivo);
+
+  const script = document.createElement("script");
+  script.id = callbackName;
+  script.src = url;
+  script.onerror = function() {
+    showMessage("Error al conectar con el servicio de guardado.", "error");
+    if (script) script.remove();
+    delete window[callbackName];
+  };
+
+  document.body.appendChild(script);
+}
 
       const payload = {
         usuario: currentUser.username,
