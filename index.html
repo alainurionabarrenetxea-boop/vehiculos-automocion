@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Automoción - Gestión de vehículos</title>
   <style>
     body {
@@ -213,32 +213,8 @@
       gap: 12px;
     }
 
-    .status-inline {
-      font-size: 13px;
-      padding: 8px 10px;
-      border-radius: 8px;
-      margin-bottom: 12px;
-      display: inline-block;
-    }
-
-    .status-saving {
-      background: #eff6ff;
-      color: #1d4ed8;
-    }
-
-    .status-saved {
-      background: #ecfdf5;
-      color: #047857;
-    }
-
-    .status-error {
-      background: #fef2f2;
-      color: #b91c1c;
-    }
-
     @media (max-width: 700px) {
-      .vehicle-grid,
-      .form-grid {
+      .vehicle-grid, .form-grid {
         grid-template-columns: 1fr;
       }
     }
@@ -254,7 +230,7 @@
     <div class="content">
       <input id="username" type="text" placeholder="Usuario">
       <input id="password" type="password" placeholder="Contraseña">
-      <button id="loginBtn">Entrar</button>
+      <button onclick="login()">Entrar</button>
       <div id="loginError" class="msg error hidden"></div>
     </div>
   </div>
@@ -269,8 +245,8 @@
       <div class="topbar">
         <div id="viewModeText">Consulta de vehículo</div>
         <div style="display:flex; gap:10px; flex-wrap:wrap;">
-          <button id="showAllBtn" class="small-btn hidden">Ver todos</button>
-          <button id="logoutBtn" class="small-btn secondary-btn">Cerrar sesión</button>
+          <button id="showAllBtn" class="small-btn hidden" onclick="showAllVehicles()">Ver todos</button>
+          <button class="small-btn secondary-btn" onclick="logout()">Cerrar sesión</button>
         </div>
       </div>
 
@@ -323,39 +299,34 @@
 
     let vehicles = [];
     let currentUser = null;
-    let autoSaveTimer = null;
 
-    function getEntryParams() {
-      const params = new URLSearchParams(window.location.search);
-      return {
-        id: params.get("id"),
-        trabajo: params.get("trabajo")
-      };
-    }
-
-    function showGlobalMessage(text, type) {
-      const appMessage = document.getElementById("appMessage");
-      appMessage.textContent = text;
-      appMessage.className = "msg " + (type || "info");
-      appMessage.classList.remove("hidden");
-    }
-
-    function clearGlobalMessage() {
-      const appMessage = document.getElementById("appMessage");
-      appMessage.textContent = "";
-      appMessage.classList.add("hidden");
-    }
-
-    function setLoginError(text) {
-      const loginError = document.getElementById("loginError");
-      loginError.textContent = text;
-      loginError.classList.remove("hidden");
+    function showLoginError(text) {
+      const el = document.getElementById("loginError");
+      el.textContent = text;
+      el.classList.remove("hidden");
     }
 
     function clearLoginError() {
-      const loginError = document.getElementById("loginError");
-      loginError.textContent = "";
-      loginError.classList.add("hidden");
+      const el = document.getElementById("loginError");
+      el.textContent = "";
+      el.classList.add("hidden");
+    }
+
+    function showMessage(text, type) {
+      const el = document.getElementById("appMessage");
+      el.textContent = text;
+      el.className = "msg " + (type || "info");
+      el.classList.remove("hidden");
+    }
+
+    function clearMessage() {
+      const el = document.getElementById("appMessage");
+      el.textContent = "";
+      el.classList.add("hidden");
+    }
+
+    function value(v) {
+      return v == null ? "" : String(v).trim();
     }
 
     function normalizeYesNo(value) {
@@ -363,14 +334,6 @@
       if (v === "bai" || v === "si" || v === "sí" || v === "yes") return "Bai";
       if (v === "ez" || v === "no") return "Ez";
       return "Ez";
-    }
-
-    function value(v) {
-      return v == null ? "" : String(v).trim();
-    }
-
-    function formatBlockDate(v) {
-      return value(v);
     }
 
     function escapeHtml(value) {
@@ -393,6 +356,14 @@
         .replace(/"/g, '\\"');
     }
 
+    function getEntryParams() {
+      const params = new URLSearchParams(window.location.search);
+      return {
+        id: params.get("id"),
+        trabajo: params.get("trabajo")
+      };
+    }
+
     function login() {
       clearLoginError();
 
@@ -402,20 +373,22 @@
       const user = USERS.find(u => u.username === username && u.password === password);
 
       if (!user) {
-        setLoginError("Usuario o contraseña incorrectos.");
+        showLoginError("Usuario o contraseña incorrectos.");
         return;
       }
 
       const entry = getEntryParams();
       if (user.role === "alumno" && !entry.id && !entry.trabajo) {
-        setLoginError("Acceso solo permitido mediante QR del coche o ficha de trabajo.");
+        showLoginError("Acceso solo permitido mediante QR del coche o ficha de trabajo.");
         return;
       }
 
       currentUser = user;
+
       document.getElementById("loginView").classList.add("hidden");
       document.getElementById("appView").classList.remove("hidden");
-      document.getElementById("welcomeText").textContent = `Bienvenido, ${user.name} · Rol: ${user.role}`;
+      document.getElementById("welcomeText").textContent =
+        `Bienvenido, ${user.name} · Rol: ${user.role}`;
 
       loadVehiclesJSONP();
     }
@@ -423,8 +396,6 @@
     function logout() {
       currentUser = null;
       vehicles = [];
-      clearTimeout(autoSaveTimer);
-
       document.getElementById("appView").classList.add("hidden");
       document.getElementById("loginView").classList.remove("hidden");
       document.getElementById("username").value = "";
@@ -433,12 +404,12 @@
       document.getElementById("tableBody").innerHTML = "";
       document.getElementById("tableContainer").classList.add("hidden");
       document.getElementById("showAllBtn").classList.add("hidden");
-      clearGlobalMessage();
+      clearMessage();
       clearLoginError();
     }
 
     function loadVehiclesJSONP() {
-      clearGlobalMessage();
+      clearMessage();
 
       const old = document.getElementById("sheetJsonpScript");
       if (old) old.remove();
@@ -475,13 +446,13 @@
             observaciones: value(r["Oharrak"]),
             blokatuta: normalizeYesNo(value(r["BLOKATUTA"])),
             idBlokeoa: value(r["ID BLOKEOA"]),
-            blokeoData: formatBlockDate(value(r["BLOKEO DATA"])),
+            blokeoData: value(r["BLOKEO DATA"]),
             blokeoZergatia: value(r["BLOKEO ZERGATIA"])
           })).filter(v => v.id !== "");
 
           routeAfterLoad();
         } catch (error) {
-          showGlobalMessage("Error procesando la hoja:\n" + error.message, "error");
+          showMessage("Error procesando la hoja:\n" + error.message, "error");
         }
       };
 
@@ -489,7 +460,7 @@
       script.id = "sheetJsonpScript";
       script.src = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?gid=${SHEET_GID}&tqx=responseHandler:handleSheetData`;
       script.onerror = function() {
-        showGlobalMessage("No se ha podido cargar la hoja desde Google Sheets.", "error");
+        showMessage("No se ha podido cargar la hoja desde Google Sheets.", "error");
       };
 
       document.body.appendChild(script);
@@ -504,7 +475,7 @@
         if (entry.id) {
           const vehicle = vehicles.find(v => String(v.id) === String(entry.id));
           if (!vehicle) {
-            showGlobalMessage("No se ha encontrado ningún vehículo con ese ID.", "error");
+            showMessage("No se ha encontrado ningún vehículo con ese ID.", "error");
             return;
           }
           renderVehicleDetail(vehicle);
@@ -521,15 +492,25 @@
         if (entry.id) {
           const vehicle = vehicles.find(v => String(v.id) === String(entry.id));
           if (!vehicle) {
-            showGlobalMessage("No se ha encontrado ningún vehículo con ese ID.", "error");
+            showMessage("No se ha encontrado ningún vehículo con ese ID.", "error");
             return;
           }
           renderVehicleDetail(vehicle);
           return;
         }
 
-        showGlobalMessage("Acceso denegado. El alumnado solo puede entrar desde QR o ficha de trabajo.", "error");
+        showMessage("Acceso denegado. El alumnado solo puede entrar desde QR o ficha de trabajo.", "error");
       }
+    }
+
+    function showAllVehicles() {
+      if (!currentUser || currentUser.role !== "profesor") return;
+
+      document.getElementById("viewModeText").textContent = "Listado completo de vehículos";
+      document.getElementById("vehicleDetail").innerHTML = "";
+      document.getElementById("tableContainer").classList.remove("hidden");
+      document.getElementById("showAllBtn").classList.add("hidden");
+      renderVehiclesTable();
     }
 
     function renderVehiclesTable() {
@@ -589,8 +570,6 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
           </div>
 
           <div class="edit-box">
-            <div id="autoSaveStatus" class="status-inline status-saved">Formulario cargado.</div>
-
             <div class="form-grid">
               <div>
                 <label for="estadoInput"><strong>Estado / Egoera</strong></label>
@@ -633,48 +612,16 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
               </div>
               ` : ""}
             </div>
+
+            ${!isBlockedForStudent ? `
+            <button onclick="saveVehicleChanges('${escapeJs(vehicle.id)}')">Guardar cambios</button>
+            ` : ""}
           </div>
 
           ${renderFichaTecnica(vehicle.fitxaTeknika)}
           ${renderRTA(vehicle.rta)}
         </div>
       `;
-
-      attachAutoSaveListeners(vehicle.id, isBlockedForStudent);
-    }
-
-    function attachAutoSaveListeners(vehicleId, isBlockedForStudent) {
-      if (isBlockedForStudent) return;
-
-      const ids = ["estadoInput", "observacionesInput", "piztenDuInput", "piztuBeharDuInput"];
-      if (currentUser && currentUser.role === "profesor") {
-        ids.push("blokatutaInput", "blokeoZergatiaInput");
-      }
-
-      ids.forEach(id => {
-        const el = document.getElementById(id);
-        if (!el) return;
-        const eventName = el.tagName === "SELECT" ? "change" : "input";
-        el.addEventListener(eventName, () => scheduleAutoSave(vehicleId));
-      });
-    }
-
-    function scheduleAutoSave(vehicleId) {
-      clearTimeout(autoSaveTimer);
-      setAutoSaveStatus("Guardando cambios...", "saving");
-      autoSaveTimer = setTimeout(() => saveVehicleChanges(vehicleId), 700);
-    }
-
-    function setAutoSaveStatus(text, type) {
-      const status = document.getElementById("autoSaveStatus");
-      if (!status) return;
-
-      status.textContent = text;
-      status.className = "status-inline " + (
-        type === "saving" ? "status-saving" :
-        type === "error" ? "status-error" :
-        "status-saved"
-      );
     }
 
     function saveVehicleChanges(vehicleId) {
@@ -686,7 +633,10 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
       const piztenDuInput = document.getElementById("piztenDuInput");
       const piztuBeharDuInput = document.getElementById("piztuBeharDuInput");
 
-      if (!estadoInput || !observacionesInput || !piztenDuInput || !piztuBeharDuInput) return;
+      if (!estadoInput || !observacionesInput || !piztenDuInput || !piztuBeharDuInput) {
+        showMessage("No se han encontrado los campos del formulario.", "error");
+        return;
+      }
 
       const payload = {
         usuario: currentUser.username,
@@ -705,11 +655,6 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
           : vehicle.blokeoZergatia
       };
 
-      setAutoSaveStatus("Guardando cambios...", "saving");
-
-      const form = document.getElementById("saveForm");
-      form.action = SAVE_API_URL;
-
       document.getElementById("f_usuario").value = payload.usuario;
       document.getElementById("f_rol").value = payload.rol;
       document.getElementById("f_idVehiculo").value = payload.idVehiculo;
@@ -720,6 +665,9 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
       document.getElementById("f_piztuBeharDu").value = payload.piztuBeharDu;
       document.getElementById("f_blokeado").value = payload.blokeado;
       document.getElementById("f_motivo").value = payload.motivo;
+
+      const form = document.getElementById("saveForm");
+      form.action = SAVE_API_URL;
 
       const frame = document.getElementById("saveFrame");
       frame.onload = function() {
@@ -741,7 +689,7 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
           }
         }
 
-        setAutoSaveStatus("Cambios enviados a Google Sheets.", "saved");
+        showMessage("Cambios enviados a Google Sheets.", "success");
       };
 
       form.submit();
@@ -770,10 +718,6 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
         </div>
       `;
     }
-
-    document.getElementById("loginBtn").addEventListener("click", login);
-    document.getElementById("logoutBtn").addEventListener("click", logout);
-    document.getElementById("showAllBtn").addEventListener("click", showAllVehicles);
 
     document.getElementById("password").addEventListener("keydown", function(e) {
       if (e.key === "Enter") login();
