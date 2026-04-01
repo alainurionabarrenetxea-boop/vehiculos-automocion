@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Automoción - Gestión de vehículos</title>
   <style>
     body {
@@ -12,16 +12,14 @@
       color: #1f2937;
     }
 
-    .hidden {
-      display: none !important;
-    }
+    .hidden { display: none !important; }
 
     .box {
       max-width: 1100px;
       margin: 24px auto;
       background: white;
       border-radius: 16px;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
       overflow: hidden;
     }
 
@@ -37,7 +35,7 @@
 
     .header p {
       margin: 0;
-      opacity: 0.95;
+      opacity: .95;
     }
 
     .content {
@@ -103,12 +101,6 @@
       background: #ecfdf5;
       color: #047857;
       border: 1px solid #a7f3d0;
-    }
-
-    .warning {
-      background: #fff7ed;
-      color: #c2410c;
-      border: 1px solid #fdba74;
     }
 
     .danger-banner {
@@ -179,8 +171,7 @@
       word-break: break-word;
     }
 
-    .ficha-box,
-    .edit-box {
+    .ficha-box, .edit-box {
       margin-top: 14px;
       padding: 14px;
       border-radius: 12px;
@@ -261,9 +252,9 @@
       <p>Consulta interna de vehículos del taller</p>
     </div>
     <div class="content">
-      <input id="username" type="text" placeholder="Usuario" />
-      <input id="password" type="password" placeholder="Contraseña" />
-      <button onclick="login()">Entrar</button>
+      <input id="username" type="text" placeholder="Usuario">
+      <input id="password" type="password" placeholder="Contraseña">
+      <button id="loginBtn">Entrar</button>
       <div id="loginError" class="msg error hidden"></div>
     </div>
   </div>
@@ -278,8 +269,8 @@
       <div class="topbar">
         <div id="viewModeText">Consulta de vehículo</div>
         <div style="display:flex; gap:10px; flex-wrap:wrap;">
-          <button id="showAllBtn" class="small-btn hidden" onclick="showAllVehicles()">Ver todos</button>
-          <button class="small-btn secondary-btn" onclick="logout()">Cerrar sesión</button>
+          <button id="showAllBtn" class="small-btn hidden">Ver todos</button>
+          <button id="logoutBtn" class="small-btn secondary-btn">Cerrar sesión</button>
         </div>
       </div>
 
@@ -304,6 +295,21 @@
     </div>
   </div>
 
+  <iframe name="saveFrame" id="saveFrame" style="display:none;"></iframe>
+
+  <form id="saveForm" target="saveFrame" method="GET" style="display:none;">
+    <input type="hidden" name="usuario" id="f_usuario">
+    <input type="hidden" name="rol" id="f_rol">
+    <input type="hidden" name="idVehiculo" id="f_idVehiculo">
+    <input type="hidden" name="autoa" id="f_autoa">
+    <input type="hidden" name="estado" id="f_estado">
+    <input type="hidden" name="observaciones" id="f_observaciones">
+    <input type="hidden" name="piztenDu" id="f_piztenDu">
+    <input type="hidden" name="piztuBeharDu" id="f_piztuBeharDu">
+    <input type="hidden" name="blokeado" id="f_blokeado">
+    <input type="hidden" name="motivo" id="f_motivo">
+  </form>
+
   <script>
     const USERS = [
       { username: "profesor", password: "auto2026", role: "profesor", name: "Profesorado" },
@@ -327,27 +333,82 @@
       };
     }
 
+    function showGlobalMessage(text, type) {
+      const appMessage = document.getElementById("appMessage");
+      appMessage.textContent = text;
+      appMessage.className = "msg " + (type || "info");
+      appMessage.classList.remove("hidden");
+    }
+
+    function clearGlobalMessage() {
+      const appMessage = document.getElementById("appMessage");
+      appMessage.textContent = "";
+      appMessage.classList.add("hidden");
+    }
+
+    function setLoginError(text) {
+      const loginError = document.getElementById("loginError");
+      loginError.textContent = text;
+      loginError.classList.remove("hidden");
+    }
+
+    function clearLoginError() {
+      const loginError = document.getElementById("loginError");
+      loginError.textContent = "";
+      loginError.classList.add("hidden");
+    }
+
+    function normalizeYesNo(value) {
+      const v = String(value || "").trim().toLowerCase();
+      if (v === "bai" || v === "si" || v === "sí" || v === "yes") return "Bai";
+      if (v === "ez" || v === "no") return "Ez";
+      return "Ez";
+    }
+
+    function value(v) {
+      return v == null ? "" : String(v).trim();
+    }
+
+    function formatBlockDate(v) {
+      return value(v);
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    function escapeAttr(value) {
+      return escapeHtml(value);
+    }
+
+    function escapeJs(value) {
+      return String(value ?? "")
+        .replace(/\\/g, "\\\\")
+        .replace(/'/g, "\\'")
+        .replace(/"/g, '\\"');
+    }
+
     function login() {
+      clearLoginError();
+
       const username = document.getElementById("username").value.trim();
       const password = document.getElementById("password").value.trim();
-      const loginError = document.getElementById("loginError");
-
-      loginError.classList.add("hidden");
-      loginError.textContent = "";
 
       const user = USERS.find(u => u.username === username && u.password === password);
 
       if (!user) {
-        loginError.textContent = "Usuario o contraseña incorrectos.";
-        loginError.classList.remove("hidden");
+        setLoginError("Usuario o contraseña incorrectos.");
         return;
       }
 
       const entry = getEntryParams();
-
       if (user.role === "alumno" && !entry.id && !entry.trabajo) {
-        loginError.textContent = "Acceso solo permitido mediante QR del coche o ficha de trabajo.";
-        loginError.classList.remove("hidden");
+        setLoginError("Acceso solo permitido mediante QR del coche o ficha de trabajo.");
         return;
       }
 
@@ -372,24 +433,12 @@
       document.getElementById("tableBody").innerHTML = "";
       document.getElementById("tableContainer").classList.add("hidden");
       document.getElementById("showAllBtn").classList.add("hidden");
-      document.getElementById("appMessage").classList.add("hidden");
-      document.getElementById("appMessage").textContent = "";
-    }
-
-    function showAllVehicles() {
-      if (!currentUser || currentUser.role !== "profesor") return;
-
-      document.getElementById("viewModeText").textContent = "Listado completo de vehículos";
-      document.getElementById("vehicleDetail").innerHTML = "";
-      document.getElementById("tableContainer").classList.remove("hidden");
-      document.getElementById("showAllBtn").classList.add("hidden");
-      renderVehiclesTable();
+      clearGlobalMessage();
+      clearLoginError();
     }
 
     function loadVehiclesJSONP() {
-      const appMessage = document.getElementById("appMessage");
-      appMessage.classList.add("hidden");
-      appMessage.textContent = "";
+      clearGlobalMessage();
 
       const old = document.getElementById("sheetJsonpScript");
       if (old) old.remove();
@@ -485,7 +534,6 @@
 
     function renderVehiclesTable() {
       const tableBody = document.getElementById("tableBody");
-
       tableBody.innerHTML = vehicles.map(v => `
         <tr class="clickable-row" onclick="openVehicleAsProfessor('${escapeJs(v.id)}')">
           <td>${escapeHtml(v.id)}</td>
@@ -598,13 +646,7 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
     function attachAutoSaveListeners(vehicleId, isBlockedForStudent) {
       if (isBlockedForStudent) return;
 
-      const ids = [
-        "estadoInput",
-        "observacionesInput",
-        "piztenDuInput",
-        "piztuBeharDuInput"
-      ];
-
+      const ids = ["estadoInput", "observacionesInput", "piztenDuInput", "piztuBeharDuInput"];
       if (currentUser && currentUser.role === "profesor") {
         ids.push("blokatutaInput", "blokeoZergatiaInput");
       }
@@ -612,7 +654,6 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
       ids.forEach(id => {
         const el = document.getElementById(id);
         if (!el) return;
-
         const eventName = el.tagName === "SELECT" ? "change" : "input";
         el.addEventListener(eventName, () => scheduleAutoSave(vehicleId));
       });
@@ -621,7 +662,7 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
     function scheduleAutoSave(vehicleId) {
       clearTimeout(autoSaveTimer);
       setAutoSaveStatus("Guardando cambios...", "saving");
-      autoSaveTimer = setTimeout(() => saveVehicleChanges(vehicleId), 800);
+      autoSaveTimer = setTimeout(() => saveVehicleChanges(vehicleId), 700);
     }
 
     function setAutoSaveStatus(text, type) {
@@ -637,97 +678,51 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
     }
 
     function saveVehicleChanges(vehicleId) {
-  const vehicle = vehicles.find(v => String(v.id) === String(vehicleId));
-  if (!vehicle || !currentUser) return;
+      const vehicle = vehicles.find(v => String(v.id) === String(vehicleId));
+      if (!vehicle || !currentUser) return;
 
-  const estadoInput = document.getElementById("estadoInput");
-  const observacionesInput = document.getElementById("observacionesInput");
-  const piztenDuInput = document.getElementById("piztenDuInput");
-  const piztuBeharDuInput = document.getElementById("piztuBeharDuInput");
+      const estadoInput = document.getElementById("estadoInput");
+      const observacionesInput = document.getElementById("observacionesInput");
+      const piztenDuInput = document.getElementById("piztenDuInput");
+      const piztuBeharDuInput = document.getElementById("piztuBeharDuInput");
 
-  if (!estadoInput || !observacionesInput || !piztenDuInput || !piztuBeharDuInput) return;
+      if (!estadoInput || !observacionesInput || !piztenDuInput || !piztuBeharDuInput) return;
 
-  const payload = {
-    usuario: currentUser.username,
-    rol: currentUser.role,
-    idVehiculo: vehicle.id,
-    autoa: vehicle.autoa,
-    estado: estadoInput.value.trim(),
-    observaciones: observacionesInput.value.trim(),
-    piztenDu: piztenDuInput.value,
-    piztuBeharDu: piztuBeharDuInput.value,
-    blokeado: currentUser.role === "profesor" && document.getElementById("blokatutaInput")
-      ? document.getElementById("blokatutaInput").value
-      : vehicle.blokatuta,
-    motivo: currentUser.role === "profesor" && document.getElementById("blokeoZergatiaInput")
-      ? document.getElementById("blokeoZergatiaInput").value.trim()
-      : vehicle.blokeoZergatia
-  };
-
-  setAutoSaveStatus("Guardando cambios...", "saving");
-
-  const form = document.getElementById("saveForm");
-  form.action = SAVE_API_URL;
-
-  document.getElementById("f_usuario").value = payload.usuario;
-  document.getElementById("f_rol").value = payload.rol;
-  document.getElementById("f_idVehiculo").value = payload.idVehiculo;
-  document.getElementById("f_autoa").value = payload.autoa;
-  document.getElementById("f_estado").value = payload.estado;
-  document.getElementById("f_observaciones").value = payload.observaciones;
-  document.getElementById("f_piztenDu").value = payload.piztenDu;
-  document.getElementById("f_piztuBeharDu").value = payload.piztuBeharDu;
-  document.getElementById("f_blokeado").value = payload.blokeado;
-  document.getElementById("f_motivo").value = payload.motivo;
-
-  const frame = document.getElementById("saveFrame");
-
-  frame.onload = function () {
-    vehicle.estado = payload.estado;
-    vehicle.observaciones = payload.observaciones;
-    vehicle.piztenDu = payload.piztenDu;
-    vehicle.piztuBeharDu = payload.piztuBeharDu;
-    vehicle.blokatuta = payload.blokeado;
-    vehicle.blokeoZergatia = payload.motivo;
-
-    if (currentUser.role === "profesor") {
-      if (payload.blokeado === "Bai") {
-        vehicle.idBlokeoa = currentUser.username;
-        vehicle.blokeoData = new Date().toLocaleString("es-ES");
-      } else {
-        vehicle.idBlokeoa = "";
-        vehicle.blokeoData = "";
-        vehicle.blokeoZergatia = "";
-      }
-    }
-
-    setAutoSaveStatus("Cambios enviados a Google Sheets.", "saved");
-  };
-
-  form.submit();
-}
-
-      const url =
-        SAVE_API_URL +
-        "?usuario=" + encodeURIComponent(payload.usuario) +
-        "&rol=" + encodeURIComponent(payload.rol) +
-        "&idVehiculo=" + encodeURIComponent(payload.idVehiculo) +
-        "&autoa=" + encodeURIComponent(payload.autoa) +
-        "&estado=" + encodeURIComponent(payload.estado) +
-        "&observaciones=" + encodeURIComponent(payload.observaciones) +
-        "&piztenDu=" + encodeURIComponent(payload.piztenDu) +
-        "&piztuBeharDu=" + encodeURIComponent(payload.piztuBeharDu) +
-        "&blokeado=" + encodeURIComponent(payload.blokeado) +
-        "&motivo=" + encodeURIComponent(payload.motivo);
+      const payload = {
+        usuario: currentUser.username,
+        rol: currentUser.role,
+        idVehiculo: vehicle.id,
+        autoa: vehicle.autoa,
+        estado: estadoInput.value.trim(),
+        observaciones: observacionesInput.value.trim(),
+        piztenDu: piztenDuInput.value,
+        piztuBeharDu: piztuBeharDuInput.value,
+        blokeado: currentUser.role === "profesor" && document.getElementById("blokatutaInput")
+          ? document.getElementById("blokatutaInput").value
+          : vehicle.blokatuta,
+        motivo: currentUser.role === "profesor" && document.getElementById("blokeoZergatiaInput")
+          ? document.getElementById("blokeoZergatiaInput").value.trim()
+          : vehicle.blokeoZergatia
+      };
 
       setAutoSaveStatus("Guardando cambios...", "saving");
 
-      try {
-        await fetch(url, {
-          method: "GET",
-          mode: "no-cors"
-        });
+      const form = document.getElementById("saveForm");
+      form.action = SAVE_API_URL;
 
+      document.getElementById("f_usuario").value = payload.usuario;
+      document.getElementById("f_rol").value = payload.rol;
+      document.getElementById("f_idVehiculo").value = payload.idVehiculo;
+      document.getElementById("f_autoa").value = payload.autoa;
+      document.getElementById("f_estado").value = payload.estado;
+      document.getElementById("f_observaciones").value = payload.observaciones;
+      document.getElementById("f_piztenDu").value = payload.piztenDu;
+      document.getElementById("f_piztuBeharDu").value = payload.piztuBeharDu;
+      document.getElementById("f_blokeado").value = payload.blokeado;
+      document.getElementById("f_motivo").value = payload.motivo;
+
+      const frame = document.getElementById("saveFrame");
+      frame.onload = function() {
         vehicle.estado = payload.estado;
         vehicle.observaciones = payload.observaciones;
         vehicle.piztenDu = payload.piztenDu;
@@ -746,11 +741,10 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
           }
         }
 
-        setAutoSaveStatus("Cambios enviados automáticamente.", "saved");
-      } catch (error) {
-        setAutoSaveStatus("Error al enviar cambios: " + error.message, "error");
-        showGlobalMessage("Error al guardar:\n" + error.message, "error");
-      }
+        setAutoSaveStatus("Cambios enviados a Google Sheets.", "saved");
+      };
+
+      form.submit();
     }
 
     function renderFichaTecnica(link) {
@@ -777,63 +771,13 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
       `;
     }
 
-    function showGlobalMessage(text, type) {
-      const appMessage = document.getElementById("appMessage");
-      appMessage.textContent = text;
-      appMessage.className = "msg " + (type || "info");
-      appMessage.classList.remove("hidden");
-    }
+    document.getElementById("loginBtn").addEventListener("click", login);
+    document.getElementById("logoutBtn").addEventListener("click", logout);
+    document.getElementById("showAllBtn").addEventListener("click", showAllVehicles);
 
-    function normalizeYesNo(value) {
-      const v = String(value || "").trim().toLowerCase();
-      if (v === "bai" || v === "si" || v === "sí" || v === "yes") return "Bai";
-      if (v === "ez" || v === "no") return "Ez";
-      return "Ez";
-    }
-
-    function value(v) {
-      return v == null ? "" : String(v).trim();
-    }
-
-    function formatBlockDate(v) {
-      const s = value(v);
-      if (!s) return "";
-      return s;
-    }
-
-    function escapeHtml(value) {
-      return String(value ?? "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#39;");
-    }
-
-    function escapeAttr(value) {
-      return escapeHtml(value);
-    }
-
-    function escapeJs(value) {
-      return String(value ?? "")
-        .replace(/\\/g, "\\\\")
-        .replace(/'/g, "\\'")
-        .replace(/"/g, '\\"');
-    }
+    document.getElementById("password").addEventListener("keydown", function(e) {
+      if (e.key === "Enter") login();
+    });
   </script>
-  <iframe name="saveFrame" id="saveFrame" style="display:none;"></iframe>
-
-<form id="saveForm" target="saveFrame" method="GET" style="display:none;">
-  <input type="hidden" name="usuario" id="f_usuario">
-  <input type="hidden" name="rol" id="f_rol">
-  <input type="hidden" name="idVehiculo" id="f_idVehiculo">
-  <input type="hidden" name="autoa" id="f_autoa">
-  <input type="hidden" name="estado" id="f_estado">
-  <input type="hidden" name="observaciones" id="f_observaciones">
-  <input type="hidden" name="piztenDu" id="f_piztenDu">
-  <input type="hidden" name="piztuBeharDu" id="f_piztuBeharDu">
-  <input type="hidden" name="blokeado" id="f_blokeado">
-  <input type="hidden" name="motivo" id="f_motivo">
-</form>
 </body>
 </html>
