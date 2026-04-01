@@ -636,33 +636,76 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
       );
     }
 
-    async function saveVehicleChanges(vehicleId) {
-      const vehicle = vehicles.find(v => String(v.id) === String(vehicleId));
-      if (!vehicle || !currentUser) return;
+    function saveVehicleChanges(vehicleId) {
+  const vehicle = vehicles.find(v => String(v.id) === String(vehicleId));
+  if (!vehicle || !currentUser) return;
 
-      const estadoInput = document.getElementById("estadoInput");
-      const observacionesInput = document.getElementById("observacionesInput");
-      const piztenDuInput = document.getElementById("piztenDuInput");
-      const piztuBeharDuInput = document.getElementById("piztuBeharDuInput");
+  const estadoInput = document.getElementById("estadoInput");
+  const observacionesInput = document.getElementById("observacionesInput");
+  const piztenDuInput = document.getElementById("piztenDuInput");
+  const piztuBeharDuInput = document.getElementById("piztuBeharDuInput");
 
-      if (!estadoInput || !observacionesInput || !piztenDuInput || !piztuBeharDuInput) return;
+  if (!estadoInput || !observacionesInput || !piztenDuInput || !piztuBeharDuInput) return;
 
-      const payload = {
-        usuario: currentUser.username,
-        rol: currentUser.role,
-        idVehiculo: vehicle.id,
-        autoa: vehicle.autoa,
-        estado: estadoInput.value.trim(),
-        observaciones: observacionesInput.value.trim(),
-        piztenDu: piztenDuInput.value,
-        piztuBeharDu: piztuBeharDuInput.value,
-        blokeado: currentUser.role === "profesor" && document.getElementById("blokatutaInput")
-          ? document.getElementById("blokatutaInput").value
-          : vehicle.blokatuta,
-        motivo: currentUser.role === "profesor" && document.getElementById("blokeoZergatiaInput")
-          ? document.getElementById("blokeoZergatiaInput").value.trim()
-          : vehicle.blokeoZergatia
-      };
+  const payload = {
+    usuario: currentUser.username,
+    rol: currentUser.role,
+    idVehiculo: vehicle.id,
+    autoa: vehicle.autoa,
+    estado: estadoInput.value.trim(),
+    observaciones: observacionesInput.value.trim(),
+    piztenDu: piztenDuInput.value,
+    piztuBeharDu: piztuBeharDuInput.value,
+    blokeado: currentUser.role === "profesor" && document.getElementById("blokatutaInput")
+      ? document.getElementById("blokatutaInput").value
+      : vehicle.blokatuta,
+    motivo: currentUser.role === "profesor" && document.getElementById("blokeoZergatiaInput")
+      ? document.getElementById("blokeoZergatiaInput").value.trim()
+      : vehicle.blokeoZergatia
+  };
+
+  setAutoSaveStatus("Guardando cambios...", "saving");
+
+  const form = document.getElementById("saveForm");
+  form.action = SAVE_API_URL;
+
+  document.getElementById("f_usuario").value = payload.usuario;
+  document.getElementById("f_rol").value = payload.rol;
+  document.getElementById("f_idVehiculo").value = payload.idVehiculo;
+  document.getElementById("f_autoa").value = payload.autoa;
+  document.getElementById("f_estado").value = payload.estado;
+  document.getElementById("f_observaciones").value = payload.observaciones;
+  document.getElementById("f_piztenDu").value = payload.piztenDu;
+  document.getElementById("f_piztuBeharDu").value = payload.piztuBeharDu;
+  document.getElementById("f_blokeado").value = payload.blokeado;
+  document.getElementById("f_motivo").value = payload.motivo;
+
+  const frame = document.getElementById("saveFrame");
+
+  frame.onload = function () {
+    vehicle.estado = payload.estado;
+    vehicle.observaciones = payload.observaciones;
+    vehicle.piztenDu = payload.piztenDu;
+    vehicle.piztuBeharDu = payload.piztuBeharDu;
+    vehicle.blokatuta = payload.blokeado;
+    vehicle.blokeoZergatia = payload.motivo;
+
+    if (currentUser.role === "profesor") {
+      if (payload.blokeado === "Bai") {
+        vehicle.idBlokeoa = currentUser.username;
+        vehicle.blokeoData = new Date().toLocaleString("es-ES");
+      } else {
+        vehicle.idBlokeoa = "";
+        vehicle.blokeoData = "";
+        vehicle.blokeoZergatia = "";
+      }
+    }
+
+    setAutoSaveStatus("Cambios enviados a Google Sheets.", "saved");
+  };
+
+  form.submit();
+}
 
       const url =
         SAVE_API_URL +
@@ -778,5 +821,19 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
         .replace(/"/g, '\\"');
     }
   </script>
+  <iframe name="saveFrame" id="saveFrame" style="display:none;"></iframe>
+
+<form id="saveForm" target="saveFrame" method="GET" style="display:none;">
+  <input type="hidden" name="usuario" id="f_usuario">
+  <input type="hidden" name="rol" id="f_rol">
+  <input type="hidden" name="idVehiculo" id="f_idVehiculo">
+  <input type="hidden" name="autoa" id="f_autoa">
+  <input type="hidden" name="estado" id="f_estado">
+  <input type="hidden" name="observaciones" id="f_observaciones">
+  <input type="hidden" name="piztenDu" id="f_piztenDu">
+  <input type="hidden" name="piztuBeharDu" id="f_piztuBeharDu">
+  <input type="hidden" name="blokeado" id="f_blokeado">
+  <input type="hidden" name="motivo" id="f_motivo">
+</form>
 </body>
 </html>
