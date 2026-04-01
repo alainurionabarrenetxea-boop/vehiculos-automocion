@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Automoción - Gestión de vehículos</title>
   <style>
     body {
@@ -12,7 +12,9 @@
       color: #1f2937;
     }
 
-    .hidden { display: none !important; }
+    .hidden {
+      display: none !important;
+    }
 
     .box {
       max-width: 1100px;
@@ -271,21 +273,6 @@
     </div>
   </div>
 
-  <iframe name="saveFrame" id="saveFrame" style="display:none;"></iframe>
-
-  <form id="saveForm" target="saveFrame" method="GET" style="display:none;">
-    <input type="hidden" name="usuario" id="f_usuario">
-    <input type="hidden" name="rol" id="f_rol">
-    <input type="hidden" name="idVehiculo" id="f_idVehiculo">
-    <input type="hidden" name="autoa" id="f_autoa">
-    <input type="hidden" name="estado" id="f_estado">
-    <input type="hidden" name="observaciones" id="f_observaciones">
-    <input type="hidden" name="piztenDu" id="f_piztenDu">
-    <input type="hidden" name="piztuBeharDu" id="f_piztuBeharDu">
-    <input type="hidden" name="blokeado" id="f_blokeado">
-    <input type="hidden" name="motivo" id="f_motivo">
-  </form>
-
   <script>
     const USERS = [
       { username: "profesor", password: "auto2026", role: "profesor", name: "Profesorado" },
@@ -295,7 +282,7 @@
 
     const SHEET_ID = "1sf2TS8gCKachrkz66S6E_zQuafVpu7F_AhSLdhi-W-g";
     const SHEET_GID = "0";
-    https://script.google.com/macros/s/AKfycby2MIw0Yh3GDaf4SUOHze4wkSXFo6GIMJnNHOE9UPSagNlL-fyw8daxxShtHzlbamKhIg/exec;
+    const SAVE_API_URL = "https://script.google.com/macros/s/AKfycby2MIw0Yh3GDaf4SUOHze4wkSXFo6GIMJnNHOE9UPSagNlL-fyw8daxxShtHzlbamKhIg/exec";
 
     let vehicles = [];
     let currentUser = null;
@@ -625,94 +612,18 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
     }
 
     function saveVehicleChanges(vehicleId) {
-  const vehicle = vehicles.find(v => String(v.id) === String(vehicleId));
-  if (!vehicle || !currentUser) return;
+      const vehicle = vehicles.find(v => String(v.id) === String(vehicleId));
+      if (!vehicle || !currentUser) return;
 
-  const estadoInput = document.getElementById("estadoInput");
-  const observacionesInput = document.getElementById("observacionesInput");
-  const piztenDuInput = document.getElementById("piztenDuInput");
-  const piztuBeharDuInput = document.getElementById("piztuBeharDuInput");
+      const estadoInput = document.getElementById("estadoInput");
+      const observacionesInput = document.getElementById("observacionesInput");
+      const piztenDuInput = document.getElementById("piztenDuInput");
+      const piztuBeharDuInput = document.getElementById("piztuBeharDuInput");
 
-  if (!estadoInput || !observacionesInput || !piztenDuInput || !piztuBeharDuInput) return;
-
-  const payload = {
-    usuario: currentUser.username,
-    rol: currentUser.role,
-    idVehiculo: vehicle.id,
-    autoa: vehicle.autoa,
-    estado: estadoInput.value.trim(),
-    observaciones: observacionesInput.value.trim(),
-    piztenDu: piztenDuInput.value,
-    piztuBeharDu: piztuBeharDuInput.value,
-    blokeado: currentUser.role === "profesor" && document.getElementById("blokatutaInput")
-      ? document.getElementById("blokatutaInput").value
-      : vehicle.blokatuta,
-    motivo: currentUser.role === "profesor" && document.getElementById("blokeoZergatiaInput")
-      ? document.getElementById("blokeoZergatiaInput").value.trim()
-      : vehicle.blokeoZergatia
-  };
-
-  const callbackName = "handleSaveResponse_" + Date.now();
-
-  window[callbackName] = function(result) {
-    try {
-      if (!result || !result.ok) {
-        const msg = result && result.msg ? result.msg : "No se pudieron guardar los cambios";
-        showMessage("Error al guardar:\n" + msg, "error");
+      if (!estadoInput || !observacionesInput || !piztenDuInput || !piztuBeharDuInput) {
+        showMessage("No se han encontrado los campos del formulario.", "error");
         return;
       }
-
-      vehicle.estado = payload.estado;
-      vehicle.observaciones = payload.observaciones;
-      vehicle.piztenDu = payload.piztenDu;
-      vehicle.piztuBeharDu = payload.piztuBeharDu;
-      vehicle.blokatuta = payload.blokeado;
-      vehicle.blokeoZergatia = payload.motivo;
-
-      if (currentUser.role === "profesor") {
-        if (payload.blokeado === "Bai") {
-          vehicle.idBlokeoa = currentUser.username;
-          vehicle.blokeoData = new Date().toLocaleString("es-ES");
-        } else {
-          vehicle.idBlokeoa = "";
-          vehicle.blokeoData = "";
-          vehicle.blokeoZergatia = "";
-        }
-      }
-
-      showMessage("Cambios guardados correctamente.", "success");
-    } finally {
-      const script = document.getElementById(callbackName);
-      if (script) script.remove();
-      delete window[callbackName];
-    }
-  };
-
-  const url =
-    SAVE_API_URL +
-    "?callback=" + encodeURIComponent(callbackName) +
-    "&usuario=" + encodeURIComponent(payload.usuario) +
-    "&rol=" + encodeURIComponent(payload.rol) +
-    "&idVehiculo=" + encodeURIComponent(payload.idVehiculo) +
-    "&autoa=" + encodeURIComponent(payload.autoa) +
-    "&estado=" + encodeURIComponent(payload.estado) +
-    "&observaciones=" + encodeURIComponent(payload.observaciones) +
-    "&piztenDu=" + encodeURIComponent(payload.piztenDu) +
-    "&piztuBeharDu=" + encodeURIComponent(payload.piztuBeharDu) +
-    "&blokeado=" + encodeURIComponent(payload.blokeado) +
-    "&motivo=" + encodeURIComponent(payload.motivo);
-
-  const script = document.createElement("script");
-  script.id = callbackName;
-  script.src = url;
-  script.onerror = function() {
-    showMessage("Error al conectar con el servicio de guardado.", "error");
-    if (script) script.remove();
-    delete window[callbackName];
-  };
-
-  document.body.appendChild(script);
-}
 
       const payload = {
         usuario: currentUser.username,
@@ -731,44 +642,66 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
           : vehicle.blokeoZergatia
       };
 
-      document.getElementById("f_usuario").value = payload.usuario;
-      document.getElementById("f_rol").value = payload.rol;
-      document.getElementById("f_idVehiculo").value = payload.idVehiculo;
-      document.getElementById("f_autoa").value = payload.autoa;
-      document.getElementById("f_estado").value = payload.estado;
-      document.getElementById("f_observaciones").value = payload.observaciones;
-      document.getElementById("f_piztenDu").value = payload.piztenDu;
-      document.getElementById("f_piztuBeharDu").value = payload.piztuBeharDu;
-      document.getElementById("f_blokeado").value = payload.blokeado;
-      document.getElementById("f_motivo").value = payload.motivo;
+      const callbackName = "handleSaveResponse_" + Date.now();
 
-      const form = document.getElementById("saveForm");
-      form.action = SAVE_API_URL;
-
-      const frame = document.getElementById("saveFrame");
-      frame.onload = function() {
-        vehicle.estado = payload.estado;
-        vehicle.observaciones = payload.observaciones;
-        vehicle.piztenDu = payload.piztenDu;
-        vehicle.piztuBeharDu = payload.piztuBeharDu;
-        vehicle.blokatuta = payload.blokeado;
-        vehicle.blokeoZergatia = payload.motivo;
-
-        if (currentUser.role === "profesor") {
-          if (payload.blokeado === "Bai") {
-            vehicle.idBlokeoa = currentUser.username;
-            vehicle.blokeoData = new Date().toLocaleString("es-ES");
-          } else {
-            vehicle.idBlokeoa = "";
-            vehicle.blokeoData = "";
-            vehicle.blokeoZergatia = "";
+      window[callbackName] = function(result) {
+        try {
+          if (!result || !result.ok) {
+            const msg = result && result.msg ? result.msg : "No se pudieron guardar los cambios";
+            showMessage("Error al guardar:\n" + msg, "error");
+            return;
           }
-        }
 
-        showMessage("Cambios enviados a Google Sheets.", "success");
+          vehicle.estado = payload.estado;
+          vehicle.observaciones = payload.observaciones;
+          vehicle.piztenDu = payload.piztenDu;
+          vehicle.piztuBeharDu = payload.piztuBeharDu;
+          vehicle.blokatuta = payload.blokeado;
+          vehicle.blokeoZergatia = payload.motivo;
+
+          if (currentUser.role === "profesor") {
+            if (payload.blokeado === "Bai") {
+              vehicle.idBlokeoa = currentUser.username;
+              vehicle.blokeoData = new Date().toLocaleString("es-ES");
+            } else {
+              vehicle.idBlokeoa = "";
+              vehicle.blokeoData = "";
+              vehicle.blokeoZergatia = "";
+            }
+          }
+
+          showMessage("Cambios guardados correctamente.", "success");
+        } finally {
+          const script = document.getElementById(callbackName);
+          if (script) script.remove();
+          delete window[callbackName];
+        }
       };
 
-      form.submit();
+      const url =
+        SAVE_API_URL +
+        "?callback=" + encodeURIComponent(callbackName) +
+        "&idVehiculo=" + encodeURIComponent(payload.idVehiculo) +
+        "&usuario=" + encodeURIComponent(payload.usuario) +
+        "&rol=" + encodeURIComponent(payload.rol) +
+        "&autoa=" + encodeURIComponent(payload.autoa) +
+        "&estado=" + encodeURIComponent(payload.estado) +
+        "&observaciones=" + encodeURIComponent(payload.observaciones) +
+        "&piztenDu=" + encodeURIComponent(payload.piztenDu) +
+        "&piztuBeharDu=" + encodeURIComponent(payload.piztuBeharDu) +
+        "&blokeado=" + encodeURIComponent(payload.blokeado) +
+        "&motivo=" + encodeURIComponent(payload.motivo);
+
+      const script = document.createElement("script");
+      script.id = callbackName;
+      script.src = url;
+      script.onerror = function() {
+        showMessage("Error al conectar con el servicio de guardado.", "error");
+        script.remove();
+        delete window[callbackName];
+      };
+
+      document.body.appendChild(script);
     }
 
     function renderFichaTecnica(link) {
