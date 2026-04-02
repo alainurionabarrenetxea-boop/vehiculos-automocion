@@ -97,12 +97,6 @@
       border: 1px solid #bfdbfe;
     }
 
-    .success {
-      background: #ecfdf5;
-      color: #047857;
-      border: 1px solid #a7f3d0;
-    }
-
     .danger-banner {
       background: #b91c1c;
       color: white;
@@ -171,8 +165,7 @@
       word-break: break-word;
     }
 
-    .ficha-box,
-    .edit-box {
+    .ficha-box, .edit-box {
       margin-top: 14px;
       padding: 14px;
       border-radius: 12px;
@@ -232,7 +225,7 @@
     <div class="content">
       <input id="username" type="text" placeholder="Usuario">
       <input id="password" type="password" placeholder="Contraseña">
-      <button onclick="login()">Entrar</button>
+      <button type="button" onclick="login()">Entrar</button>
       <div id="loginError" class="msg error hidden"></div>
     </div>
   </div>
@@ -247,8 +240,8 @@
       <div class="topbar">
         <div id="viewModeText">Consulta de vehículo</div>
         <div style="display:flex; gap:10px; flex-wrap:wrap;">
-          <button id="showAllBtn" class="small-btn hidden" onclick="showAllVehicles()">Ver todos</button>
-          <button class="small-btn secondary-btn" onclick="logout()">Cerrar sesión</button>
+          <button id="showAllBtn" class="small-btn hidden" type="button" onclick="showAllVehicles()">Ver todos</button>
+          <button class="small-btn secondary-btn" type="button" onclick="logout()">Cerrar sesión</button>
         </div>
       </div>
 
@@ -282,9 +275,9 @@
 
     const SHEET_ID = "1sf2TS8gCKachrkz66S6E_zQuafVpu7F_AhSLdhi-W-g";
     const SHEET_GID = "0";
-    const SAVE_API_URL = "https://script.google.com/macros/s/AKfycby2MIw0Yh3GDaf4SUOHze4wkSXFo6GIMJnNHOE9UPSagNlL-fyw8daxxShtHzlbamKhIg/exec";
 
     let vehicles = [];
+    let currentUser = null;
 
     function showLoginError(text) {
       const el = document.getElementById("loginError");
@@ -369,7 +362,7 @@
         return;
       }
 
-      window.currentUser = user;
+      currentUser = user;
 
       document.getElementById("loginView").classList.add("hidden");
       document.getElementById("appView").classList.remove("hidden");
@@ -380,9 +373,8 @@
     }
 
     function logout() {
-      window.currentUser = null;
+      currentUser = null;
       vehicles = [];
-
       document.getElementById("appView").classList.add("hidden");
       document.getElementById("loginView").classList.remove("hidden");
       document.getElementById("username").value = "";
@@ -455,7 +447,6 @@
 
     function routeAfterLoad() {
       const entry = getEntryParams();
-      const currentUser = window.currentUser;
 
       if (!currentUser) return;
 
@@ -492,7 +483,6 @@
     }
 
     function showAllVehicles() {
-      const currentUser = window.currentUser;
       if (!currentUser || currentUser.role !== "profesor") return;
 
       document.getElementById("viewModeText").textContent = "Listado completo de vehículos";
@@ -517,16 +507,13 @@
     }
 
     function openVehicleAsProfessor(vehicleId) {
-      const currentUser = window.currentUser;
       if (!currentUser || currentUser.role !== "profesor") return;
-
       const vehicle = vehicles.find(v => String(v.id) === String(vehicleId));
       if (!vehicle) return;
       renderVehicleDetail(vehicle);
     }
 
     function renderVehicleDetail(vehicle) {
-      const currentUser = window.currentUser;
       const detail = document.getElementById("vehicleDetail");
       const tableContainer = document.getElementById("tableContainer");
       const viewModeText = document.getElementById("viewModeText");
@@ -606,7 +593,7 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
             </div>
 
             ${!isBlockedForStudent ? `
-            <button onclick="saveVehicleChanges('${escapeJs(vehicle.id)}')">Guardar cambios</button>
+            <button type="button" onclick="saveVehicleChanges('${escapeJs(vehicle.id)}')">Guardar cambios</button>
             ` : ""}
           </div>
 
@@ -617,92 +604,18 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
     }
 
     function saveVehicleChanges(vehicleId) {
-  const currentUser = window.currentUser;
-  const vehicle = vehicles.find(v => String(v.id) === String(vehicleId));
-  if (!vehicle || !currentUser) return;
+      const vehicle = vehicles.find(v => String(v.id) === String(vehicleId));
+      if (!vehicle || !currentUser) return;
 
-  const estadoInput = document.getElementById("estadoInput");
-  const observacionesInput = document.getElementById("observacionesInput");
-  const piztenDuInput = document.getElementById("piztenDuInput");
-  const piztuBeharDuInput = document.getElementById("piztuBeharDuInput");
+      const estadoInput = document.getElementById("estadoInput");
+      const observacionesInput = document.getElementById("observacionesInput");
+      const piztenDuInput = document.getElementById("piztenDuInput");
+      const piztuBeharDuInput = document.getElementById("piztuBeharDuInput");
 
-  if (!estadoInput || !observacionesInput || !piztenDuInput || !piztuBeharDuInput) {
-    showMessage("No se han encontrado los campos del formulario.", "error");
-    return;
-  }
-
-  const payload = {
-    usuario: currentUser.username,
-    rol: currentUser.role,
-    idVehiculo: vehicle.id,
-    autoa: vehicle.autoa,
-    estado: estadoInput.value.trim(),
-    observaciones: observacionesInput.value.trim(),
-    piztenDu: piztenDuInput.value,
-    piztuBeharDu: piztuBeharDuInput.value,
-    blokeado: currentUser.role === "profesor" && document.getElementById("blokatutaInput")
-      ? document.getElementById("blokatutaInput").value
-      : vehicle.blokatuta,
-    motivo: currentUser.role === "profesor" && document.getElementById("blokeoZergatiaInput")
-      ? document.getElementById("blokeoZergatiaInput").value.trim()
-      : vehicle.blokeoZergatia
-  };
-
-  const callbackName = "handleSaveResponse_" + Date.now();
-
-  const url =
-    SAVE_API_URL +
-    "?callback=" + encodeURIComponent(callbackName) +
-    "&idVehiculo=" + encodeURIComponent(payload.idVehiculo) +
-    "&usuario=" + encodeURIComponent(payload.usuario) +
-    "&rol=" + encodeURIComponent(payload.rol) +
-    "&autoa=" + encodeURIComponent(payload.autoa) +
-    "&estado=" + encodeURIComponent(payload.estado) +
-    "&observaciones=" + encodeURIComponent(payload.observaciones) +
-    "&piztenDu=" + encodeURIComponent(payload.piztenDu) +
-    "&piztuBeharDu=" + encodeURIComponent(payload.piztuBeharDu) +
-    "&blokeado=" + encodeURIComponent(payload.blokeado) +
-    "&motivo=" + encodeURIComponent(payload.motivo);
-
-  showMessage("URL de guardado generada:\n" + url, "info");
-}
-
-  const payload = {
-    usuario: currentUser.username,
-    rol: currentUser.role,
-    idVehiculo: vehicle.id,
-    autoa: vehicle.autoa,
-    estado: estadoInput.value.trim(),
-    observaciones: observacionesInput.value.trim(),
-    piztenDu: piztenDuInput.value,
-    piztuBeharDu: piztuBeharDuInput.value,
-    blokeado: currentUser.role === "profesor" && document.getElementById("blokatutaInput")
-      ? document.getElementById("blokatutaInput").value
-      : vehicle.blokatuta,
-    motivo: currentUser.role === "profesor" && document.getElementById("blokeoZergatiaInput")
-      ? document.getElementById("blokeoZergatiaInput").value.trim()
-      : vehicle.blokeoZergatia
-  };
-
-  const callbackName = "handleSaveResponse_" + Date.now();
-
-  const url =
-    SAVE_API_URL +
-    "?callback=" + encodeURIComponent(callbackName) +
-    "&idVehiculo=" + encodeURIComponent(payload.idVehiculo) +
-    "&usuario=" + encodeURIComponent(payload.usuario) +
-    "&rol=" + encodeURIComponent(payload.rol) +
-    "&autoa=" + encodeURIComponent(payload.autoa) +
-    "&estado=" + encodeURIComponent(payload.estado) +
-    "&observaciones=" + encodeURIComponent(payload.observaciones) +
-    "&piztenDu=" + encodeURIComponent(payload.piztenDu) +
-    "&piztuBeharDu=" + encodeURIComponent(payload.piztuBeharDu) +
-    "&blokeado=" + encodeURIComponent(payload.blokeado) +
-    "&motivo=" + encodeURIComponent(payload.motivo);
-
-  // DIAGNÓSTICO: abre la URL exacta que la web intenta usar
-  window.open(url, "_blank");
-}
+      if (!estadoInput || !observacionesInput || !piztenDuInput || !piztuBeharDuInput) {
+        showMessage("No se han encontrado los campos del formulario.", "error");
+        return;
+      }
 
       const payload = {
         usuario: currentUser.username,
