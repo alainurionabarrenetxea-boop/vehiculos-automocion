@@ -664,6 +664,42 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
     "&blokeado=" + encodeURIComponent(payload.blokeado) +
     "&motivo=" + encodeURIComponent(payload.motivo);
 
+  showMessage("URL de guardado generada:\n" + url, "info");
+}
+
+  const payload = {
+    usuario: currentUser.username,
+    rol: currentUser.role,
+    idVehiculo: vehicle.id,
+    autoa: vehicle.autoa,
+    estado: estadoInput.value.trim(),
+    observaciones: observacionesInput.value.trim(),
+    piztenDu: piztenDuInput.value,
+    piztuBeharDu: piztuBeharDuInput.value,
+    blokeado: currentUser.role === "profesor" && document.getElementById("blokatutaInput")
+      ? document.getElementById("blokatutaInput").value
+      : vehicle.blokatuta,
+    motivo: currentUser.role === "profesor" && document.getElementById("blokeoZergatiaInput")
+      ? document.getElementById("blokeoZergatiaInput").value.trim()
+      : vehicle.blokeoZergatia
+  };
+
+  const callbackName = "handleSaveResponse_" + Date.now();
+
+  const url =
+    SAVE_API_URL +
+    "?callback=" + encodeURIComponent(callbackName) +
+    "&idVehiculo=" + encodeURIComponent(payload.idVehiculo) +
+    "&usuario=" + encodeURIComponent(payload.usuario) +
+    "&rol=" + encodeURIComponent(payload.rol) +
+    "&autoa=" + encodeURIComponent(payload.autoa) +
+    "&estado=" + encodeURIComponent(payload.estado) +
+    "&observaciones=" + encodeURIComponent(payload.observaciones) +
+    "&piztenDu=" + encodeURIComponent(payload.piztenDu) +
+    "&piztuBeharDu=" + encodeURIComponent(payload.piztuBeharDu) +
+    "&blokeado=" + encodeURIComponent(payload.blokeado) +
+    "&motivo=" + encodeURIComponent(payload.motivo);
+
   // DIAGNÓSTICO: abre la URL exacta que la web intenta usar
   window.open(url, "_blank");
 }
