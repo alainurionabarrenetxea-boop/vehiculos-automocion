@@ -12,14 +12,16 @@
       color: #1f2937;
     }
 
-    .hidden { display: none !important; }
+    .hidden {
+      display: none !important;
+    }
 
     .box {
       max-width: 1100px;
       margin: 24px auto;
       background: white;
       border-radius: 16px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
       overflow: hidden;
     }
 
@@ -35,7 +37,7 @@
 
     .header p {
       margin: 0;
-      opacity: .95;
+      opacity: 0.95;
     }
 
     .content {
@@ -95,6 +97,12 @@
       background: #eff6ff;
       color: #1d4ed8;
       border: 1px solid #bfdbfe;
+    }
+
+    .success {
+      background: #ecfdf5;
+      color: #047857;
+      border: 1px solid #a7f3d0;
     }
 
     .danger-banner {
@@ -165,7 +173,8 @@
       word-break: break-word;
     }
 
-    .ficha-box, .edit-box {
+    .ficha-box,
+    .edit-box {
       margin-top: 14px;
       padding: 14px;
       border-radius: 12px;
@@ -205,6 +214,16 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 12px;
+    }
+
+    .save-status {
+      display: inline-block;
+      padding: 8px 10px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-bottom: 12px;
+      background: #eff6ff;
+      color: #1d4ed8;
     }
 
     @media (max-width: 700px) {
@@ -275,6 +294,7 @@
 
     const SHEET_ID = "1sf2TS8gCKachrkz66S6E_zQuafVpu7F_AhSLdhi-W-g";
     const SHEET_GID = "0";
+    const SAVE_API_URL = "https://script.google.com/macros/s/AKfycby2MIw0Yh3GDaf4SUOHze4wkSXFo6GIMJnNHOE9UPSagNlL-fyw8daxxShtHzlbamKhIg/exec";
 
     let vehicles = [];
     let currentUser = null;
@@ -291,10 +311,10 @@
       el.classList.add("hidden");
     }
 
-    function showMessage(text, type) {
+    function showMessage(text, type = "info") {
       const el = document.getElementById("appMessage");
       el.textContent = text;
-      el.className = "msg " + (type || "info");
+      el.className = "msg " + type;
       el.classList.remove("hidden");
     }
 
@@ -308,10 +328,10 @@
       return v == null ? "" : String(v).trim();
     }
 
-    function normalizeYesNo(value) {
-      const v = String(value || "").trim().toLowerCase();
-      if (v === "bai" || v === "si" || v === "sí" || v === "yes") return "Bai";
-      if (v === "ez" || v === "no") return "Ez";
+    function normalizeYesNo(v) {
+      const x = String(v || "").trim().toLowerCase();
+      if (x === "bai" || x === "si" || x === "sí" || x === "yes") return "Bai";
+      if (x === "ez" || x === "no") return "Ez";
       return "Ez";
     }
 
@@ -339,7 +359,8 @@
       const params = new URLSearchParams(window.location.search);
       return {
         id: params.get("id"),
-        trabajo: params.get("trabajo")
+        trabajo: params.get("trabajo"),
+        profesor: params.get("profesor")
       };
     }
 
@@ -350,24 +371,22 @@
       const password = document.getElementById("password").value.trim();
 
       const user = USERS.find(u => u.username === username && u.password === password);
-
       if (!user) {
         showLoginError("Usuario o contraseña incorrectos.");
         return;
       }
 
       const entry = getEntryParams();
+
       if (user.role === "alumno" && !entry.id && !entry.trabajo) {
         showLoginError("Acceso solo permitido mediante QR del coche o ficha de trabajo.");
         return;
       }
 
       currentUser = user;
-
       document.getElementById("loginView").classList.add("hidden");
       document.getElementById("appView").classList.remove("hidden");
-      document.getElementById("welcomeText").textContent =
-        `Bienvenido, ${user.name} · Rol: ${user.role}`;
+      document.getElementById("welcomeText").textContent = `Bienvenido, ${user.name} · Rol: ${user.role}`;
 
       loadVehiclesJSONP();
     }
@@ -447,7 +466,6 @@
 
     function routeAfterLoad() {
       const entry = getEntryParams();
-
       if (!currentUser) return;
 
       if (currentUser.role === "profesor") {
@@ -549,6 +567,8 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
           </div>
 
           <div class="edit-box">
+            <div id="saveStatus" class="save-status">Lista para guardar.</div>
+
             <div class="form-grid">
               <div>
                 <label for="estadoInput"><strong>Estado / Egoera</strong></label>
@@ -603,6 +623,14 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
       `;
     }
 
+    function setSaveStatus(text, isError = false) {
+      const el = document.getElementById("saveStatus");
+      if (!el) return;
+      el.textContent = text;
+      el.style.background = isError ? "#fef2f2" : "#eff6ff";
+      el.style.color = isError ? "#b91c1c" : "#1d4ed8";
+    }
+
     function saveVehicleChanges(vehicleId) {
       const vehicle = vehicles.find(v => String(v.id) === String(vehicleId));
       if (!vehicle || !currentUser) return;
@@ -641,6 +669,7 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
           if (!result || !result.ok) {
             const msg = result && result.msg ? result.msg : "No se pudieron guardar los cambios";
             showMessage("Error al guardar:\n" + msg, "error");
+            setSaveStatus("Error al guardar.", true);
             return;
           }
 
@@ -663,6 +692,8 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
           }
 
           showMessage("Cambios guardados correctamente.", "success");
+          setSaveStatus("Cambios guardados correctamente.");
+          renderVehicleDetail(vehicle);
         } finally {
           const script = document.getElementById(callbackName);
           if (script) script.remove();
@@ -684,11 +715,14 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
         "&blokeado=" + encodeURIComponent(payload.blokeado) +
         "&motivo=" + encodeURIComponent(payload.motivo);
 
+      setSaveStatus("Guardando...");
+
       const script = document.createElement("script");
       script.id = callbackName;
       script.src = url;
       script.onerror = function() {
         showMessage("Error al conectar con el servicio de guardado.", "error");
+        setSaveStatus("Error al conectar con el servicio de guardado.", true);
         script.remove();
         delete window[callbackName];
       };
