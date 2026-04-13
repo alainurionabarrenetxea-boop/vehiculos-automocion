@@ -701,19 +701,19 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
         }
       };
 
-      const url =
-        SAVE_API_URL +
-        "?callback=" + encodeURIComponent(callbackName) +
-        "&idVehiculo=" + encodeURIComponent(payload.idVehiculo) +
-        "&usuario=" + encodeURIComponent(payload.usuario) +
-        "&rol=" + encodeURIComponent(payload.rol) +
-        "&autoa=" + encodeURIComponent(payload.autoa) +
-        "&estado=" + encodeURIComponent(payload.estado) +
-        "&observaciones=" + encodeURIComponent(payload.observaciones) +
-        "&piztenDu=" + encodeURIComponent(payload.piztenDu) +
-        "&piztuBeharDu=" + encodeURIComponent(payload.piztuBeharDu) +
-        "&blokeado=" + encodeURIComponent(payload.blokeado) +
-        "&motivo=" + encodeURIComponent(payload.motivo);
+     const url =
+  SAVE_API_URL +
+  "?callback=" + encodeURIComponent(callbackName) +
+  "&idVehiculo=" + encodeURIComponent(payload.idVehiculo) +
+  "&usuario=" + encodeURIComponent(payload.usuario) +
+  "&rol=" + encodeURIComponent(payload.rol) +
+  "&autoa=" + encodeURIComponent(payload.autoa) +
+  "&estado=" + encodeURIComponent(payload.estado) +
+  "&observaciones=" + encodeURIComponent(payload.observaciones) +
+  "&piztenDu=" + encodeURIComponent(payload.piztenDu) +
+  "&piztuBeharDu=" + encodeURIComponent(payload.piztuBeharDu) +
+  "&blokeado=" + encodeURIComponent(payload.blokeado) +
+  "&motivo=" + encodeURIComponent(payload.motivo);
 
       setSaveStatus("Guardando...");
 
