@@ -11,11 +11,7 @@
       background: #f5f7fb;
       color: #1f2937;
     }
-
-    .hidden {
-      display: none !important;
-    }
-
+    .hidden { display: none !important; }
     .box {
       max-width: 1100px;
       margin: 24px auto;
@@ -24,26 +20,14 @@
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
       overflow: hidden;
     }
-
     .header {
       background: #2563eb;
       color: white;
       padding: 20px;
     }
-
-    .header h2 {
-      margin: 0 0 6px;
-    }
-
-    .header p {
-      margin: 0;
-      opacity: 0.95;
-    }
-
-    .content {
-      padding: 20px;
-    }
-
+    .header h2 { margin: 0 0 6px; }
+    .header p { margin: 0; opacity: 0.95; }
+    .content { padding: 20px; }
     input, button, textarea, select {
       width: 100%;
       padding: 12px;
@@ -54,12 +38,10 @@
       box-sizing: border-box;
       font-family: Arial, sans-serif;
     }
-
     textarea {
       min-height: 100px;
       resize: vertical;
     }
-
     button {
       background: #2563eb;
       color: white;
@@ -67,44 +49,32 @@
       cursor: pointer;
       font-weight: bold;
     }
-
-    button:hover {
-      background: #1d4ed8;
-    }
-
+    button:hover { background: #1d4ed8; }
     .secondary-btn {
       background: #6b7280;
     }
-
-    .secondary-btn:hover {
-      background: #4b5563;
-    }
-
+    .secondary-btn:hover { background: #4b5563; }
     .msg {
       padding: 12px;
       border-radius: 10px;
       margin-bottom: 15px;
       white-space: pre-wrap;
     }
-
     .error {
       background: #fef2f2;
       color: #b91c1c;
       border: 1px solid #fecaca;
     }
-
     .info {
       background: #eff6ff;
       color: #1d4ed8;
       border: 1px solid #bfdbfe;
     }
-
     .success {
       background: #ecfdf5;
       color: #047857;
       border: 1px solid #a7f3d0;
     }
-
     .danger-banner {
       background: #b91c1c;
       color: white;
@@ -114,7 +84,6 @@
       font-weight: bold;
       white-space: pre-wrap;
     }
-
     .topbar {
       display: flex;
       justify-content: space-between;
@@ -123,56 +92,45 @@
       margin-bottom: 18px;
       flex-wrap: wrap;
     }
-
     .small-btn {
       width: auto;
       min-width: 160px;
       margin-bottom: 0;
     }
-
-    .button-link {
-      text-decoration: none;
-    }
-
+    .button-link { text-decoration: none; }
     .vehicle-card {
       border: 1px solid #e5e7eb;
       border-radius: 16px;
       padding: 20px;
       background: #fafafa;
     }
-
     .vehicle-title {
       margin: 0 0 18px;
       font-size: 30px;
       color: #111827;
     }
-
     .vehicle-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 12px;
     }
-
     .field {
       background: white;
       border: 1px solid #e5e7eb;
       border-radius: 12px;
       padding: 12px;
     }
-
     .field-label {
       font-size: 12px;
       color: #6b7280;
       text-transform: uppercase;
       margin-bottom: 6px;
     }
-
     .field-value {
       font-size: 15px;
       font-weight: 600;
       word-break: break-word;
     }
-
     .ficha-box,
     .edit-box {
       margin-top: 14px;
@@ -182,40 +140,29 @@
       border: 1px solid #e5e7eb;
       white-space: pre-wrap;
     }
-
-    .table-wrap {
-      overflow-x: auto;
-    }
-
+    .table-wrap { overflow-x: auto; }
     table {
       width: 100%;
       border-collapse: collapse;
       background: white;
       min-width: 850px;
     }
-
     th, td {
       border-bottom: 1px solid #e5e7eb;
       padding: 10px;
       text-align: left;
       vertical-align: top;
     }
-
-    th {
-      background: #f9fafb;
-    }
-
+    th { background: #f9fafb; }
     tr.clickable-row:hover {
       background: #eff6ff;
       cursor: pointer;
     }
-
     .form-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 12px;
     }
-
     .save-status {
       display: inline-block;
       padding: 8px 10px;
@@ -225,7 +172,6 @@
       background: #eff6ff;
       color: #1d4ed8;
     }
-
     @media (max-width: 700px) {
       .vehicle-grid,
       .form-grid {
@@ -701,19 +647,19 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
         }
       };
 
-     const url =
-  SAVE_API_URL +
-  "?callback=" + encodeURIComponent(callbackName) +
-  "&idVehiculo=" + encodeURIComponent(payload.idVehiculo) +
-  "&usuario=" + encodeURIComponent(payload.usuario) +
-  "&rol=" + encodeURIComponent(payload.rol) +
-  "&autoa=" + encodeURIComponent(payload.autoa) +
-  "&estado=" + encodeURIComponent(payload.estado) +
-  "&observaciones=" + encodeURIComponent(payload.observaciones) +
-  "&piztenDu=" + encodeURIComponent(payload.piztenDu) +
-  "&piztuBeharDu=" + encodeURIComponent(payload.piztuBeharDu) +
-  "&blokeado=" + encodeURIComponent(payload.blokeado) +
-  "&motivo=" + encodeURIComponent(payload.motivo);
+      const url =
+        SAVE_API_URL +
+        "?callback=" + encodeURIComponent(callbackName) +
+        "&idVehiculo=" + encodeURIComponent(payload.idVehiculo) +
+        "&usuario=" + encodeURIComponent(payload.usuario) +
+        "&rol=" + encodeURIComponent(payload.rol) +
+        "&autoa=" + encodeURIComponent(payload.autoa) +
+        "&estado=" + encodeURIComponent(payload.estado) +
+        "&observaciones=" + encodeURIComponent(payload.observaciones) +
+        "&piztenDu=" + encodeURIComponent(payload.piztenDu) +
+        "&piztuBeharDu=" + encodeURIComponent(payload.piztuBeharDu) +
+        "&blokeado=" + encodeURIComponent(payload.blokeado) +
+        "&motivo=" + encodeURIComponent(payload.motivo);
 
       setSaveStatus("Guardando...");
 
