@@ -53,6 +53,9 @@
     .danger-btn { background: #b91c1c; }
     .danger-btn:hover { background: #991b1b; }
 
+    .success-btn { background: #047857; }
+    .success-btn:hover { background: #065f46; }
+
     .msg {
       padding: 12px;
       border-radius: 10px;
@@ -85,7 +88,7 @@
 
     .small-btn {
       width: auto;
-      min-width: 160px;
+      min-width: 150px;
       margin-bottom: 0;
     }
 
@@ -96,11 +99,12 @@
       border-radius: 16px;
       padding: 20px;
       background: #fafafa;
+      margin-bottom: 18px;
     }
 
     .vehicle-title {
       margin: 0 0 18px;
-      font-size: 30px;
+      font-size: 28px;
       color: #111827;
     }
 
@@ -179,10 +183,33 @@
       color: #1d4ed8;
     }
 
+    .work-columns {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .work-card {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+
+    .priority-urgente { border-left: 8px solid #b91c1c; }
+    .priority-alta { border-left: 8px solid #f59e0b; }
+    .priority-normal { border-left: 8px solid #2563eb; }
+
     @media (max-width: 700px) {
       .vehicle-grid,
-      .form-grid {
+      .form-grid,
+      .work-columns {
         grid-template-columns: 1fr;
+      }
+
+      .small-btn {
+        width: 100%;
       }
     }
   </style>
@@ -216,6 +243,7 @@
 
         <div style="display:flex; gap:10px; flex-wrap:wrap;">
           <button id="showAllBtn" class="small-btn hidden" type="button" onclick="showAllVehicles()">Ver todos</button>
+          <button id="showWorksBtn" class="small-btn hidden" type="button" onclick="showWorksPanel()">Trabajos</button>
           <button class="small-btn secondary-btn" type="button" onclick="logout()">Cerrar sesión</button>
         </div>
       </div>
@@ -243,14 +271,13 @@
 
   <script>
     let USERS = [];
+    let vehicles = [];
+    let currentUser = null;
 
     const SHEET_ID = "1sf2TS8gCKachrkz66S6E_zQuafVpu7F_AhSLdhi-W-g";
     const SHEET_GID = "0";
 
     const SAVE_API_URL = "https://script.google.com/macros/s/AKfycbwBYs2oADcw-Za-nLVbR0oF5L6ZHx2gYd1JS-0vjIW9IbD53P9j7U68R09-WGieM2Er2A/exec";
-
-    let vehicles = [];
-    let currentUser = null;
 
     function showLoginError(text) {
       const el = document.getElementById("loginError");
@@ -327,6 +354,7 @@
         id: params.get("id"),
         trabajo: params.get("trabajo"),
         profesor: params.get("profesor"),
+        panel: params.get("panel"),
         qrHarrera: params.get("qrHarrera") || params.get("harrera") || params.get("qr")
       };
     }
@@ -373,6 +401,10 @@
         document.getElementById("welcomeText").textContent =
           "Bienvenido, " + currentUser.name + " · Rol: " + currentUser.role;
 
+        if (currentUser.role === "profesor") {
+          document.getElementById("showWorksBtn").classList.remove("hidden");
+        }
+
         loadVehiclesJSONP();
 
       } catch (err) {
@@ -393,6 +425,7 @@
       document.getElementById("tableBody").innerHTML = "";
       document.getElementById("tableContainer").classList.add("hidden");
       document.getElementById("showAllBtn").classList.add("hidden");
+      document.getElementById("showWorksBtn").classList.add("hidden");
 
       clearMessage();
       clearLoginError();
@@ -474,6 +507,11 @@
       }
 
       if (currentUser.role === "profesor") {
+        if (entry.panel === "irakaslea") {
+          showWorksPanel();
+          return;
+        }
+
         if (entry.id) {
           const vehicle = vehicles.find(v => String(v.id) === String(entry.id));
 
@@ -584,17 +622,17 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
 
             <div class="form-grid">
               <div>
-                <label for="estadoInput"><strong>Estado / Egoera</strong></label>
+                <label><strong>Estado / Egoera</strong></label>
                 <textarea id="estadoInput" ${isBlockedForStudent ? "disabled" : ""}>${escapeHtml(vehicle.estado)}</textarea>
               </div>
 
               <div>
-                <label for="observacionesInput"><strong>Observaciones / Oharrak</strong></label>
+                <label><strong>Observaciones / Oharrak</strong></label>
                 <textarea id="observacionesInput" ${isBlockedForStudent ? "disabled" : ""}>${escapeHtml(vehicle.observaciones || "")}</textarea>
               </div>
 
               <div>
-                <label for="piztenDuInput"><strong>Pizten du</strong></label>
+                <label><strong>Pizten du</strong></label>
                 <select id="piztenDuInput" ${isBlockedForStudent ? "disabled" : ""}>
                   <option value="Bai" ${vehicle.piztenDu === "Bai" ? "selected" : ""}>Bai</option>
                   <option value="Ez" ${vehicle.piztenDu === "Ez" ? "selected" : ""}>Ez</option>
@@ -602,7 +640,7 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
               </div>
 
               <div>
-                <label for="piztuBeharDuInput"><strong>Piztu behar du</strong></label>
+                <label><strong>Piztu behar du</strong></label>
                 <select id="piztuBeharDuInput" ${isBlockedForStudent ? "disabled" : ""}>
                   <option value="Bai" ${vehicle.piztuBeharDu === "Bai" ? "selected" : ""}>Bai</option>
                   <option value="Ez" ${vehicle.piztuBeharDu === "Ez" ? "selected" : ""}>Ez</option>
@@ -611,7 +649,7 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
 
               ${isProfesor ? `
               <div>
-                <label for="blokatutaInput"><strong>BLOKATUTA</strong></label>
+                <label><strong>BLOKATUTA</strong></label>
                 <select id="blokatutaInput">
                   <option value="Bai" ${vehicle.blokatuta === "Bai" ? "selected" : ""}>Bai</option>
                   <option value="Ez" ${vehicle.blokatuta === "Ez" ? "selected" : ""}>Ez</option>
@@ -619,14 +657,14 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
               </div>
 
               <div>
-                <label for="blokeoZergatiaInput"><strong>BLOKEO ZERGATIA</strong></label>
+                <label><strong>BLOKEO ZERGATIA</strong></label>
                 <textarea id="blokeoZergatiaInput">${escapeHtml(vehicle.blokeoZergatia || "")}</textarea>
               </div>
               ` : ""}
             </div>
 
             ${!isBlockedForStudent ? `
-            <button type="button" onclick="saveVehicleChanges('${escapeJs(vehicle.id)}')">Guardar cambios</button>
+              <button type="button" onclick="saveVehicleChanges('${escapeJs(vehicle.id)}')">Guardar cambios</button>
             ` : ""}
           </div>
 
@@ -649,26 +687,16 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
       const vehicle = vehicles.find(v => String(v.id) === String(vehicleId));
       if (!vehicle || !currentUser) return;
 
-      const estadoInput = document.getElementById("estadoInput");
-      const observacionesInput = document.getElementById("observacionesInput");
-      const piztenDuInput = document.getElementById("piztenDuInput");
-      const piztuBeharDuInput = document.getElementById("piztuBeharDuInput");
-
-      if (!estadoInput || !observacionesInput || !piztenDuInput || !piztuBeharDuInput) {
-        showMessage("No se han encontrado los campos del formulario.", "error");
-        return;
-      }
-
       const payload = {
         accion: "guardarVehiculo",
         usuario: currentUser.username,
         rol: currentUser.role,
         idVehiculo: vehicle.id,
         autoa: vehicle.autoa,
-        estado: estadoInput.value.trim(),
-        observaciones: observacionesInput.value.trim(),
-        piztenDu: piztenDuInput.value,
-        piztuBeharDu: piztuBeharDuInput.value,
+        estado: document.getElementById("estadoInput").value.trim(),
+        observaciones: document.getElementById("observacionesInput").value.trim(),
+        piztenDu: document.getElementById("piztenDuInput").value,
+        piztuBeharDu: document.getElementById("piztuBeharDuInput").value,
         blokeado: currentUser.role === "profesor" && document.getElementById("blokatutaInput")
           ? document.getElementById("blokatutaInput").value
           : vehicle.blokatuta,
@@ -679,33 +707,13 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
 
       callSaveAPI(payload, function(result) {
         if (!result || !result.ok) {
-          const msg = result && result.msg ? result.msg : "No se pudieron guardar los cambios";
-          showMessage("Error al guardar:\n" + msg, "error");
+          showMessage("Error al guardar:\n" + (result && result.msg ? result.msg : "Error desconocido"), "error");
           setSaveStatus("Error al guardar.", true);
           return;
         }
 
-        vehicle.estado = payload.estado;
-        vehicle.observaciones = payload.observaciones;
-        vehicle.piztenDu = payload.piztenDu;
-        vehicle.piztuBeharDu = payload.piztuBeharDu;
-        vehicle.blokatuta = payload.blokeado;
-        vehicle.blokeoZergatia = payload.motivo;
-
-        if (currentUser.role === "profesor") {
-          if (payload.blokeado === "Bai") {
-            vehicle.idBlokeoa = currentUser.username;
-            vehicle.blokeoData = new Date().toLocaleString("es-ES");
-          } else {
-            vehicle.idBlokeoa = "";
-            vehicle.blokeoData = "";
-            vehicle.blokeoZergatia = "";
-          }
-        }
-
         showMessage("Cambios guardados correctamente.", "success");
-        setSaveStatus("Cambios guardados correctamente.");
-        renderVehicleDetail(vehicle);
+        loadVehiclesJSONP();
       });
     }
 
@@ -744,9 +752,7 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
       document.getElementById("tableContainer").classList.add("hidden");
       document.getElementById("showAllBtn").classList.add("hidden");
 
-      const detail = document.getElementById("vehicleDetail");
-
-      detail.innerHTML = `
+      document.getElementById("vehicleDetail").innerHTML = `
         <div class="vehicle-card">
           <h2 class="vehicle-title">Recepción vehículo externo</h2>
 
@@ -756,41 +762,13 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
           </div>
 
           <div class="form-grid">
-            <div>
-              <label><strong>Matrícula</strong></label>
-              <input id="recMatricula" placeholder="1234 ABC">
-            </div>
-
-            <div>
-              <label><strong>Marca</strong></label>
-              <input id="recMarca" placeholder="Citroen, Renault...">
-            </div>
-
-            <div>
-              <label><strong>Modelo</strong></label>
-              <input id="recModelo" placeholder="C4, Scenic...">
-            </div>
-
-            <div>
-              <label><strong>Kilómetros</strong></label>
-              <input id="recKm" placeholder="185000">
-            </div>
-
-            <div>
-              <label><strong>Cliente</strong></label>
-              <input id="recCliente" placeholder="Nombre del cliente">
-            </div>
-
-            <div>
-              <label><strong>Teléfono</strong></label>
-              <input id="recTelefono" placeholder="Teléfono">
-            </div>
-
-            <div>
-              <label><strong>Email</strong></label>
-              <input id="recEmail" placeholder="correo@email.com">
-            </div>
-
+            <div><label><strong>Matrícula</strong></label><input id="recMatricula"></div>
+            <div><label><strong>Marca</strong></label><input id="recMarca"></div>
+            <div><label><strong>Modelo</strong></label><input id="recModelo"></div>
+            <div><label><strong>Kilómetros</strong></label><input id="recKm"></div>
+            <div><label><strong>Cliente</strong></label><input id="recCliente"></div>
+            <div><label><strong>Teléfono</strong></label><input id="recTelefono"></div>
+            <div><label><strong>Email</strong></label><input id="recEmail"></div>
             <div>
               <label><strong>Estado recepción</strong></label>
               <select id="recEstadoRecepcion">
@@ -802,23 +780,21 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
           </div>
 
           <label><strong>Queja del cliente</strong></label>
-          <textarea id="recQuejaCliente" placeholder="Qué comenta el cliente"></textarea>
+          <textarea id="recQuejaCliente"></textarea>
 
           <label><strong>Trabajo solicitado</strong></label>
-          <textarea id="recTrabajoSolicitado" placeholder="Qué trabajo hay que realizar"></textarea>
+          <textarea id="recTrabajoSolicitado"></textarea>
 
           <label><strong>Daños visibles</strong></label>
-          <textarea id="recDanosVisibles" placeholder="Golpes, rayones, piezas rotas..."></textarea>
+          <textarea id="recDanosVisibles"></textarea>
 
           <label><strong>Fotos</strong></label>
-          <textarea id="recFotos" placeholder="Aquí luego podremos guardar enlaces a fotos"></textarea>
+          <textarea id="recFotos"></textarea>
 
           <label><strong>Observaciones</strong></label>
-          <textarea id="recObservaciones" placeholder="Observaciones de recepción"></textarea>
+          <textarea id="recObservaciones"></textarea>
 
-          <button type="button" onclick="createReception('${escapeJs(qrId)}')">
-            Crear recepción
-          </button>
+          <button type="button" onclick="createReception('${escapeJs(qrId)}')">Crear recepción</button>
         </div>
       `;
     }
@@ -828,23 +804,17 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
       document.getElementById("tableContainer").classList.add("hidden");
       document.getElementById("showAllBtn").classList.add("hidden");
 
-      const detail = document.getElementById("vehicleDetail");
-
-      detail.innerHTML = `
+      document.getElementById("vehicleDetail").innerHTML = `
         <div class="vehicle-card">
-          <h2 class="vehicle-title">${escapeHtml(qr["MATRICULA"] || "Recepción ocupada")}</h2>
+          <h2 class="vehicle-title">Recepción ocupada</h2>
 
           <div class="vehicle-grid">
             <div class="field"><div class="field-label">QR</div><div class="field-value">${escapeHtml(qr["QR_HARRERA"])}</div></div>
             <div class="field"><div class="field-label">Estado QR</div><div class="field-value">${escapeHtml(qr["EGOERA"])}</div></div>
-            <div class="field"><div class="field-label">Matrícula</div><div class="field-value">${escapeHtml(qr["MATRICULA"])}</div></div>
-            <div class="field"><div class="field-label">Cliente</div><div class="field-value">${escapeHtml(qr["CLIENTE"])}</div></div>
-            <div class="field"><div class="field-label">Fecha</div><div class="field-value">${escapeHtml(qr["FECHA"])}</div></div>
-            <div class="field"><div class="field-label">ID recepción</div><div class="field-value">${escapeHtml(qr["ID_RECEPCION"])}</div></div>
           </div>
 
           <div class="ficha-box">
-            Recepción abierta. Más adelante añadiremos aquí edición completa, fotos y generación del PDF.
+            Este QR está ocupado. La recepción está guardada en la hoja HARRERA.
           </div>
 
           ${currentUser && currentUser.role === "profesor" ? `
@@ -913,6 +883,211 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
 
         showMessage("Recepción cerrada y QR liberado.", "success");
         loadReceptionQR(qrId);
+      });
+    }
+
+    async function showWorksPanel() {
+      if (!currentUser || currentUser.role !== "profesor") return;
+
+      document.getElementById("viewModeText").textContent = "Panel de trabajos";
+      document.getElementById("tableContainer").classList.add("hidden");
+      document.getElementById("showAllBtn").classList.remove("hidden");
+
+      document.getElementById("vehicleDetail").innerHTML = `
+        <div class="vehicle-card">
+          <h2 class="vehicle-title">Nuevo trabajo</h2>
+
+          <div class="form-grid">
+            <div>
+              <label><strong>Taller</strong></label>
+              <select id="workTailerra">
+                <option value="MEKANIKA">MEKANIKA</option>
+                <option value="KARROZERIA">KARROZERIA</option>
+              </select>
+            </div>
+
+            <div><label><strong>Cliente</strong></label><input id="workCliente"></div>
+            <div><label><strong>Vehículo</strong></label><input id="workAutoa"></div>
+            <div><label><strong>Matrícula</strong></label><input id="workMatricula"></div>
+            <div><label><strong>Fecha programada</strong></label><input type="date" id="workFecha"></div>
+            <div><label><strong>Hora programada</strong></label><input type="time" id="workHora"></div>
+
+            <div>
+              <label><strong>Prioridad</strong></label>
+              <select id="workPrioridad">
+                <option value="normal">normal</option>
+                <option value="alta">alta</option>
+                <option value="urgente">urgente</option>
+              </select>
+            </div>
+          </div>
+
+          <label><strong>Trabajo a realizar</strong></label>
+          <textarea id="workLana"></textarea>
+
+          <button type="button" onclick="createWork()">Crear trabajo</button>
+        </div>
+
+        <div class="vehicle-card">
+          <h2 class="vehicle-title">Listado ordenado</h2>
+          <div id="worksList">Cargando...</div>
+        </div>
+
+        <div class="vehicle-card">
+          <h2 class="vehicle-title">Tablero por estado</h2>
+          <div id="worksKanban">Cargando...</div>
+        </div>
+      `;
+
+      loadWorks();
+    }
+
+    async function loadWorks() {
+      try {
+        const response = await fetch("https://opensheet.elk.sh/" + SHEET_ID + "/LANAK");
+        const rows = await response.json();
+        renderWorks(rows);
+      } catch (err) {
+        document.getElementById("worksList").innerHTML =
+          "<div class='msg error'>Error cargando trabajos</div>";
+      }
+    }
+
+    function getWorkSortValue(r) {
+      const programmed = String(r.NOIZKO || "").trim();
+      const programmedHour = String(r["N.ORDUA"] || "").trim();
+
+      if (programmed) {
+        return programmed + " " + programmedHour;
+      }
+
+      return String(r.SORTZE_DATA || r.DATA || "") + " " + String(r.SORTZE_ORDUA || r.ORDUA || "");
+    }
+
+    function renderWorks(rows) {
+      const validRows = rows.filter(r => String(r.ID_TRABAJO || "").trim() !== "");
+
+      validRows.sort((a, b) => getWorkSortValue(a).localeCompare(getWorkSortValue(b)));
+
+      const activeRows = validRows.filter(r =>
+        String(r.EGOERA || "").trim() !== "terminado" &&
+        String(r.EGOERA || "").trim() !== "cancelado"
+      );
+
+      const mekanika = activeRows.filter(r => String(r.TAILERRA || "").trim() === "MEKANIKA");
+      const karrozeria = activeRows.filter(r => String(r.TAILERRA || "").trim() === "KARROZERIA");
+
+      document.getElementById("worksList").innerHTML = `
+        <div class="work-columns">
+          <div>
+            <h3>MEKANIKA</h3>
+            ${renderWorkCards(mekanika)}
+          </div>
+          <div>
+            <h3>KARROZERIA</h3>
+            ${renderWorkCards(karrozeria)}
+          </div>
+        </div>
+      `;
+
+      const pendientes = activeRows.filter(r => String(r.EGOERA || "").trim() === "pendiente");
+      const enCurso = activeRows.filter(r => String(r.EGOERA || "").trim() === "en curso");
+      const terminados = validRows.filter(r => String(r.EGOERA || "").trim() === "terminado").slice(-10).reverse();
+
+      document.getElementById("worksKanban").innerHTML = `
+        <div class="work-columns">
+          <div>
+            <h3>Pendiente</h3>
+            ${renderWorkCards(pendientes)}
+          </div>
+          <div>
+            <h3>En curso</h3>
+            ${renderWorkCards(enCurso)}
+          </div>
+        </div>
+
+        <h3>Últimos terminados</h3>
+        ${renderWorkCards(terminados)}
+      `;
+    }
+
+    function renderWorkCards(rows) {
+      if (!rows.length) return "<div class='ficha-box'>Sin trabajos</div>";
+
+      return rows.map(r => {
+        const prioridad = String(r.LEHENTASUNA || "normal").trim();
+
+        return `
+          <div class="work-card priority-${escapeAttr(prioridad)}">
+            <strong>${escapeHtml(r.AUTOA || "")}</strong>
+            ${r.MATRIKULA ? " · " + escapeHtml(r.MATRIKULA) : ""}
+            <br>
+            Cliente: ${escapeHtml(r.BEZEROA || "")}
+            <br>
+            Taller: ${escapeHtml(r.TAILERRA || "")}
+            <br>
+            Fecha: ${escapeHtml(r.NOIZKO || r.DATA || "")} ${escapeHtml(r["N.ORDUA"] || r.ORDUA || "")}
+            <br>
+            Prioridad: ${escapeHtml(r.LEHENTASUNA || "")}
+            <br><br>
+            ${escapeHtml(r.LANA || "")}
+
+            <br><br>
+
+            <select onchange="changeWorkStatus('${escapeJs(r.ID_TRABAJO)}', this.value)">
+              <option value="pendiente" ${r.EGOERA === "pendiente" ? "selected" : ""}>pendiente</option>
+              <option value="en curso" ${r.EGOERA === "en curso" ? "selected" : ""}>en curso</option>
+              <option value="terminado" ${r.EGOERA === "terminado" ? "selected" : ""}>terminado</option>
+              <option value="cancelado" ${r.EGOERA === "cancelado" ? "selected" : ""}>cancelado</option>
+            </select>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function createWork() {
+      const payload = {
+        accion: "crearTrabajo",
+        tailerra: document.getElementById("workTailerra").value,
+        cliente: document.getElementById("workCliente").value.trim(),
+        autoa: document.getElementById("workAutoa").value.trim(),
+        matricula: document.getElementById("workMatricula").value.trim(),
+        fecha: document.getElementById("workFecha").value,
+        hora: document.getElementById("workHora").value,
+        prioridad: document.getElementById("workPrioridad").value,
+        lana: document.getElementById("workLana").value.trim(),
+        usuario: currentUser.username
+      };
+
+      if (!payload.cliente || !payload.lana) {
+        showMessage("Falta cliente o trabajo a realizar.", "error");
+        return;
+      }
+
+      callSaveAPI(payload, function(result) {
+        if (!result || !result.ok) {
+          showMessage("Error creando trabajo:\n" + (result && result.msg ? result.msg : "Error desconocido"), "error");
+          return;
+        }
+
+        showMessage("Trabajo creado correctamente.", "success");
+        showWorksPanel();
+      });
+    }
+
+    function changeWorkStatus(idTrabajo, estado) {
+      callSaveAPI({
+        accion: "cambiarEstadoTrabajo",
+        idTrabajo: idTrabajo,
+        estado: estado,
+        usuario: currentUser.username
+      }, function(result) {
+        if (!result || !result.ok) {
+          showMessage("Error actualizando estado:\n" + (result && result.msg ? result.msg : "Error desconocido"), "error");
+          return;
+        }
+
+        loadWorks();
       });
     }
 
