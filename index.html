@@ -12,29 +12,60 @@
   <meta name="theme-color" content="#2563eb">
 
   <style>
-    body { font-family: Arial, sans-serif; margin: 0; background: #f5f7fb; color: #1f2937; }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      margin: 0;
+      background: linear-gradient(135deg, #eef4ff, #f8fbff);
+      color: #1f2937;
+    }
+
     .hidden { display: none !important; }
 
     .box {
-      max-width: 1100px;
+      max-width: 1200px;
       margin: 24px auto;
       background: white;
-      border-radius: 16px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+      border-radius: 24px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.05);
       overflow: hidden;
     }
 
-    .header { background: #2563eb; color: white; padding: 20px; }
-    .header-logo { display: flex; align-items: center; gap: 14px; }
-    .header-logo img { width: 64px; height: 64px; object-fit: contain; background: white; border-radius: 12px; padding: 4px; }
-    .header h2 { margin: 0 0 6px; font-size: 30px; }
+    .header {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: white;
+      padding: 24px;
+    }
+
+    .header-logo {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .header-logo img {
+      width: 76px;
+      height: 76px;
+      border-radius: 18px;
+      background: white;
+      padding: 6px;
+      object-fit: contain;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .header h2 {
+      margin: 0 0 6px;
+      font-size: 34px;
+      font-weight: 800;
+      letter-spacing: .5px;
+    }
+
     .header p { margin: 0; opacity: 0.95; }
 
-    .content { padding: 20px; }
+    .content { padding: 26px; }
 
     .footer-credit {
       text-align: center;
-      padding: 14px;
+      padding: 16px;
       font-size: 13px;
       color: #6b7280;
       background: #f9fafb;
@@ -45,26 +76,34 @@
 
     input, button, textarea, select {
       width: 100%;
-      padding: 12px;
-      margin-bottom: 10px;
-      border-radius: 10px;
+      padding: 13px;
+      margin-bottom: 12px;
+      border-radius: 14px;
       border: 1px solid #d1d5db;
       font-size: 15px;
       box-sizing: border-box;
-      font-family: Arial, sans-serif;
+      font-family: inherit;
+      background: white;
     }
 
-    textarea { min-height: 100px; resize: vertical; }
+    input:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: #2563eb;
+      box-shadow: 0 0 0 4px rgba(37,99,235,.12);
+    }
+
+    textarea { min-height: 110px; resize: vertical; }
 
     button {
       background: #2563eb;
       color: white;
       border: none;
       cursor: pointer;
-      font-weight: bold;
+      font-weight: 700;
+      transition: .18s;
     }
 
-    button:hover { background: #1d4ed8; }
+    button:hover { background: #1d4ed8; transform: translateY(-1px); }
 
     .secondary-btn { background: #6b7280; }
     .secondary-btn:hover { background: #4b5563; }
@@ -73,10 +112,11 @@
     .danger-btn:hover { background: #991b1b; }
 
     .msg {
-      padding: 12px;
-      border-radius: 10px;
-      margin-bottom: 15px;
+      padding: 14px;
+      border-radius: 14px;
+      margin-bottom: 18px;
       white-space: pre-wrap;
+      font-weight: 600;
     }
 
     .error { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
@@ -84,80 +124,87 @@
     .success { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
 
     .danger-banner {
-      background: #b91c1c;
+      background: linear-gradient(135deg, #dc2626, #b91c1c);
       color: white;
-      padding: 14px;
-      border-radius: 12px;
-      margin-bottom: 14px;
-      font-weight: bold;
+      padding: 16px;
+      border-radius: 18px;
+      margin-bottom: 16px;
+      font-weight: 700;
       white-space: pre-wrap;
+      box-shadow: 0 4px 10px rgba(185,28,28,.25);
     }
 
     .topbar {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 10px;
-      margin-bottom: 18px;
+      gap: 12px;
+      margin-bottom: 22px;
       flex-wrap: wrap;
     }
 
-    .small-btn {
-      width: auto;
-      min-width: 150px;
-      margin-bottom: 0;
+    .topbar-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
     }
 
+    .small-btn { width: auto; min-width: 150px; margin-bottom: 0; }
     .button-link { text-decoration: none; }
 
     .vehicle-card {
       border: 1px solid #e5e7eb;
-      border-radius: 16px;
-      padding: 20px;
-      background: #fafafa;
+      border-radius: 22px;
+      padding: 24px;
+      background: #fafcff;
       margin-bottom: 18px;
+      box-shadow: 0 4px 12px rgba(0,0,0,.04);
     }
 
     .vehicle-title {
-      margin: 0 0 18px;
-      font-size: 28px;
+      margin: 0 0 20px;
+      font-size: 30px;
       color: #111827;
+      font-weight: 800;
     }
 
     .vehicle-grid, .form-grid, .work-columns {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 12px;
+      gap: 14px;
     }
 
     .field {
       background: white;
       border: 1px solid #e5e7eb;
-      border-radius: 12px;
-      padding: 12px;
+      border-radius: 18px;
+      padding: 16px;
+      box-shadow: 0 2px 6px rgba(0,0,0,.03);
     }
 
     .field-label {
-      font-size: 12px;
+      font-size: 11px;
       color: #6b7280;
       text-transform: uppercase;
-      margin-bottom: 6px;
+      margin-bottom: 8px;
+      letter-spacing: .8px;
+      font-weight: 700;
     }
 
     .field-value {
-      font-size: 15px;
-      font-weight: 600;
+      font-size: 16px;
+      font-weight: 700;
       word-break: break-word;
     }
 
-    .ficha-box,
-    .edit-box {
-      margin-top: 14px;
-      padding: 14px;
-      border-radius: 12px;
+    .ficha-box, .edit-box {
+      margin-top: 16px;
+      padding: 18px;
+      border-radius: 18px;
       background: white;
       border: 1px solid #e5e7eb;
       white-space: pre-wrap;
+      box-shadow: 0 2px 6px rgba(0,0,0,.03);
     }
 
     .table-wrap { overflow-x: auto; }
@@ -166,50 +213,75 @@
       width: 100%;
       border-collapse: collapse;
       background: white;
+      border-radius: 18px;
+      overflow: hidden;
       min-width: 850px;
     }
 
     th, td {
       border-bottom: 1px solid #e5e7eb;
-      padding: 10px;
+      padding: 14px;
       text-align: left;
       vertical-align: top;
     }
 
-    th { background: #f9fafb; }
-
-    tr.clickable-row:hover {
-      background: #eff6ff;
-      cursor: pointer;
+    th {
+      background: #f9fafb;
+      font-size: 13px;
+      text-transform: uppercase;
+      color: #6b7280;
     }
+
+    tr.clickable-row:hover { background: #eff6ff; cursor: pointer; }
 
     .save-status {
       display: inline-block;
-      padding: 8px 10px;
-      border-radius: 8px;
+      padding: 10px 12px;
+      border-radius: 12px;
       font-size: 13px;
-      margin-bottom: 12px;
+      margin-bottom: 14px;
       background: #eff6ff;
       color: #1d4ed8;
+      font-weight: 700;
     }
 
     .work-card {
       background: white;
+      border-radius: 18px;
+      padding: 18px;
+      margin-bottom: 14px;
       border: 1px solid #e5e7eb;
-      border-radius: 14px;
-      padding: 14px;
-      margin-bottom: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,.05);
+      border-left: 8px solid #2563eb;
     }
 
-    .priority-urgente { border-left: 8px solid #b91c1c; }
-    .priority-alta { border-left: 8px solid #f59e0b; }
-    .priority-normal { border-left: 8px solid #2563eb; }
+    .priority-urgente { border-left-color: #dc2626; }
+    .priority-alta { border-left-color: #f59e0b; }
+    .priority-normal { border-left-color: #2563eb; }
 
-    @media (max-width: 700px) {
+    .badge {
+      display: inline-block;
+      padding: 7px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      margin-top: 8px;
+    }
+
+    .badge-pendiente { background: #dbeafe; color: #1d4ed8; }
+    .badge-curso { background: #fef3c7; color: #92400e; }
+    .badge-terminado { background: #dcfce7; color: #166534; }
+    .badge-cancelado { background: #fee2e2; color: #991b1b; }
+
+    @media (max-width: 800px) {
       .vehicle-grid, .form-grid, .work-columns { grid-template-columns: 1fr; }
+      .topbar { flex-direction: column; align-items: stretch; }
+      .topbar-actions { width: 100%; }
       .small-btn { width: 100%; }
       .header-logo { align-items: flex-start; }
-      .header-logo img { width: 54px; height: 54px; }
+      .header-logo img { width: 58px; height: 58px; }
+      .header h2 { font-size: 28px; }
+      .content { padding: 18px; }
     }
   </style>
 </head>
@@ -254,7 +326,7 @@
       <div class="topbar">
         <div id="viewModeText">Consulta de vehículo</div>
 
-        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <div class="topbar-actions">
           <button id="showAllBtn" class="small-btn hidden" type="button" onclick="showAllVehicles()">Ver todos</button>
           <button id="showWorksBtn" class="small-btn hidden" type="button" onclick="showWorksPanel()">Trabajos</button>
           <button class="small-btn secondary-btn" type="button" onclick="logout()">Cerrar sesión</button>
@@ -320,9 +392,7 @@
       el.classList.add("hidden");
     }
 
-    function value(v) {
-      return v == null ? "" : String(v).trim();
-    }
+    function value(v) { return v == null ? "" : String(v).trim(); }
 
     function normalizeYesNo(v) {
       const x = String(v || "").trim().toLowerCase();
@@ -352,9 +422,7 @@
         .replace(/'/g, "&#39;");
     }
 
-    function escapeAttr(value) {
-      return escapeHtml(value);
-    }
+    function escapeAttr(value) { return escapeHtml(value); }
 
     function escapeJs(value) {
       return String(value ?? "")
@@ -365,7 +433,6 @@
 
     function getEntryParams() {
       const params = new URLSearchParams(window.location.search);
-
       return {
         id: params.get("id"),
         trabajo: params.get("trabajo"),
@@ -514,7 +581,6 @@
 
     function routeAfterLoad() {
       const entry = getEntryParams();
-
       if (!currentUser) return;
 
       if (entry.qrHarrera) {
@@ -530,18 +596,17 @@
 
         if (entry.id) {
           const vehicle = vehicles.find(v => String(v.id) === String(entry.id));
-
           if (!vehicle) {
             showMessage("No se ha encontrado ningún vehículo con ese ID.", "error");
             return;
           }
-
           renderVehicleDetail(vehicle);
           return;
         }
 
         document.getElementById("viewModeText").textContent = "Panel general de profesor";
         document.getElementById("tableContainer").classList.remove("hidden");
+        document.getElementById("showAllBtn").classList.add("hidden");
         renderVehiclesTable();
         return;
       }
@@ -549,12 +614,10 @@
       if (currentUser.role === "alumno") {
         if (entry.id) {
           const vehicle = vehicles.find(v => String(v.id) === String(entry.id));
-
           if (!vehicle) {
             showMessage("No se ha encontrado ningún vehículo con ese ID.", "error");
             return;
           }
-
           renderVehicleDetail(vehicle);
           return;
         }
@@ -570,13 +633,11 @@
       document.getElementById("vehicleDetail").innerHTML = "";
       document.getElementById("tableContainer").classList.remove("hidden");
       document.getElementById("showAllBtn").classList.add("hidden");
-
       renderVehiclesTable();
     }
 
     function renderVehiclesTable() {
       const tableBody = document.getElementById("tableBody");
-
       tableBody.innerHTML = vehicles.map(v => `
         <tr class="clickable-row" onclick="openVehicleAsProfessor('${escapeJs(v.id)}')">
           <td>${escapeHtml(v.id)}</td>
@@ -591,10 +652,8 @@
 
     function openVehicleAsProfessor(vehicleId) {
       if (!currentUser || currentUser.role !== "profesor") return;
-
       const vehicle = vehicles.find(v => String(v.id) === String(vehicleId));
       if (!vehicle) return;
-
       renderVehicleDetail(vehicle);
     }
 
@@ -604,9 +663,7 @@
 
       document.getElementById("viewModeText").textContent = isProfesor ? "Ficha de vehículo" : "Ficha asignada por QR";
       document.getElementById("tableContainer").classList.add("hidden");
-
-      if (isProfesor) document.getElementById("showAllBtn").classList.remove("hidden");
-      else document.getElementById("showAllBtn").classList.add("hidden");
+      document.getElementById("showAllBtn").classList.toggle("hidden", !isProfesor);
 
       document.getElementById("vehicleDetail").innerHTML = `
         ${vehicle.blokatuta === "Bai" ? `
@@ -659,7 +716,6 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
                     <option value="Ez" ${vehicle.blokatuta === "Ez" ? "selected" : ""}>Ez</option>
                   </select>
                 </div>
-
                 <div><label><strong>BLOKEO ZERGATIA</strong></label><textarea id="blokeoZergatiaInput">${escapeHtml(vehicle.blokeoZergatia || "")}</textarea></div>
               ` : ""}
             </div>
@@ -676,7 +732,6 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
     function setSaveStatus(text, isError = false) {
       const el = document.getElementById("saveStatus");
       if (!el) return;
-
       el.textContent = text;
       el.style.background = isError ? "#fef2f2" : "#eff6ff";
       el.style.color = isError ? "#b91c1c" : "#1d4ed8";
@@ -710,7 +765,6 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
           setSaveStatus("Error al guardar.", true);
           return;
         }
-
         showMessage("Cambios guardados correctamente.", "success");
         loadVehiclesJSONP();
       });
@@ -718,11 +772,9 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
 
     async function loadReceptionQR(qrId) {
       clearMessage();
-
       try {
         const response = await fetch("https://opensheet.elk.sh/" + SHEET_ID + "/QR_HARRERA");
         const rows = await response.json();
-
         const qr = rows.find(r => String(r["QR_HARRERA"] || "").trim() === String(qrId).trim());
 
         if (!qr) {
@@ -731,13 +783,8 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
         }
 
         const estado = String(qr["EGOERA"] || "").trim().toLowerCase();
-
-        if (estado === "libre") {
-          renderReceptionForm(qrId);
-          return;
-        }
-
-        renderReceptionDetail(qr);
+        if (estado === "libre") renderReceptionForm(qrId);
+        else renderReceptionDetail(qr);
 
       } catch (err) {
         showMessage("Error cargando QR de recepción:\n" + err.message, "error");
@@ -804,14 +851,11 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
       document.getElementById("vehicleDetail").innerHTML = `
         <div class="vehicle-card">
           <h2 class="vehicle-title">Recepción ocupada</h2>
-
           <div class="vehicle-grid">
             <div class="field"><div class="field-label">QR</div><div class="field-value">${escapeHtml(qr["QR_HARRERA"])}</div></div>
             <div class="field"><div class="field-label">Estado QR</div><div class="field-value">${escapeHtml(qr["EGOERA"])}</div></div>
           </div>
-
           <div class="ficha-box">Este QR está ocupado. La recepción está guardada en la hoja HARRERA.</div>
-
           ${currentUser && currentUser.role === "profesor" ? `
             <button type="button" class="danger-btn" onclick="closeReceptionQR('${escapeJs(qr["QR_HARRERA"])}')">
               Cerrar recepción y liberar QR
@@ -856,7 +900,6 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
           showMessage("Error creando recepción:\n" + (result && result.msg ? result.msg : "Error desconocido"), "error");
           return;
         }
-
         showMessage("Recepción creada correctamente.", "success");
         loadReceptionQR(qrId);
       });
@@ -875,7 +918,6 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
           showMessage("Error cerrando recepción:\n" + (result && result.msg ? result.msg : "Error desconocido"), "error");
           return;
         }
-
         showMessage("Recepción cerrada y QR liberado.", "success");
         loadReceptionQR(qrId);
       });
@@ -900,13 +942,11 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
                 <option value="KARROZERIA">KARROZERIA</option>
               </select>
             </div>
-
             <div><label><strong>Cliente</strong></label><input id="workCliente"></div>
             <div><label><strong>Vehículo</strong></label><input id="workAutoa"></div>
             <div><label><strong>Matrícula</strong></label><input id="workMatricula"></div>
             <div><label><strong>Fecha programada</strong></label><input type="date" id="workFecha"></div>
             <div><label><strong>Hora programada</strong></label><input type="time" id="workHora"></div>
-
             <div>
               <label><strong>Prioridad</strong></label>
               <select id="workPrioridad">
@@ -919,7 +959,6 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
 
           <label><strong>Trabajo a realizar</strong></label>
           <textarea id="workLana"></textarea>
-
           <button type="button" onclick="createWork()">Crear trabajo</button>
         </div>
 
@@ -951,15 +990,12 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
     function getWorkSortValue(r) {
       const programmed = String(r.NOIZKO || "").trim();
       const programmedHour = String(r["N.ORDUA"] || "").trim();
-
       if (programmed) return programmed + " " + programmedHour;
-
       return String(r.SORTZE_DATA || r.DATA || "") + " " + String(r.SORTZE_ORDUA || r.ORDUA || "");
     }
 
     function renderWorks(rows) {
       const validRows = rows.filter(r => String(r.ID_TRABAJO || "").trim() !== "");
-
       validRows.sort((a, b) => getWorkSortValue(a).localeCompare(getWorkSortValue(b)));
 
       const activeRows = validRows.filter(r =>
@@ -996,6 +1032,8 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
 
       return rows.map(r => {
         const prioridad = String(r.LEHENTASUNA || "normal").trim();
+        const estado = String(r.EGOERA || "pendiente").trim();
+        const badgeClass = estado === "en curso" ? "badge-curso" : estado === "terminado" ? "badge-terminado" : estado === "cancelado" ? "badge-cancelado" : "badge-pendiente";
 
         return `
           <div class="work-card priority-${escapeAttr(prioridad)}">
@@ -1009,11 +1047,11 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
             Fecha: ${escapeHtml(r.NOIZKO || r.DATA || "")} ${escapeHtml(r["N.ORDUA"] || r.ORDUA || "")}
             <br>
             Prioridad: ${escapeHtml(r.LEHENTASUNA || "")}
+            <br>
+            <span class="badge ${badgeClass}">${escapeHtml(estado)}</span>
             <br><br>
             ${escapeHtml(r.LANA || "")}
-
             <br><br>
-
             <select onchange="changeWorkStatus('${escapeJs(r.ID_TRABAJO)}', this.value)">
               <option value="pendiente" ${r.EGOERA === "pendiente" ? "selected" : ""}>pendiente</option>
               <option value="en curso" ${r.EGOERA === "en curso" ? "selected" : ""}>en curso</option>
@@ -1049,7 +1087,6 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
           showMessage("Error creando trabajo:\n" + (result && result.msg ? result.msg : "Error desconocido"), "error");
           return;
         }
-
         showMessage("Trabajo creado correctamente.", "success");
         showWorksPanel();
       });
@@ -1066,7 +1103,6 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
           showMessage("Error actualizando estado:\n" + (result && result.msg ? result.msg : "Error desconocido"), "error");
           return;
         }
-
         loadWorks();
       });
     }
@@ -1075,9 +1111,8 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
       const callbackName = "handleSaveResponse_" + Date.now();
 
       window[callbackName] = function(result) {
-        try {
-          onDone(result);
-        } finally {
+        try { onDone(result); }
+        finally {
           const script = document.getElementById(callbackName);
           if (script) script.remove();
           delete window[callbackName];
@@ -1086,27 +1121,21 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
 
       const params = new URLSearchParams();
       params.set("callback", callbackName);
-
-      Object.keys(payload).forEach(key => {
-        params.set(key, payload[key] ?? "");
-      });
+      Object.keys(payload).forEach(key => params.set(key, payload[key] ?? ""));
 
       const script = document.createElement("script");
       script.id = callbackName;
       script.src = SAVE_API_URL + "?" + params.toString();
-
       script.onerror = function() {
         showMessage("Error al conectar con el servicio de guardado.", "error");
         script.remove();
         delete window[callbackName];
       };
-
       document.body.appendChild(script);
     }
 
     function renderFichaTecnica(link) {
       if (!link) return "";
-
       return `
         <div class="ficha-box">
           <strong>Ficha técnica</strong><br><br>
@@ -1119,7 +1148,6 @@ ${vehicle.blokeoZergatia ? "\nMotivo: " + escapeHtml(vehicle.blokeoZergatia) : "
 
     function renderRTA(link) {
       if (!link) return "";
-
       return `
         <div class="ficha-box">
           <strong>RTA</strong><br><br>
