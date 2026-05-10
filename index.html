@@ -30,9 +30,256 @@ function renderReceptionForm(qrId){document.getElementById('viewModeText').textC
 function renderReceptionDetail(qr){document.getElementById('viewModeText').textContent='Ficha de recepción';document.getElementById('tableContainer').classList.add('hidden');document.getElementById('showAllBtn').classList.add('hidden');document.getElementById('vehicleDetail').innerHTML=`<div class="vehicle-card"><h2 class="vehicle-title">Recepción ocupada</h2><div class="vehicle-grid"><div class="field"><div class="field-label">QR</div><div class="field-value">${escapeHtml(qr.QR_HARRERA)}</div></div><div class="field"><div class="field-label">Estado QR</div><div class="field-value">${escapeHtml(qr.EGOERA)}</div></div></div><div class="ficha-box">Este QR está ocupado. La recepción está guardada en la hoja HARRERA.</div>${currentUser&&currentUser.role==='profesor'?`<button type="button" class="danger-btn" onclick="closeReceptionQR('${escapeJs(qr.QR_HARRERA)}')">Cerrar recepción y liberar QR</button>`:''}</div>`}
 function createReception(qrId){if(!currentUser)return;const payload={accion:'crearRecepcion',qrRecepcion:qrId,usuario:currentUser.username,rol:currentUser.role,taldea:currentUser.taldea,matricula:document.getElementById('recMatricula').value.trim(),marca:document.getElementById('recMarca').value.trim(),modelo:document.getElementById('recModelo').value.trim(),km:document.getElementById('recKm').value.trim(),cliente:document.getElementById('recCliente').value.trim(),telefono:document.getElementById('recTelefono').value.trim(),email:document.getElementById('recEmail').value.trim(),tipoTrabajo:document.getElementById('recTipoTrabajo').value,quejaCliente:document.getElementById('recQuejaCliente').value.trim(),trabajoSolicitado:document.getElementById('recTrabajoSolicitado').value.trim(),estadoVehiculo:'',danosVisibles:document.getElementById('recDanosVisibles').value.trim(),fotos:document.getElementById('recFotos').value.trim(),observaciones:document.getElementById('recObservaciones').value.trim(),estadoRecepcion:document.getElementById('recEstadoRecepcion').value};if(!payload.matricula||!payload.cliente){showMessage('Rellena al menos matrícula y cliente.','error');return}callSaveAPI(payload,r=>{if(!r||!r.ok){showMessage('Error creando recepción:\n'+(r&&r.msg?r.msg:'Error desconocido'),'error');return}showMessage('Recepción creada correctamente.','success');loadReceptionQR(qrId)})}
 function closeReceptionQR(qrId){if(!confirm('¿Cerrar esta recepción y liberar el QR?'))return;callSaveAPI({accion:'cerrarRecepcion',qrRecepcion:qrId,usuario:currentUser.username,rol:currentUser.role},r=>{if(!r||!r.ok){showMessage('Error cerrando recepción:\n'+(r&&r.msg?r.msg:'Error desconocido'),'error');return}showMessage('Recepción cerrada y QR liberado.','success');loadReceptionQR(qrId)})}
-async function showWorksPanel(){if(!currentUser||currentUser.role!=='profesor')return;document.getElementById('viewModeText').textContent='Panel de trabajos';document.getElementById('tableContainer').classList.add('hidden');document.getElementById('showAllBtn').classList.remove('hidden');document.getElementById('vehicleDetail').innerHTML=`<div class="vehicle-card"><h2 class="vehicle-title">Nuevo trabajo</h2><div class="form-grid"><div><label><strong>Taller</strong></label><select id="workTailerra"><option value="MEKANIKA">MEKANIKA</option><option value="KARROZERIA">KARROZERIA</option></select></div><div><label><strong>Cliente</strong></label><input id="workCliente"></div><div><label><strong>Vehículo</strong></label><input id="workAutoa"></div><div><label><strong>Matrícula</strong></label><input id="workMatricula"></div><div><label><strong>Fecha programada</strong></label><input type="date" id="workFecha"></div><div><label><strong>Hora programada</strong></label><input type="time" id="workHora"></div><div><label><strong>Prioridad</strong></label><select id="workPrioridad"><option value="normal">normal</option><option value="alta">alta</option><option value="urgente">urgente</option></select></div></div><label><strong>Trabajo a realizar</strong></label><textarea id="workLana"></textarea><button type="button" onclick="createWork()">Crear trabajo</button></div><div class="vehicle-card"><h2 class="vehicle-title">Listado ordenado</h2><div id="worksList">Cargando...</div></div><div class="vehicle-card"><h2 class="vehicle-title">Tablero por estado</h2><div id="worksKanban">Cargando...</div></div>`;loadWorks()}
-async function loadWorks(){try{const response=await fetch('https://opensheet.elk.sh/'+SHEET_ID+'/LANAK');const rows=await response.json();renderWorks(rows)}catch(err){document.getElementById('worksList').innerHTML="<div class='msg error'>Error cargando trabajos</div>"}}function getWorkSortValue(r){const p=String(r.NOIZKO||'').trim(),h=String(r['N.ORDUA']||'').trim();if(p)return p+' '+h;return String(r.SORTZE_DATA||r.DATA||'')+' '+String(r.SORTZE_ORDUA||r.ORDUA||'')}function renderWorks(rows){const allRows=rows.filter(r=>String(r.ID_TRABAJO||'').trim()!=='');allRows.sort((a,b)=>getWorkSortValue(a).localeCompare(getWorkSortValue(b)));const latestMap={};allRows.forEach(r=>{latestMap[String(r.ID_TRABAJO||'').trim()]=r});const validRows=Object.values(latestMap);validRows.sort((a,b)=>getWorkSortValue(a).localeCompare(getWorkSortValue(b)));const activeRows=validRows.filter(r=>String(r.EGOERA||'').trim()!=='terminado'&&String(r.EGOERA||'').trim()!=='cancelado'),mekanika=activeRows.filter(r=>String(r.TAILERRA||'').trim()==='MEKANIKA'),karrozeria=activeRows.filter(r=>String(r.TAILERRA||'').trim()==='KARROZERIA');document.getElementById('worksList').innerHTML=`<div class="work-columns"><div><h3>MEKANIKA</h3>${renderWorkCards(mekanika)}</div><div><h3>KARROZERIA</h3>${renderWorkCards(karrozeria)}</div></div>`;const pendientes=activeRows.filter(r=>String(r.EGOERA||'').trim()==='pendiente'),enCurso=activeRows.filter(r=>String(r.EGOERA||'').trim()==='en curso'),terminados=validRows.filter(r=>String(r.EGOERA||'').trim()==='terminado').slice(-10).reverse();document.getElementById('worksKanban').innerHTML=`<div class="work-columns"><div><h3>Pendiente</h3>${renderWorkCards(pendientes)}</div><div><h3>En curso</h3>${renderWorkCards(enCurso)}</div></div><h3>Últimos terminados</h3>${renderWorkCards(terminados)}`}
-function renderWorkCards(rows){if(!rows.length)return"<div class='ficha-box'>Sin trabajos</div>";return rows.map(r=>{const prioridad=String(r.LEHENTASUNA||'normal').trim(),estado=String(r.EGOERA||'pendiente').trim(),badgeClass=estado==='en curso'?'badge-curso':estado==='terminado'?'badge-terminado':estado==='cancelado'?'badge-cancelado':'badge-pendiente';return`<div class="work-card priority-${escapeAttr(prioridad)}"><strong>${escapeHtml(r.AUTOA||'')}</strong>${r.MATRIKULA?' · '+escapeHtml(r.MATRIKULA):''}<br>Cliente: ${escapeHtml(r.BEZEROA||'')}<br>Taller: ${escapeHtml(r.TAILERRA||'')}<br>Fecha: ${escapeHtml(r.NOIZKO||r.DATA||'')} ${escapeHtml(r['N.ORDUA']||r.ORDUA||'')}<br>Prioridad: ${escapeHtml(r.LEHENTASUNA||'')}<br><span class="badge ${badgeClass}">${escapeHtml(estado)}</span><br><br>${escapeHtml(r.LANA||'')}<br><br><select id="estado_${escapeAttr(r.ID_TRABAJO)}"><option value="pendiente" ${r.EGOERA==='pendiente'?'selected':''}>pendiente</option><option value="en curso" ${r.EGOERA==='en curso'?'selected':''}>en curso</option><option value="terminado" ${r.EGOERA==='terminado'?'selected':''}>terminado</option><option value="cancelado" ${r.EGOERA==='cancelado'?'selected':''}>cancelado</option></select><button type="button" onclick="saveWorkStatus('${escapeJs(r.ID_TRABAJO)}')">Guardar estado</button></div>`}).join('')}
+async let WORK_ROWS_CACHE = [];
+
+function showWorksPanel(){
+  if(!currentUser || currentUser.role !== 'profesor') return;
+
+  document.getElementById('viewModeText').textContent = 'Panel de trabajos';
+  document.getElementById('tableContainer').classList.add('hidden');
+  document.getElementById('showAllBtn').classList.remove('hidden');
+
+  document.getElementById('vehicleDetail').innerHTML = `
+    <div class="vehicle-card">
+      <h2 class="vehicle-title">Nuevo trabajo</h2>
+
+      <div class="form-grid">
+        <div>
+          <label><strong>Taller</strong></label>
+          <select id="workTailerra">
+            <option value="MEKANIKA">MEKANIKA</option>
+            <option value="KARROZERIA">KARROZERIA</option>
+          </select>
+        </div>
+
+        <div><label><strong>Cliente</strong></label><input id="workCliente"></div>
+        <div><label><strong>Vehículo</strong></label><input id="workAutoa"></div>
+        <div><label><strong>Matrícula</strong></label><input id="workMatricula"></div>
+        <div><label><strong>Fecha programada</strong></label><input type="date" id="workFecha"></div>
+        <div><label><strong>Hora programada</strong></label><input type="time" id="workHora"></div>
+
+        <div>
+          <label><strong>Prioridad</strong></label>
+          <select id="workPrioridad">
+            <option value="normal">normal</option>
+            <option value="alta">alta</option>
+            <option value="urgente">urgente</option>
+          </select>
+        </div>
+      </div>
+
+      <label><strong>Trabajo a realizar</strong></label>
+      <textarea id="workLana"></textarea>
+
+      <button type="button" onclick="createWork()">Crear trabajo</button>
+    </div>
+
+    <div class="vehicle-card">
+      <h2 class="vehicle-title">Trabajos activos</h2>
+      <p style="margin-top:-8px;color:#6b7280;">
+        Pulsa sobre un vehículo para desplegar el trabajo. Los terminados y cancelados desaparecen de esta lista.
+      </p>
+      <div id="worksList">Cargando...</div>
+    </div>
+
+    <div class="vehicle-card">
+      <h2 class="vehicle-title">Histórico por matrícula</h2>
+      <div class="form-grid">
+        <div>
+          <label><strong>Matrícula</strong></label>
+          <input id="historyMatricula" placeholder="Ejemplo: BI6404BZ">
+        </div>
+        <div style="display:flex;align-items:end;">
+          <button type="button" onclick="showWorkHistory()">Consultar histórico</button>
+        </div>
+      </div>
+      <div id="historyResult"></div>
+    </div>
+  `;
+
+  loadWorks();
+}
+
+async function loadWorks(){
+  try{
+    const response = await fetch('https://opensheet.elk.sh/' + SHEET_ID + '/LANAK');
+    const rows = await response.json();
+    WORK_ROWS_CACHE = rows;
+    renderWorks(rows);
+  }catch(err){
+    document.getElementById('worksList').innerHTML = "<div class='msg error'>Error cargando trabajos</div>";
+  }
+}
+
+function getWorkSortValue(r){
+  const programmedDate = String(r.NOIZKO || '').trim();
+  const programmedHour = String(r['N.ORDUA'] || '').trim();
+
+  if(programmedDate){
+    return programmedDate + ' ' + programmedHour;
+  }
+
+  return String(r.SORTZE_DATA || r.DATA || '') + ' ' + String(r.SORTZE_ORDUA || r.ORDUA || '');
+}
+
+function getPriorityValue(r){
+  const p = String(r.LEHENTASUNA || 'normal').trim().toLowerCase();
+  if(p === 'urgente') return 0;
+  if(p === 'alta') return 1;
+  return 2;
+}
+
+function renderWorks(rows){
+  const allRows = rows.filter(r => String(r.ID_TRABAJO || '').trim() !== '');
+
+  allRows.sort((a,b) => {
+    const dateCompare = getWorkSortValue(a).localeCompare(getWorkSortValue(b));
+    if(dateCompare !== 0) return dateCompare;
+    return getPriorityValue(a) - getPriorityValue(b);
+  });
+
+  const latestMap = {};
+  allRows.forEach(r => {
+    latestMap[String(r.ID_TRABAJO || '').trim()] = r;
+  });
+
+  const latestRows = Object.values(latestMap);
+
+  latestRows.sort((a,b) => {
+    const dateCompare = getWorkSortValue(a).localeCompare(getWorkSortValue(b));
+    if(dateCompare !== 0) return dateCompare;
+    return getPriorityValue(a) - getPriorityValue(b);
+  });
+
+  const activeRows = latestRows.filter(r => {
+    const estado = String(r.EGOERA || '').trim().toLowerCase();
+    return estado !== 'terminado' && estado !== 'cancelado';
+  });
+
+  const mekanika = activeRows.filter(r => String(r.TAILERRA || '').trim() === 'MEKANIKA');
+  const karrozeria = activeRows.filter(r => String(r.TAILERRA || '').trim() === 'KARROZERIA');
+
+  document.getElementById('worksList').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
+      <div>
+        <h3 style="font-size:24px;margin-bottom:12px;">MEKANIKA</h3>
+        ${renderWorkList(mekanika)}
+      </div>
+      <div>
+        <h3 style="font-size:24px;margin-bottom:12px;">KARROZERIA</h3>
+        ${renderWorkList(karrozeria)}
+      </div>
+    </div>
+  `;
+}
+
+function renderWorkList(rows){
+  if(!rows.length){
+    return "<div class='ficha-box'>Sin trabajos</div>";
+  }
+
+  return rows.map(r => {
+    const id = String(r.ID_TRABAJO || '').trim();
+    const estado = String(r.EGOERA || 'pendiente').trim();
+    const prioridad = String(r.LEHENTASUNA || 'normal').trim();
+    const badgeClass = estado === 'en curso' ? 'badge-curso' :
+                       estado === 'terminado' ? 'badge-terminado' :
+                       estado === 'cancelado' ? 'badge-cancelado' :
+                       'badge-pendiente';
+
+    return `
+      <details class="work-card priority-${escapeAttr(prioridad)}" style="padding:0;overflow:hidden;">
+        <summary style="list-style:none;cursor:pointer;padding:18px;">
+          <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;">
+            <div>
+              <strong style="font-size:20px;">${escapeHtml(r.AUTOA || 'Vehículo')}</strong>
+              ${r.MATRIKULA ? `<span style="color:#6b7280;"> · ${escapeHtml(r.MATRIKULA)}</span>` : ''}
+              <br>
+              <span style="color:#6b7280;">${escapeHtml(r.BEZEROA || '')}</span>
+            </div>
+            <span class="badge ${badgeClass}">${escapeHtml(estado)}</span>
+          </div>
+        </summary>
+
+        <div style="padding:0 18px 18px;">
+          <div class="field" style="margin-bottom:12px;">
+            <div class="field-label">Trabajo</div>
+            <div class="field-value">${escapeHtml(r.LANA || '')}</div>
+          </div>
+
+          <div class="vehicle-grid">
+            <div class="field"><div class="field-label">Taller</div><div class="field-value">${escapeHtml(r.TAILERRA || '')}</div></div>
+            <div class="field"><div class="field-label">Fecha</div><div class="field-value">${escapeHtml(r.NOIZKO || r.DATA || '')} ${escapeHtml(r['N.ORDUA'] || r.ORDUA || '')}</div></div>
+            <div class="field"><div class="field-label">Prioridad</div><div class="field-value">${escapeHtml(prioridad)}</div></div>
+            <div class="field"><div class="field-label">Usuario último registro</div><div class="field-value">${escapeHtml(r.ERABILTZAILEA || '')}</div></div>
+          </div>
+
+          <br>
+
+          <label><strong>Estado</strong></label>
+          <select id="estado_${escapeAttr(id)}">
+            <option value="pendiente" ${estado === 'pendiente' ? 'selected' : ''}>pendiente</option>
+            <option value="en curso" ${estado === 'en curso' ? 'selected' : ''}>en curso</option>
+            <option value="terminado" ${estado === 'terminado' ? 'selected' : ''}>terminado</option>
+            <option value="cancelado" ${estado === 'cancelado' ? 'selected' : ''}>cancelado</option>
+          </select>
+
+          <button type="button" onclick="saveWorkStatus('${escapeJs(id)}')">Guardar estado</button>
+        </div>
+      </details>
+    `;
+  }).join('');
+}
+
+function showWorkHistory(){
+  const input = document.getElementById('historyMatricula');
+  const result = document.getElementById('historyResult');
+
+  if(!input || !result) return;
+
+  const matricula = String(input.value || '').trim().toLowerCase();
+
+  if(!matricula){
+    result.innerHTML = "<div class='msg error'>Introduce una matrícula.</div>";
+    return;
+  }
+
+  const rows = WORK_ROWS_CACHE.filter(r =>
+    String(r.MATRIKULA || '').trim().toLowerCase() === matricula
+  );
+
+  rows.sort((a,b) => getWorkSortValue(a).localeCompare(getWorkSortValue(b)));
+
+  if(!rows.length){
+    result.innerHTML = "<div class='ficha-box'>No hay histórico para esa matrícula.</div>";
+    return;
+  }
+
+  result.innerHTML = rows.map(r => {
+    const estado = String(r.EGOERA || '').trim();
+    const badgeClass = estado === 'en curso' ? 'badge-curso' :
+                       estado === 'terminado' ? 'badge-terminado' :
+                       estado === 'cancelado' ? 'badge-cancelado' :
+                       'badge-pendiente';
+
+    return `
+      <div class="work-card">
+        <strong>${escapeHtml(r.AUTOA || '')}</strong> · ${escapeHtml(r.MATRIKULA || '')}
+        <br>
+        Fecha: ${escapeHtml(r.DATA || r.SORTZE_DATA || '')} ${escapeHtml(r.ORDUA || r.SORTZE_ORDUA || '')}
+        <br>
+        Usuario: ${escapeHtml(r.ERABILTZAILEA || '')}
+        <br>
+        Taller: ${escapeHtml(r.TAILERRA || '')}
+        <br>
+        <span class="badge ${badgeClass}">${escapeHtml(estado)}</span>
+        <br><br>
+        ${escapeHtml(r.LANA || '')}
+      </div>
+    `;
+  }).join('');
+}
+
 function createWork(){const payload={accion:'crearTrabajo',tailerra:document.getElementById('workTailerra').value,cliente:document.getElementById('workCliente').value.trim(),autoa:document.getElementById('workAutoa').value.trim(),matricula:document.getElementById('workMatricula').value.trim(),fecha:document.getElementById('workFecha').value,hora:document.getElementById('workHora').value,prioridad:document.getElementById('workPrioridad').value,lana:document.getElementById('workLana').value.trim(),usuario:currentUser.username};if(!payload.cliente||!payload.lana){showMessage('Falta cliente o trabajo a realizar.','error');return}callSaveAPI(payload,r=>{if(!r||!r.ok){showMessage('Error creando trabajo:\n'+(r&&r.msg?r.msg:'Error desconocido'),'error');return}showMessage('Trabajo creado correctamente.','success');showWorksPanel()})}
 function saveWorkStatus(idTrabajo){const select=document.getElementById('estado_'+idTrabajo);if(!select){showMessage('No se ha encontrado el selector de estado.','error');return}callSaveAPI({accion:'cambiarEstadoTrabajo',idTrabajo,estado:select.value,usuario:currentUser.username},r=>{if(!r||!r.ok){showMessage('Error actualizando estado:\n'+(r&&r.msg?r.msg:'Error desconocido'),'error');return}showMessage('Estado del trabajo guardado correctamente.','success');loadWorks()})}
 function callSaveAPI(payload,onDone){const callbackName='handleSaveResponse_'+Date.now();window[callbackName]=function(result){try{onDone(result)}finally{const script=document.getElementById(callbackName);if(script)script.remove();delete window[callbackName]}};const params=new URLSearchParams();params.set('callback',callbackName);Object.keys(payload).forEach(k=>params.set(k,payload[k]??''));const script=document.createElement('script');script.id=callbackName;script.src=SAVE_API_URL+'?'+params.toString();script.onerror=function(){showMessage('Error al conectar con el servicio de guardado.','error');script.remove();delete window[callbackName]};document.body.appendChild(script)}
