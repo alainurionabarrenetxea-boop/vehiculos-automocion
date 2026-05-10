@@ -26,9 +26,9 @@ function showAllVehicles(){if(!currentUser||currentUser.role!=='profesor')return
 function renderVehicleDetail(vehicle){const isProfesor=currentUser&&currentUser.role==='profesor',isBlockedForStudent=!isProfesor&&vehicle.blokatuta==='Bai';document.getElementById('viewModeText').textContent=isProfesor?'Ficha de vehículo':'Ficha asignada por QR';document.getElementById('tableContainer').classList.add('hidden');document.getElementById('showAllBtn').classList.toggle('hidden',!isProfesor);document.getElementById('vehicleDetail').innerHTML=`${vehicle.blokatuta==='Bai'?`<div class="danger-banner">🚫 VEHÍCULO BLOQUEADO\n${vehicle.idBlokeoa?'Bloqueado por: '+escapeHtml(vehicle.idBlokeoa):''}${vehicle.blokeoData?'\nFecha: '+escapeHtml(vehicle.blokeoData):''}${vehicle.blokeoZergatia?'\nMotivo: '+escapeHtml(vehicle.blokeoZergatia):''}</div>`:''}<div class="vehicle-card"><h2 class="vehicle-title">${escapeHtml(vehicle.autoa||'Vehículo')}</h2><div class="vehicle-grid"><div class="field"><div class="field-label">ID</div><div class="field-value">${escapeHtml(vehicle.id)}</div></div><div class="field"><div class="field-label">Taller</div><div class="field-value">${escapeHtml(vehicle.tailerra)}</div></div><div class="field"><div class="field-label">Color</div><div class="field-value">${escapeHtml(vehicle.color)}</div></div><div class="field"><div class="field-label">VIN</div><div class="field-value">${escapeHtml(vehicle.vin)}</div></div><div class="field"><div class="field-label">Egokitua</div><div class="field-value">${escapeHtml(vehicle.egokitua)}</div></div><div class="field"><div class="field-label">Erabilpena</div><div class="field-value">${escapeHtml(vehicle.erabilpena)}</div></div></div><div class="edit-box"><div id="saveStatus" class="save-status">Lista para guardar.</div><div class="form-grid"><div><label><strong>Estado / Egoera</strong></label><textarea id="estadoInput" ${isBlockedForStudent?'disabled':''}>${escapeHtml(vehicle.estado)}</textarea></div><div><label><strong>Observaciones / Oharrak</strong></label><textarea id="observacionesInput" ${isBlockedForStudent?'disabled':''}>${escapeHtml(vehicle.observaciones||'')}</textarea></div><div><label><strong>Pizten du</strong></label><select id="piztenDuInput" ${isBlockedForStudent?'disabled':''}><option value="Bai" ${vehicle.piztenDu==='Bai'?'selected':''}>Bai</option><option value="Ez" ${vehicle.piztenDu==='Ez'?'selected':''}>Ez</option></select></div><div><label><strong>Piztu behar du</strong></label><select id="piztuBeharDuInput" ${isBlockedForStudent?'disabled':''}><option value="Bai" ${vehicle.piztuBeharDu==='Bai'?'selected':''}>Bai</option><option value="Ez" ${vehicle.piztuBeharDu==='Ez'?'selected':''}>Ez</option></select></div>${isProfesor?`<div><label><strong>BLOKATUTA</strong></label><select id="blokatutaInput"><option value="Bai" ${vehicle.blokatuta==='Bai'?'selected':''}>Bai</option><option value="Ez" ${vehicle.blokatuta==='Ez'?'selected':''}>Ez</option></select></div><div><label><strong>BLOKEO ZERGATIA</strong></label><textarea id="blokeoZergatiaInput">${escapeHtml(vehicle.blokeoZergatia||'')}</textarea></div>`:''}</div>${!isBlockedForStudent?`<button type="button" onclick="saveVehicleChanges('${escapeJs(vehicle.id)}')">Guardar cambios</button>`:''}</div>${renderFichaTecnica(vehicle.fitxaTeknika)}${renderRTA(vehicle.rta)}</div>`}
 function setSaveStatus(t,err=false){const e=document.getElementById('saveStatus');if(!e)return;e.textContent=t;e.style.background=err?'#fef2f2':'#eff6ff';e.style.color=err?'#b91c1c':'#1d4ed8'}function saveVehicleChanges(id){const v=vehicles.find(x=>String(x.id)===String(id));if(!v||!currentUser)return;const payload={accion:'guardarVehiculo',usuario:currentUser.username,rol:currentUser.role,idVehiculo:v.id,autoa:v.autoa,estado:document.getElementById('estadoInput').value.trim(),observaciones:document.getElementById('observacionesInput').value.trim(),piztenDu:document.getElementById('piztenDuInput').value,piztuBeharDu:document.getElementById('piztuBeharDuInput').value,blokeado:currentUser.role==='profesor'&&document.getElementById('blokatutaInput')?document.getElementById('blokatutaInput').value:v.blokatuta,motivo:currentUser.role==='profesor'&&document.getElementById('blokeoZergatiaInput')?document.getElementById('blokeoZergatiaInput').value.trim():v.blokeoZergatia};callSaveAPI(payload,r=>{if(!r||!r.ok){showMessage('Error al guardar:\n'+(r&&r.msg?r.msg:'Error desconocido'),'error');setSaveStatus('Error al guardar.',true);return}showMessage('Cambios guardados correctamente.','success');loadVehiclesJSONP()})}
 async function loadReceptionQR(qrId){clearMessage();try{const response=await fetch('https://opensheet.elk.sh/'+SHEET_ID+'/QR_HARRERA');const rows=await response.json();const qr=rows.find(r=>String(r.QR_HARRERA||'').trim()===String(qrId).trim());if(!qr){showMessage('No existe este QR de recepción: '+qrId,'error');return}const estado=String(qr.EGOERA||'').trim().toLowerCase();if(estado==='libre')renderReceptionForm(qrId);else renderReceptionDetail(qr)}catch(err){showMessage('Error cargando QR de recepción:\n'+err.message,'error')}}
-function renderReceptionForm(qrId){document.getElementById('viewModeText').textContent='Nueva recepción de taller';document.getElementById('tableContainer').classList.add('hidden');document.getElementById('showAllBtn').classList.add('hidden');document.getElementById('vehicleDetail').innerHTML=`<div class="vehicle-card"><h2 class="vehicle-title">Recepción vehículo externo</h2><div class="field" style="margin-bottom:12px;"><div class="field-label">QR recepción</div><div class="field-value">${escapeHtml(qrId)}</div></div><div class="form-grid"><div><label><strong>Matrícula</strong></label><input id="recMatricula"></div><div><label><strong>Marca</strong></label><input id="recMarca"></div><div><label><strong>Modelo</strong></label><input id="recModelo"></div><div><label><strong>Kilómetros</strong></label><input id="recKm"></div><div><label><strong>Cliente</strong></label><input id="recCliente"></div><div><label><strong>Teléfono</strong></label><input id="recTelefono"></div><div><label><strong>Email</strong></label><input id="recEmail"></div><div><label><strong>Tipo de trabajo</strong></label><select id="recTipoTrabajo"><option value="MEKANIKA">Mecánica</option><option value="KARROZERIA">Carrocería</option><option value="BIAK">Mecánica + Carrocería</option></select></div><div><label><strong>Estado recepción</strong></label><select id="recEstadoRecepcion"><option value="abierta">abierta</option><option value="en curso">en curso</option><option value="cerrada">cerrada</option></select></div></div><label><strong>Queja del cliente</strong></label><textarea id="recQuejaCliente"></textarea><label><strong>Trabajo solicitado</strong></label><textarea id="recTrabajoSolicitado"></textarea><label><strong>Daños visibles</strong></label><textarea id="recDanosVisibles"></textarea><label><strong>Fotos</strong></label><textarea id="recFotos"></textarea><label><strong>Observaciones</strong></label><textarea id="recObservaciones"></textarea><button type="button" onclick="createReception('${escapeJs(qrId)}')">Crear recepción</button></div>`}
+function renderReceptionForm(qrId){document.getElementById('viewModeText').textContent='Nueva recepción de taller';document.getElementById('tableContainer').classList.add('hidden');document.getElementById('showAllBtn').classList.add('hidden');document.getElementById('vehicleDetail').innerHTML=`<div class="vehicle-card"><h2 class="vehicle-title">Recepción vehículo externo</h2><div class="field" style="margin-bottom:12px;"><div class="field-label">QR recepción</div><div class="field-value">${escapeHtml(qrId)}</div></div><div class="form-grid"><div><label><strong>Matrícula</strong></label><input id="recMatricula"></div><div><label><strong>Marca</strong></label><input id="recMarca"></div><div><label><strong>Modelo</strong></label><input id="recModelo"></div><div><label><strong>Kilómetros</strong></label><input id="recKm"></div><div><label><strong>Cliente</strong></label><input id="recCliente"></div><div><label><strong>Teléfono</strong></label><input id="recTelefono"></div><div><label><strong>Email</strong></label><input id="recEmail"></div><div><label><strong>Tipo de trabajo</strong></label><select id="recTipoTrabajo"><option value="MEKANIKA">Mecánica</option><option value="KARROZERIA">Carrocería</option><option value="BIAK">Mecánica + Carrocería</option></select></div><div><label><strong>Prioridad</strong></label><select id="recPrioridad"><option value="normal">normal</option><option value="alta">alta</option><option value="urgente">urgente</option></select></div><div><label><strong>Estado recepción</strong></label><select id="recEstadoRecepcion"><option value="abierta">abierta</option><option value="en curso">en curso</option><option value="cerrada">cerrada</option></select></div></div><label><strong>Queja del cliente</strong></label><textarea id="recQuejaCliente"></textarea><label><strong>Trabajo solicitado</strong></label><textarea id="recTrabajoSolicitado"></textarea><label><strong>Daños visibles</strong></label><textarea id="recDanosVisibles"></textarea><label><strong>Fotos</strong></label><textarea id="recFotos"></textarea><label><strong>Observaciones</strong></label><textarea id="recObservaciones"></textarea><button type="button" onclick="createReception('${escapeJs(qrId)}')">Crear recepción</button></div>`}
 function renderReceptionDetail(qr){document.getElementById('viewModeText').textContent='Ficha de recepción';document.getElementById('tableContainer').classList.add('hidden');document.getElementById('showAllBtn').classList.add('hidden');document.getElementById('vehicleDetail').innerHTML=`<div class="vehicle-card"><h2 class="vehicle-title">Recepción ocupada</h2><div class="vehicle-grid"><div class="field"><div class="field-label">QR</div><div class="field-value">${escapeHtml(qr.QR_HARRERA)}</div></div><div class="field"><div class="field-label">Estado QR</div><div class="field-value">${escapeHtml(qr.EGOERA)}</div></div></div><div class="ficha-box">Este QR está ocupado. La recepción está guardada en la hoja HARRERA.</div>${currentUser&&currentUser.role==='profesor'?`<button type="button" class="danger-btn" onclick="closeReceptionQR('${escapeJs(qr.QR_HARRERA)}')">Cerrar recepción y liberar QR</button>`:''}</div>`}
-function createReception(qrId){if(!currentUser)return;const payload={accion:'crearRecepcion',qrRecepcion:qrId,usuario:currentUser.username,rol:currentUser.role,taldea:currentUser.taldea,matricula:document.getElementById('recMatricula').value.trim(),marca:document.getElementById('recMarca').value.trim(),modelo:document.getElementById('recModelo').value.trim(),km:document.getElementById('recKm').value.trim(),cliente:document.getElementById('recCliente').value.trim(),telefono:document.getElementById('recTelefono').value.trim(),email:document.getElementById('recEmail').value.trim(),tipoTrabajo:document.getElementById('recTipoTrabajo').value,quejaCliente:document.getElementById('recQuejaCliente').value.trim(),trabajoSolicitado:document.getElementById('recTrabajoSolicitado').value.trim(),estadoVehiculo:'',danosVisibles:document.getElementById('recDanosVisibles').value.trim(),fotos:document.getElementById('recFotos').value.trim(),observaciones:document.getElementById('recObservaciones').value.trim(),estadoRecepcion:document.getElementById('recEstadoRecepcion').value};if(!payload.matricula||!payload.cliente){showMessage('Rellena al menos matrícula y cliente.','error');return}callSaveAPI(payload,r=>{if(!r||!r.ok){showMessage('Error creando recepción:\n'+(r&&r.msg?r.msg:'Error desconocido'),'error');return}showMessage('Recepción creada correctamente.','success');loadReceptionQR(qrId)})}
+function createReception(qrId){if(!currentUser)return;const payload={accion:'crearRecepcion',qrRecepcion:qrId,usuario:currentUser.username,rol:currentUser.role,taldea:currentUser.taldea,matricula:document.getElementById('recMatricula').value.trim(),marca:document.getElementById('recMarca').value.trim(),modelo:document.getElementById('recModelo').value.trim(),km:document.getElementById('recKm').value.trim(),cliente:document.getElementById('recCliente').value.trim(),telefono:document.getElementById('recTelefono').value.trim(),email:document.getElementById('recEmail').value.trim(),tipoTrabajo:document.getElementById('recTipoTrabajo').value,prioridad:document.getElementById('recPrioridad').value,quejaCliente:document.getElementById('recQuejaCliente').value.trim(),trabajoSolicitado:document.getElementById('recTrabajoSolicitado').value.trim(),estadoVehiculo:'',danosVisibles:document.getElementById('recDanosVisibles').value.trim(),fotos:document.getElementById('recFotos').value.trim(),observaciones:document.getElementById('recObservaciones').value.trim(),estadoRecepcion:document.getElementById('recEstadoRecepcion').value};if(!payload.matricula||!payload.cliente){showMessage('Rellena al menos matrícula y cliente.','error');return}callSaveAPI(payload,r=>{if(!r||!r.ok){showMessage('Error creando recepción:\n'+(r&&r.msg?r.msg:'Error desconocido'),'error');return}showMessage('Recepción creada correctamente.','success');loadReceptionQR(qrId)})}
 function closeReceptionQR(qrId){if(!confirm('¿Cerrar esta recepción y liberar el QR?'))return;callSaveAPI({accion:'cerrarRecepcion',qrRecepcion:qrId,usuario:currentUser.username,rol:currentUser.role},r=>{if(!r||!r.ok){showMessage('Error cerrando recepción:\n'+(r&&r.msg?r.msg:'Error desconocido'),'error');return}showMessage('Recepción cerrada y QR liberado.','success');loadReceptionQR(qrId)})}
 async let WORK_ROWS_CACHE = [];
 
@@ -77,7 +77,7 @@ function showWorksPanel(){
     <div class="vehicle-card">
       <h2 class="vehicle-title">Trabajos activos</h2>
       <p style="margin-top:-8px;color:#6b7280;">
-        Pulsa sobre un vehículo para desplegar el trabajo. Los terminados y cancelados desaparecen de esta lista.
+        Pulsa sobre un vehículo para desplegarlo. Al guardar como terminado o cancelado desaparece de esta lista y queda en LANAK.
       </p>
       <div id="worksList">Cargando...</div>
     </div>
@@ -160,7 +160,7 @@ function renderWorks(rows){
   const karrozeria = activeRows.filter(r => String(r.TAILERRA || '').trim() === 'KARROZERIA');
 
   document.getElementById('worksList').innerHTML = `
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;">
       <div>
         <h3 style="font-size:24px;margin-bottom:12px;">MEKANIKA</h3>
         ${renderWorkList(mekanika)}
@@ -196,6 +196,8 @@ function renderWorkList(rows){
               ${r.MATRIKULA ? `<span style="color:#6b7280;"> · ${escapeHtml(r.MATRIKULA)}</span>` : ''}
               <br>
               <span style="color:#6b7280;">${escapeHtml(r.BEZEROA || '')}</span>
+              <br>
+              <span style="color:#6b7280;">Prioridad: ${escapeHtml(prioridad)}</span>
             </div>
             <span class="badge ${badgeClass}">${escapeHtml(estado)}</span>
           </div>
@@ -210,8 +212,8 @@ function renderWorkList(rows){
           <div class="vehicle-grid">
             <div class="field"><div class="field-label">Taller</div><div class="field-value">${escapeHtml(r.TAILERRA || '')}</div></div>
             <div class="field"><div class="field-label">Fecha</div><div class="field-value">${escapeHtml(r.NOIZKO || r.DATA || '')} ${escapeHtml(r['N.ORDUA'] || r.ORDUA || '')}</div></div>
-            <div class="field"><div class="field-label">Prioridad</div><div class="field-value">${escapeHtml(prioridad)}</div></div>
             <div class="field"><div class="field-label">Usuario último registro</div><div class="field-value">${escapeHtml(r.ERABILTZAILEA || '')}</div></div>
+            <div class="field"><div class="field-label">ID trabajo</div><div class="field-value">${escapeHtml(id)}</div></div>
           </div>
 
           <br>
@@ -224,7 +226,14 @@ function renderWorkList(rows){
             <option value="cancelado" ${estado === 'cancelado' ? 'selected' : ''}>cancelado</option>
           </select>
 
-          <button type="button" onclick="saveWorkStatus('${escapeJs(id)}')">Guardar estado</button>
+          <label><strong>Prioridad</strong></label>
+          <select id="prioridad_${escapeAttr(id)}">
+            <option value="normal" ${prioridad === 'normal' ? 'selected' : ''}>normal</option>
+            <option value="alta" ${prioridad === 'alta' ? 'selected' : ''}>alta</option>
+            <option value="urgente" ${prioridad === 'urgente' ? 'selected' : ''}>urgente</option>
+          </select>
+
+          <button type="button" onclick="saveWorkStatus('${escapeJs(id)}')">Guardar cambios</button>
         </div>
       </details>
     `;
@@ -257,13 +266,14 @@ function showWorkHistory(){
 
   result.innerHTML = rows.map(r => {
     const estado = String(r.EGOERA || '').trim();
+    const prioridad = String(r.LEHENTASUNA || 'normal').trim();
     const badgeClass = estado === 'en curso' ? 'badge-curso' :
                        estado === 'terminado' ? 'badge-terminado' :
                        estado === 'cancelado' ? 'badge-cancelado' :
                        'badge-pendiente';
 
     return `
-      <div class="work-card">
+      <div class="work-card priority-${escapeAttr(prioridad)}">
         <strong>${escapeHtml(r.AUTOA || '')}</strong> · ${escapeHtml(r.MATRIKULA || '')}
         <br>
         Fecha: ${escapeHtml(r.DATA || r.SORTZE_DATA || '')} ${escapeHtml(r.ORDUA || r.SORTZE_ORDUA || '')}
@@ -271,6 +281,8 @@ function showWorkHistory(){
         Usuario: ${escapeHtml(r.ERABILTZAILEA || '')}
         <br>
         Taller: ${escapeHtml(r.TAILERRA || '')}
+        <br>
+        Prioridad: ${escapeHtml(prioridad)}
         <br>
         <span class="badge ${badgeClass}">${escapeHtml(estado)}</span>
         <br><br>
@@ -281,7 +293,30 @@ function showWorkHistory(){
 }
 
 function createWork(){const payload={accion:'crearTrabajo',tailerra:document.getElementById('workTailerra').value,cliente:document.getElementById('workCliente').value.trim(),autoa:document.getElementById('workAutoa').value.trim(),matricula:document.getElementById('workMatricula').value.trim(),fecha:document.getElementById('workFecha').value,hora:document.getElementById('workHora').value,prioridad:document.getElementById('workPrioridad').value,lana:document.getElementById('workLana').value.trim(),usuario:currentUser.username};if(!payload.cliente||!payload.lana){showMessage('Falta cliente o trabajo a realizar.','error');return}callSaveAPI(payload,r=>{if(!r||!r.ok){showMessage('Error creando trabajo:\n'+(r&&r.msg?r.msg:'Error desconocido'),'error');return}showMessage('Trabajo creado correctamente.','success');showWorksPanel()})}
-function saveWorkStatus(idTrabajo){const select=document.getElementById('estado_'+idTrabajo);if(!select){showMessage('No se ha encontrado el selector de estado.','error');return}callSaveAPI({accion:'cambiarEstadoTrabajo',idTrabajo,estado:select.value,usuario:currentUser.username},r=>{if(!r||!r.ok){showMessage('Error actualizando estado:\n'+(r&&r.msg?r.msg:'Error desconocido'),'error');return}showMessage('Estado del trabajo guardado correctamente.','success');loadWorks()})}
+function saveWorkStatus(idTrabajo){
+  const selectEstado = document.getElementById('estado_' + idTrabajo);
+  const selectPrioridad = document.getElementById('prioridad_' + idTrabajo);
+
+  if(!selectEstado){
+    showMessage('No se ha encontrado el selector de estado.','error');
+    return;
+  }
+
+  callSaveAPI({
+    accion:'cambiarEstadoTrabajo',
+    idTrabajo:idTrabajo,
+    estado:selectEstado.value,
+    prioridad:selectPrioridad ? selectPrioridad.value : '',
+    usuario:currentUser.username
+  }, r => {
+    if(!r || !r.ok){
+      showMessage('Error actualizando trabajo:\n' + (r && r.msg ? r.msg : 'Error desconocido'), 'error');
+      return;
+    }
+    showMessage('Trabajo guardado correctamente.', 'success');
+    loadWorks();
+  });
+}
 function callSaveAPI(payload,onDone){const callbackName='handleSaveResponse_'+Date.now();window[callbackName]=function(result){try{onDone(result)}finally{const script=document.getElementById(callbackName);if(script)script.remove();delete window[callbackName]}};const params=new URLSearchParams();params.set('callback',callbackName);Object.keys(payload).forEach(k=>params.set(k,payload[k]??''));const script=document.createElement('script');script.id=callbackName;script.src=SAVE_API_URL+'?'+params.toString();script.onerror=function(){showMessage('Error al conectar con el servicio de guardado.','error');script.remove();delete window[callbackName]};document.body.appendChild(script)}
 function renderFichaTecnica(link){if(!link)return'';return`<div class="ficha-box"><strong>Ficha técnica</strong><br><br><a class="button-link" href="${escapeAttr(link)}" target="_blank" rel="noopener"><button type="button" class="small-btn">Ver ficha técnica</button></a></div>`}function renderRTA(link){if(!link)return'';return`<div class="ficha-box"><strong>RTA</strong><br><br><a class="button-link" href="${escapeAttr(link)}" target="_blank" rel="noopener"><button type="button" class="small-btn">Ver RTA</button></a></div>`}document.getElementById('password').addEventListener('keydown',e=>{if(e.key==='Enter')login()});
 </script>
