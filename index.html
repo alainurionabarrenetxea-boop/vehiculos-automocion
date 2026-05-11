@@ -129,6 +129,7 @@ function getPriorityValue(r){
   return 2;
 }
 
+function getProgressValue(r){return String(r.AURRERAPENA||r.PROGRESO||r.OHARRAK||r.OBSERVACIONES||'').trim()}
 function renderWorks(rows){
   const allRows = rows.filter(r => String(r.ID_TRABAJO || '').trim() !== '');
 
@@ -209,6 +210,8 @@ function renderWorkList(rows){
             <div class="field-value">${escapeHtml(r.LANA || '')}</div>
           </div>
 
+          ${getProgressValue(r) ? `<div class="field" style="margin-bottom:12px;"><div class="field-label">Último progreso</div><div class="field-value">${escapeHtml(getProgressValue(r))}</div></div>` : ""}
+
           <div class="vehicle-grid">
             <div class="field"><div class="field-label">Taller</div><div class="field-value">${escapeHtml(r.TAILERRA || '')}</div></div>
             <div class="field"><div class="field-label">Fecha</div><div class="field-value">${escapeHtml(r.NOIZKO || r.DATA || '')} ${escapeHtml(r['N.ORDUA'] || r.ORDUA || '')}</div></div>
@@ -233,6 +236,8 @@ function renderWorkList(rows){
             <option value="urgente" ${prioridad === 'urgente' ? 'selected' : ''}>urgente</option>
           </select>
 
+          <label><strong>Añadir progreso / trabajo realizado</strong></label>
+          <textarea id="progreso_${escapeAttr(id)}" placeholder="Ejemplo: desmontado paragolpes, falta revisar soporte derecho..."></textarea>
           <button type="button" onclick="saveWorkStatus('${escapeJs(id)}')">Guardar cambios</button>
         </div>
       </details>
@@ -287,6 +292,7 @@ function showWorkHistory(){
         <span class="badge ${badgeClass}">${escapeHtml(estado)}</span>
         <br><br>
         ${escapeHtml(r.LANA || '')}
+        ${getProgressValue(r) ? `<br><br><strong>Progreso:</strong><br>${escapeHtml(getProgressValue(r))}` : ''}
       </div>
     `;
   }).join('');
@@ -296,6 +302,7 @@ function createWork(){const payload={accion:'crearTrabajo',tailerra:document.get
 function saveWorkStatus(idTrabajo){
   const selectEstado = document.getElementById('estado_' + idTrabajo);
   const selectPrioridad = document.getElementById('prioridad_' + idTrabajo);
+  const progresoInput = document.getElementById('progreso_' + idTrabajo);
 
   if(!selectEstado){
     showMessage('No se ha encontrado el selector de estado.','error');
@@ -307,6 +314,7 @@ function saveWorkStatus(idTrabajo){
     idTrabajo:idTrabajo,
     estado:selectEstado.value,
     prioridad:selectPrioridad ? selectPrioridad.value : '',
+    progreso:progresoInput ? progresoInput.value.trim() : '',
     usuario:currentUser.username
   }, r => {
     if(!r || !r.ok){
