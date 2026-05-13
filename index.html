@@ -59,6 +59,23 @@ function getLatestByQR(rows, qrId){
   return filtered[filtered.length-1];
 }
 
+
+function getLatestWorkRowsByRecepcion(rows,idRecepcion,matricula){
+  const rec=String(idRecepcion||'').trim();
+  const mat=String(matricula||'').trim().toLowerCase();
+  let filtered=rows.filter(r=>String(r.ID_TRABAJO||'').trim()!=='' && String(r.ID_RECEPCION||'').trim()===rec);
+  if(!filtered.length && mat){
+    filtered=rows.filter(r=>String(r.ID_TRABAJO||'').trim()!=='' && String(r.MATRIKULA||'').trim().toLowerCase()===mat);
+  }
+  filtered.sort((a,b)=>getWorkSortValue(a).localeCompare(getWorkSortValue(b)));
+  const latestMap={};
+  filtered.forEach(r=>{latestMap[String(r.ID_TRABAJO||'').trim()]=r});
+  return Object.values(latestMap).filter(r=>{
+    const estado=String(r.EGOERA||'').trim().toLowerCase();
+    return estado!=='terminado'&&estado!=='cancelado';
+  });
+}
+
 function getLatestWorkRowsByMatricula(rows, matricula){
   const filtered = rows.filter(r =>
     String(r.ID_TRABAJO || '').trim() !== '' &&
@@ -138,9 +155,10 @@ function renderReceptionDetail(qr, harrera, lanakRows){
   const autoa = (marca + ' ' + modelo).trim();
   const cliente = getField(harrera, ['CLIENTE','BEZEROA']);
   const tipoTrabajo = getField(harrera, ['TIPO_TRABAJO','TAILERRA']);
+  const idRecepcion = getField(harrera, ['ID_RECEPCION']);
   const trabajoSolicitado = getField(harrera, ['TRABAJO_SOLICITADO','TRABAJO_SOLICITADO ','LANA','QUEJA_CLIENTE']);
 
-  const activeWorks = getLatestWorkRowsByMatricula(lanakRows || [], matricula);
+  const activeWorks = getLatestWorkRowsByRecepcion(lanakRows || [], idRecepcion, matricula);
   const mekanika = activeWorks.filter(r => String(r.TAILERRA || '').trim() === 'MEKANIKA');
   const karrozeria = activeWorks.filter(r => String(r.TAILERRA || '').trim() === 'KARROZERIA');
 
@@ -154,7 +172,7 @@ function renderReceptionDetail(qr, harrera, lanakRows){
         <div class="field"><div class="field-label">Matrícula</div><div class="field-value">${escapeHtml(matricula)}</div></div>
         <div class="field"><div class="field-label">Cliente</div><div class="field-value">${escapeHtml(cliente)}</div></div>
         <div class="field"><div class="field-label">Tipo trabajo</div><div class="field-value">${escapeHtml(tipoTrabajo)}</div></div>
-        <div class="field"><div class="field-label">ID recepción</div><div class="field-value">${escapeHtml(harrera ? getField(harrera, ['ID_RECEPCION']) : '')}</div></div>
+        <div class="field"><div class="field-label">ID recepción</div><div class="field-value">${escapeHtml(idRecepcion)}</div></div>
       </div>
       ${trabajoSolicitado ? `<div class="field" style="margin-top:12px;"><div class="field-label">Trabajo solicitado</div><div class="field-value">${escapeHtml(trabajoSolicitado)}</div></div>` : ''}
 
@@ -166,7 +184,7 @@ function renderReceptionDetail(qr, harrera, lanakRows){
     </div>
 
     <div class="vehicle-card">
-      <h2 class="vehicle-title">Trabajos activos de este coche</h2>
+      <h2 class="vehicle-title">Trabajos activos de esta recepción</h2>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;">
         <div>
           <h3 style="font-size:24px;margin-bottom:12px;">MEKANIKA</h3>
@@ -181,7 +199,7 @@ function renderReceptionDetail(qr, harrera, lanakRows){
 
     <div class="vehicle-card">
       <h2 class="vehicle-title">Histórico de este coche</h2>
-      <div id="historyResult">${renderHistoryByMatricula(matricula)}</div>
+      <div id="historyResult">${renderHistoryByRecepcion(idRecepcion, matricula)}</div>
     </div>
 
     ${currentUser && currentUser.role === 'profesor' ? `
@@ -192,6 +210,22 @@ function renderReceptionDetail(qr, harrera, lanakRows){
       </div>
     ` : ''}
   `;
+}
+
+
+function renderHistoryByRecepcion(idRecepcion,matricula){
+  let rows=WORK_ROWS_CACHE.filter(r=>String(r.ID_RECEPCION||'').trim()===String(idRecepcion||'').trim());
+  if(!rows.length){
+    rows=WORK_ROWS_CACHE.filter(r=>String(r.MATRIKULA||'').trim().toLowerCase()===String(matricula||'').trim().toLowerCase());
+  }
+  rows.sort((a,b)=>getWorkSortValue(a).localeCompare(getWorkSortValue(b)));
+  if(!rows.length)return "<div class='ficha-box'>No hay histórico para esta recepción.</div>";
+  return rows.map(r=>{
+    const estado=String(r.EGOERA||'').trim();
+    const prioridad=String(r.LEHENTASUNA||'normal').trim();
+    const badgeClass=estado==='en curso'?'badge-curso':estado==='terminado'?'badge-terminado':estado==='cancelado'?'badge-cancelado':'badge-pendiente';
+    return `<div class="work-card priority-${escapeAttr(prioridad)}"><strong>${escapeHtml(r.AUTOA||'')}</strong> · ${escapeHtml(r.MATRIKULA||'')}<br>ID recepción: ${escapeHtml(r.ID_RECEPCION||'')}<br>Fecha: ${escapeHtml(r.DATA||r.SORTZE_DATA||'')} ${escapeHtml(r.ORDUA||r.SORTZE_ORDUA||'')}<br>Usuario: ${escapeHtml(r.ERABILTZAILEA||'')}<br>Taller: ${escapeHtml(r.TAILERRA||'')}<br>Prioridad: ${escapeHtml(prioridad)}<br><span class="badge ${badgeClass}">${escapeHtml(estado)}</span><br><br>${escapeHtml(r.LANA||'')}${getProgressValue(r)?`<br><br><strong>Progreso:</strong><br>${escapeHtml(getProgressValue(r))}`:''}</div>`;
+  }).join('');
 }
 
 function renderHistoryByMatricula(matricula){
@@ -556,7 +590,7 @@ function saveWorkStatus(idTrabajo){
   });
 }
 
-function callSaveAPI(payload,onDone){const callbackName='handleSaveResponse_'+Date.now();window[callbackName]=function(result){try{onDone(result)}finally{const script=document.getElementById(callbackName);if(script)script.remove();delete window[callbackName]}};const params=new URLSearchParams();params.set('callback',callbackName);Object.keys(payload).forEach(k=>params.set(k,payload[k]??''));const script=document.createElement('script');script.id=callbackName;params.set('_ts',Date.now());script.src=SAVE_API_URL+'?'+params.toString();script.onerror=function(){showMessage('Error al conectar con el servicio de guardado.','error');script.remove();delete window[callbackName]};document.body.appendChild(script)}
+function callSaveAPI(payload,onDone){const callbackName='handleSaveResponse_'+Date.now();window[callbackName]=function(result){try{onDone(result)}finally{const script=document.getElementById(callbackName);if(script)script.remove();delete window[callbackName]}};const params=new URLSearchParams();params.set('callback',callbackName);Object.keys(payload).forEach(k=>params.set(k,payload[k]??''));const script=document.createElement('script');script.id=callbackName;params.set('_ts',Date.now());params.set('_ts',Date.now());script.src=SAVE_API_URL+'?'+params.toString();script.onerror=function(){showMessage('Error al conectar con el servicio de guardado.','error');script.remove();delete window[callbackName]};document.body.appendChild(script)}
 function renderFichaTecnica(link){if(!link)return'';return`<div class="ficha-box"><strong>Ficha técnica</strong><br><br><a class="button-link" href="${escapeAttr(link)}" target="_blank" rel="noopener"><button type="button" class="small-btn">Ver ficha técnica</button></a></div>`}function renderRTA(link){if(!link)return'';return`<div class="ficha-box"><strong>RTA</strong><br><br><a class="button-link" href="${escapeAttr(link)}" target="_blank" rel="noopener"><button type="button" class="small-btn">Ver RTA</button></a></div>`}
 function getTutorialSteps(){
   const role=currentUser&&currentUser.role?currentUser.role:'alumno';
