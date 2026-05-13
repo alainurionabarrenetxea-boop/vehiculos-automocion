@@ -41,17 +41,22 @@ function routeAfterLoad(){const entry=getEntryParams();if(!currentUser)return;if
 function showAllVehicles(){if(!currentUser||currentUser.role!=='profesor')return;document.getElementById('viewModeText').textContent='Listado completo de vehículos';document.getElementById('vehicleDetail').innerHTML='';document.getElementById('tableContainer').classList.remove('hidden');document.getElementById('showAllBtn').classList.add('hidden');renderVehiclesTable()}function renderVehiclesTable(){document.getElementById('tableBody').innerHTML=vehicles.map(v=>`<tr class="clickable-row" onclick="openVehicleAsProfessor('${escapeJs(v.id)}')"><td>${escapeHtml(v.id)}</td><td>${escapeHtml(v.autoa)}</td><td>${escapeHtml(v.color)}</td><td>${escapeHtml(v.vin)}</td><td>${escapeHtml(v.estado)}</td><td>${escapeHtml(v.observaciones)}</td></tr>`).join('')}function openVehicleAsProfessor(id){const v=vehicles.find(x=>String(x.id)===String(id));if(v)renderVehicleDetail(v)}
 function renderVehicleDetail(vehicle){const isProfesor=currentUser&&currentUser.role==='profesor',isBlockedForStudent=!isProfesor&&vehicle.blokatuta==='Bai';document.getElementById('viewModeText').textContent=isProfesor?'Ficha de vehículo':'Ficha asignada por QR';document.getElementById('tableContainer').classList.add('hidden');document.getElementById('showAllBtn').classList.toggle('hidden',!isProfesor);document.getElementById('vehicleDetail').innerHTML=`${vehicle.blokatuta==='Bai'?`<div class="danger-banner">🚫 VEHÍCULO BLOQUEADO\n${vehicle.idBlokeoa?'Bloqueado por: '+escapeHtml(vehicle.idBlokeoa):''}${vehicle.blokeoData?'\nFecha: '+escapeHtml(vehicle.blokeoData):''}${vehicle.blokeoZergatia?'\nMotivo: '+escapeHtml(vehicle.blokeoZergatia):''}</div>`:''}<div class="vehicle-card"><h2 class="vehicle-title">${escapeHtml(vehicle.autoa||'Vehículo')}</h2><div class="vehicle-grid"><div class="field"><div class="field-label">ID</div><div class="field-value">${escapeHtml(vehicle.id)}</div></div><div class="field"><div class="field-label">Taller</div><div class="field-value">${escapeHtml(vehicle.tailerra)}</div></div><div class="field"><div class="field-label">Color</div><div class="field-value">${escapeHtml(vehicle.color)}</div></div><div class="field"><div class="field-label">VIN</div><div class="field-value">${escapeHtml(vehicle.vin)}</div></div><div class="field"><div class="field-label">Egokitua</div><div class="field-value">${escapeHtml(vehicle.egokitua)}</div></div><div class="field"><div class="field-label">Erabilpena</div><div class="field-value">${escapeHtml(vehicle.erabilpena)}</div></div></div><div class="edit-box"><div id="saveStatus" class="save-status">Lista para guardar.</div><div class="form-grid"><div><label><strong>Estado / Egoera</strong></label><textarea id="estadoInput" ${isBlockedForStudent?'disabled':''}>${escapeHtml(vehicle.estado)}</textarea></div><div><label><strong>Observaciones / Oharrak</strong></label><textarea id="observacionesInput" ${isBlockedForStudent?'disabled':''}>${escapeHtml(vehicle.observaciones||'')}</textarea></div><div><label><strong>Pizten du</strong></label><select id="piztenDuInput" ${isBlockedForStudent?'disabled':''}><option value="Bai" ${vehicle.piztenDu==='Bai'?'selected':''}>Bai</option><option value="Ez" ${vehicle.piztenDu==='Ez'?'selected':''}>Ez</option></select></div><div><label><strong>Piztu behar du</strong></label><select id="piztuBeharDuInput" ${isBlockedForStudent?'disabled':''}><option value="Bai" ${vehicle.piztuBeharDu==='Bai'?'selected':''}>Bai</option><option value="Ez" ${vehicle.piztuBeharDu==='Ez'?'selected':''}>Ez</option></select></div>${isProfesor?`<div><label><strong>BLOKATUTA</strong></label><select id="blokatutaInput"><option value="Bai" ${vehicle.blokatuta==='Bai'?'selected':''}>Bai</option><option value="Ez" ${vehicle.blokatuta==='Ez'?'selected':''}>Ez</option></select></div><div><label><strong>BLOKEO ZERGATIA</strong></label><textarea id="blokeoZergatiaInput">${escapeHtml(vehicle.blokeoZergatia||'')}</textarea></div>`:''}</div>${!isBlockedForStudent?`<button type="button" onclick="saveVehicleChanges('${escapeJs(vehicle.id)}')">Guardar cambios</button>`:''}</div>${renderFichaTecnica(vehicle.fitxaTeknika)}${renderRTA(vehicle.rta)}</div>`}
 function setSaveStatus(t,err=false){const e=document.getElementById('saveStatus');if(!e)return;e.textContent=t;e.style.background=err?'#fef2f2':'#eff6ff';e.style.color=err?'#b91c1c':'#1d4ed8'}function saveVehicleChanges(id){const v=vehicles.find(x=>String(x.id)===String(id));if(!v||!currentUser)return;const payload={accion:'guardarVehiculo',usuario:currentUser.username,rol:currentUser.role,idVehiculo:v.id,autoa:v.autoa,estado:document.getElementById('estadoInput').value.trim(),observaciones:document.getElementById('observacionesInput').value.trim(),piztenDu:document.getElementById('piztenDuInput').value,piztuBeharDu:document.getElementById('piztuBeharDuInput').value,blokeado:currentUser.role==='profesor'&&document.getElementById('blokatutaInput')?document.getElementById('blokatutaInput').value:v.blokatuta,motivo:currentUser.role==='profesor'&&document.getElementById('blokeoZergatiaInput')?document.getElementById('blokeoZergatiaInput').value.trim():v.blokeoZergatia};callSaveAPI(payload,r=>{if(!r||!r.ok){showMessage('Error al guardar:\n'+(r&&r.msg?r.msg:'Error desconocido'),'error');setSaveStatus('Error al guardar.',true);return}showMessage('Cambios guardados correctamente.','success');loadVehiclesJSONP()})}
-async function getLatestByQR(rows, qrId){
-  const filtered = rows.filter(r => String(r.QR_RECEPCION || r.QR_HARRERA || '').trim() === String(qrId).trim());
-  if(!filtered.length) return null;
+async function normKeyValue(v){return String(v||'').trim().toLowerCase()}
+function getField(r,names){if(!r)return '';for(let i=0;i<names.length;i++){const n=names[i];if(r[n]!==undefined&&r[n]!==null&&String(r[n]).trim()!=='')return String(r[n]).trim()}return ''}
 
-  filtered.sort((a,b) => {
-    const av = String(a.FECHA || '') + ' ' + String(a.HORA || '');
-    const bv = String(b.FECHA || '') + ' ' + String(b.HORA || '');
+function getLatestByQR(rows, qrId){
+  const target=normKeyValue(qrId);
+  const filtered=rows.filter(r=>{
+    const qrValue=getField(r,['QR_RECEPCION','QR_HARRERA','QR','qrRecepcion','qrHarrera']);
+    return normKeyValue(qrValue)===target;
+  });
+  if(!filtered.length)return null;
+  filtered.sort((a,b)=>{
+    const av=getField(a,['FECHA','DATA'])+' '+getField(a,['HORA','ORDUA']);
+    const bv=getField(b,['FECHA','DATA'])+' '+getField(b,['HORA','ORDUA']);
     return av.localeCompare(bv);
   });
-
-  return filtered[filtered.length - 1];
+  return filtered[filtered.length-1];
 }
 
 function getLatestWorkRowsByMatricula(rows, matricula){
@@ -116,12 +121,13 @@ function renderReceptionDetail(qr, harrera, lanakRows){
   document.getElementById('tableContainer').classList.add('hidden');
   document.getElementById('showAllBtn').classList.add('hidden');
 
-  const matricula = harrera ? String(harrera.MATRICULA || '').trim() : '';
-  const marca = harrera ? String(harrera.MARCA || '').trim() : '';
-  const modelo = harrera ? String(harrera.MODELO || '').trim() : '';
+  const matricula = getField(harrera, ['MATRICULA','MATRIKULA']);
+  const marca = getField(harrera, ['MARCA']);
+  const modelo = getField(harrera, ['MODELO']);
   const autoa = (marca + ' ' + modelo).trim();
-  const cliente = harrera ? String(harrera.CLIENTE || '').trim() : '';
-  const tipoTrabajo = harrera ? String(harrera.TIPO_TRABAJO || '').trim() : '';
+  const cliente = getField(harrera, ['CLIENTE','BEZEROA']);
+  const tipoTrabajo = getField(harrera, ['TIPO_TRABAJO','TAILERRA']);
+  const trabajoSolicitado = getField(harrera, ['TRABAJO_SOLICITADO','TRABAJO_SOLICITADO ','LANA','QUEJA_CLIENTE']);
 
   const activeWorks = getLatestWorkRowsByMatricula(lanakRows || [], matricula);
   const mekanika = activeWorks.filter(r => String(r.TAILERRA || '').trim() === 'MEKANIKA');
@@ -137,11 +143,14 @@ function renderReceptionDetail(qr, harrera, lanakRows){
         <div class="field"><div class="field-label">Matrícula</div><div class="field-value">${escapeHtml(matricula)}</div></div>
         <div class="field"><div class="field-label">Cliente</div><div class="field-value">${escapeHtml(cliente)}</div></div>
         <div class="field"><div class="field-label">Tipo trabajo</div><div class="field-value">${escapeHtml(tipoTrabajo)}</div></div>
-        <div class="field"><div class="field-label">ID recepción</div><div class="field-value">${escapeHtml(harrera ? harrera.ID_RECEPCION : '')}</div></div>
+        <div class="field"><div class="field-label">ID recepción</div><div class="field-value">${escapeHtml(harrera ? getField(harrera, ['ID_RECEPCION']) : '')}</div></div>
       </div>
+      ${trabajoSolicitado ? `<div class="field" style="margin-top:12px;"><div class="field-label">Trabajo solicitado</div><div class="field-value">${escapeHtml(trabajoSolicitado)}</div></div>` : ''}
 
       <div class="ficha-box">
         Este QR está ocupado y funciona como acceso directo a la orden de trabajo del coche externo.
+        ${!harrera ? '<br><br><strong>Atención:</strong> no se ha encontrado la recepción en HARRERA para este QR. Revisa que QR_RECEPCION coincida exactamente con el QR escaneado.' : ''}
+        ${harrera && !activeWorks.length ? '<br><br><strong>Sin trabajos activos:</strong> no hay trabajos pendientes/en curso para esta matrícula. Si el trabajo ya está terminado, libera el QR.' : ''}
       </div>
     </div>
 
