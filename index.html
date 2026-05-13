@@ -78,13 +78,16 @@ function getLatestWorkRowsByMatricula(rows, matricula){
   });
 }
 
-async function loadReceptionQR(qrId){
+function loadReceptionQR(qrId){
   clearMessage();
 
-  try{
-    const response = await fetch('https://opensheet.elk.sh/' + SHEET_ID + '/QR_HARRERA');
-    const rows = await response.json();
+  callSaveAPI({accion:'listarQrHarrera'}, qrResp => {
+    if(!qrResp || !qrResp.ok){
+      showMessage('Error cargando QR de recepción.', 'error');
+      return;
+    }
 
+    const rows = qrResp.rows || [];
     const qr = rows.find(r => String(r.QR_HARRERA || '').trim() === String(qrId).trim());
 
     if(!qr){
@@ -99,19 +102,27 @@ async function loadReceptionQR(qrId){
       return;
     }
 
-    const harreraResponse = await fetch('https://opensheet.elk.sh/' + SHEET_ID + '/HARRERA');
-    const harreraRows = await harreraResponse.json();
-    const harrera = getLatestByQR(harreraRows, qrId);
+    callSaveAPI({accion:'listarHarrera'}, hResp => {
+      if(!hResp || !hResp.ok){
+        showMessage('Error cargando HARRERA.', 'error');
+        return;
+      }
 
-    const lanakResponse = await fetch('https://opensheet.elk.sh/' + SHEET_ID + '/LANAK');
-    const lanakRows = await lanakResponse.json();
-    WORK_ROWS_CACHE = lanakRows;
+      const harreraRows = hResp.rows || [];
+      const harrera = getLatestByQR(harreraRows, qrId);
 
-    renderReceptionDetail(qr, harrera, lanakRows);
+      callSaveAPI({accion:'listarLanak'}, lResp => {
+        if(!lResp || !lResp.ok){
+          showMessage('Error cargando LANAK.', 'error');
+          return;
+        }
 
-  }catch(err){
-    showMessage('Error cargando QR de recepción:\n' + err.message, 'error');
-  }
+        const lanakRows = lResp.rows || [];
+        WORK_ROWS_CACHE = lanakRows;
+        renderReceptionDetail(qr, harrera, lanakRows);
+      });
+    });
+  });
 }
 
 function renderReceptionForm(qrId){document.getElementById('viewModeText').textContent='Nueva recepción de taller';document.getElementById('tableContainer').classList.add('hidden');document.getElementById('showAllBtn').classList.add('hidden');document.getElementById('vehicleDetail').innerHTML=`<div class="vehicle-card"><h2 class="vehicle-title">Recepción vehículo externo</h2><div class="field" style="margin-bottom:12px;"><div class="field-label">QR recepción</div><div class="field-value">${escapeHtml(qrId)}</div></div><div class="form-grid"><div><label><strong>Matrícula</strong></label><input id="recMatricula"></div><div><label><strong>Marca</strong></label><input id="recMarca"></div><div><label><strong>Modelo</strong></label><input id="recModelo"></div><div><label><strong>Kilómetros</strong></label><input id="recKm"></div><div><label><strong>Cliente</strong></label><input id="recCliente"></div><div><label><strong>Teléfono</strong></label><input id="recTelefono"></div><div><label><strong>Email</strong></label><input id="recEmail"></div><div><label><strong>Tipo de trabajo</strong></label><select id="recTipoTrabajo"><option value="MEKANIKA">Mecánica</option><option value="KARROZERIA">Carrocería</option><option value="BIAK">Mecánica + Carrocería</option></select></div><div><label><strong>Prioridad</strong></label><select id="recPrioridad"><option value="normal">normal</option><option value="alta">alta</option><option value="urgente">urgente</option></select></div><div><label><strong>Estado recepción</strong></label><select id="recEstadoRecepcion"><option value="abierta">abierta</option><option value="en curso">en curso</option><option value="cerrada">cerrada</option></select></div></div><label><strong>Queja del cliente</strong></label><textarea id="recQuejaCliente"></textarea><label><strong>Trabajo solicitado</strong></label><textarea id="recTrabajoSolicitado"></textarea><label><strong>Daños visibles</strong></label><textarea id="recDanosVisibles"></textarea><label><strong>Fotos</strong></label><textarea id="recFotos"></textarea><label><strong>Observaciones</strong></label><textarea id="recObservaciones"></textarea><button type="button" onclick="createReception('${escapeJs(qrId)}')">Crear recepción</button></div>`}
@@ -295,15 +306,16 @@ function showWorksPanel(){
   loadWorks();
 }
 
-async function loadWorks(){
-  try{
-    const response = await fetch('https://opensheet.elk.sh/' + SHEET_ID + '/LANAK');
-    const rows = await response.json();
-    WORK_ROWS_CACHE = rows;
-    renderWorks(rows);
-  }catch(err){
-    document.getElementById('worksList').innerHTML = "<div class='msg error'>Error cargando trabajos</div>";
-  }
+function loadWorks(){
+  callSaveAPI({accion:'listarLanak'}, r => {
+    if(!r || !r.ok){
+      document.getElementById('worksList').innerHTML = "<div class='msg error'>Error cargando trabajos</div>";
+      return;
+    }
+
+    WORK_ROWS_CACHE = r.rows || [];
+    renderWorks(WORK_ROWS_CACHE);
+  });
 }
 
 function getWorkSortValue(r){
@@ -394,6 +406,8 @@ function renderWorkList(rows){
               <span style="color:#6b7280;">${escapeHtml(r.BEZEROA || '')}</span>
               <br>
               <span style="color:#6b7280;">Prioridad: ${escapeHtml(prioridad)}</span>
+              <br>
+              <span style="color:#2563eb;font-weight:700;">Tocar para abrir/modificar</span>
             </div>
             <span class="badge ${badgeClass}">${escapeHtml(estado)}</span>
           </div>
@@ -504,6 +518,12 @@ function saveWorkStatus(idTrabajo){
     return;
   }
 
+  const botonActivo = document.activeElement;
+  if(botonActivo && botonActivo.tagName === 'BUTTON'){
+    botonActivo.disabled = true;
+    botonActivo.textContent = 'Guardando...';
+  }
+
   callSaveAPI({
     accion:'cambiarEstadoTrabajo',
     idTrabajo:idTrabajo,
@@ -512,15 +532,31 @@ function saveWorkStatus(idTrabajo){
     progreso:progresoInput ? progresoInput.value.trim() : '',
     usuario:currentUser.username
   }, r => {
+    if(botonActivo && botonActivo.tagName === 'BUTTON'){
+      botonActivo.disabled = false;
+      botonActivo.textContent = 'Guardar cambios';
+    }
+
     if(!r || !r.ok){
       showMessage('Error actualizando trabajo:\n' + (r && r.msg ? r.msg : 'Error desconocido'), 'error');
       return;
     }
-    showMessage('Trabajo guardado correctamente.', 'success');
-    loadWorks();
+
+    showMessage(r.msg || 'Trabajo guardado correctamente.', 'success');
+
+    const entry = getEntryParams();
+
+    setTimeout(() => {
+      if(entry.qrHarrera){
+        loadReceptionQR(entry.qrHarrera);
+      }else{
+        loadWorks();
+      }
+    }, 500);
   });
 }
-function callSaveAPI(payload,onDone){const callbackName='handleSaveResponse_'+Date.now();window[callbackName]=function(result){try{onDone(result)}finally{const script=document.getElementById(callbackName);if(script)script.remove();delete window[callbackName]}};const params=new URLSearchParams();params.set('callback',callbackName);Object.keys(payload).forEach(k=>params.set(k,payload[k]??''));const script=document.createElement('script');script.id=callbackName;script.src=SAVE_API_URL+'?'+params.toString();script.onerror=function(){showMessage('Error al conectar con el servicio de guardado.','error');script.remove();delete window[callbackName]};document.body.appendChild(script)}
+
+function callSaveAPI(payload,onDone){const callbackName='handleSaveResponse_'+Date.now();window[callbackName]=function(result){try{onDone(result)}finally{const script=document.getElementById(callbackName);if(script)script.remove();delete window[callbackName]}};const params=new URLSearchParams();params.set('callback',callbackName);Object.keys(payload).forEach(k=>params.set(k,payload[k]??''));const script=document.createElement('script');script.id=callbackName;params.set('_ts',Date.now());script.src=SAVE_API_URL+'?'+params.toString();script.onerror=function(){showMessage('Error al conectar con el servicio de guardado.','error');script.remove();delete window[callbackName]};document.body.appendChild(script)}
 function renderFichaTecnica(link){if(!link)return'';return`<div class="ficha-box"><strong>Ficha técnica</strong><br><br><a class="button-link" href="${escapeAttr(link)}" target="_blank" rel="noopener"><button type="button" class="small-btn">Ver ficha técnica</button></a></div>`}function renderRTA(link){if(!link)return'';return`<div class="ficha-box"><strong>RTA</strong><br><br><a class="button-link" href="${escapeAttr(link)}" target="_blank" rel="noopener"><button type="button" class="small-btn">Ver RTA</button></a></div>`}
 function getTutorialSteps(){
   const role=currentUser&&currentUser.role?currentUser.role:'alumno';
