@@ -24,6 +24,16 @@
     .tutorial-progress{color:#6b7280;font-size:13px;font-weight:700;margin-bottom:8px}
     @media(max-width:700px){.help-floating{right:12px;bottom:12px;min-width:96px;padding:12px 14px}.tutorial-card{padding:20px}.tutorial-card h2{font-size:24px}.tutorial-actions button{width:100%}}
 
+  
+    .task-list{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+    .task-row{border:1px solid #e5e7eb;border-radius:14px;background:white;overflow:hidden}
+    .task-summary{list-style:none;cursor:pointer;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+    .task-summary::-webkit-details-marker{display:none}
+    .task-title{font-weight:800;color:#111827}
+    .task-meta{font-size:13px;color:#6b7280;margin-top:3px}
+    .task-body{padding:0 14px 14px}
+    .task-check{font-size:20px;font-weight:900;margin-right:8px}
+
   </style>
 </head>
 <body>
@@ -184,17 +194,9 @@ function renderReceptionDetail(qr, harrera, lanakRows){
     </div>
 
     <div class="vehicle-card">
-      <h2 class="vehicle-title">Trabajos activos de esta recepción</h2>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;">
-        <div>
-          <h3 style="font-size:24px;margin-bottom:12px;">MEKANIKA</h3>
-          ${renderWorkList(mekanika)}
-        </div>
-        <div>
-          <h3 style="font-size:24px;margin-bottom:12px;">KARROZERIA</h3>
-          ${renderWorkList(karrozeria)}
-        </div>
-      </div>
+      <h2 class="vehicle-title">Recepción y trabajos</h2>
+      <p style="margin-top:-8px;color:#6b7280;">Despliega cada tarea para cambiar estado, prioridad o añadir progreso.</p>
+      ${renderReceptionTaskMenu(activeWorks)}
     </div>
 
     <div class="vehicle-card">
@@ -414,6 +416,67 @@ function renderWorks(rows){
     </div>
   `;
 }
+
+
+function renderReceptionTaskMenu(rows){
+  if(!rows.length){
+    return "<div class='ficha-box'>Sin trabajos activos en esta recepción</div>";
+  }
+
+  return `<div class="task-list">${rows.map(r => {
+    const id = String(r.ID_TRABAJO || '').trim();
+    const estado = String(r.EGOERA || 'pendiente').trim();
+    const prioridad = String(r.LEHENTASUNA || 'normal').trim();
+    const badgeClass = estado === 'en curso' ? 'badge-curso' :
+                       estado === 'terminado' ? 'badge-terminado' :
+                       estado === 'cancelado' ? 'badge-cancelado' :
+                       'badge-pendiente';
+
+    const checked = estado === 'terminado' ? '☑' : '☐';
+
+    return `
+      <details class="task-row priority-${escapeAttr(prioridad)}">
+        <summary class="task-summary">
+          <div>
+            <span class="task-check">${checked}</span>
+            <span class="task-title">${escapeHtml(r.LANA || 'Trabajo')}</span>
+            <div class="task-meta">
+              ${escapeHtml(r.TAILERRA || '')}
+              · Prioridad: ${escapeHtml(prioridad)}
+              · Último usuario: ${escapeHtml(r.ERABILTZAILEA || '')}
+            </div>
+          </div>
+          <span class="badge ${badgeClass}">${escapeHtml(estado)}</span>
+        </summary>
+
+        <div class="task-body">
+          ${getProgressValue(r) ? `<div class="field" style="margin-bottom:12px;"><div class="field-label">Último progreso</div><div class="field-value">${escapeHtml(getProgressValue(r))}</div></div>` : ""}
+
+          <label><strong>Estado</strong></label>
+          <select id="estado_${escapeAttr(id)}">
+            <option value="pendiente" ${estado === 'pendiente' ? 'selected' : ''}>pendiente</option>
+            <option value="en curso" ${estado === 'en curso' ? 'selected' : ''}>en curso</option>
+            <option value="terminado" ${estado === 'terminado' ? 'selected' : ''}>terminado</option>
+            <option value="cancelado" ${estado === 'cancelado' ? 'selected' : ''}>cancelado</option>
+          </select>
+
+          <label><strong>Prioridad</strong></label>
+          <select id="prioridad_${escapeAttr(id)}">
+            <option value="normal" ${prioridad === 'normal' ? 'selected' : ''}>normal</option>
+            <option value="alta" ${prioridad === 'alta' ? 'selected' : ''}>alta</option>
+            <option value="urgente" ${prioridad === 'urgente' ? 'selected' : ''}>urgente</option>
+          </select>
+
+          <label><strong>Añadir progreso / trabajo realizado</strong></label>
+          <textarea id="progreso_${escapeAttr(id)}" placeholder="Ejemplo: desmontado paragolpes, falta revisar soporte derecho..."></textarea>
+
+          <button type="button" onclick="saveWorkStatus('${escapeJs(id)}')">Guardar cambios</button>
+        </div>
+      </details>
+    `;
+  }).join('')}</div>`;
+}
+
 
 function renderWorkList(rows){
   if(!rows.length){
