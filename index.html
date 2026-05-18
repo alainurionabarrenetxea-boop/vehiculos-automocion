@@ -34,6 +34,33 @@
     .task-body{padding:0 14px 14px}
     .task-check{font-size:20px;font-weight:900;margin-right:8px}
 
+  
+    /* ===== MENDIcar v1.9 VISUAL ===== */
+    .status-strip{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0 18px}
+    .status-chip{display:inline-flex;align-items:center;gap:8px;padding:9px 13px;border-radius:999px;font-weight:800;font-size:13px;border:1px solid #e5e7eb;background:white;box-shadow:0 4px 12px rgba(15,23,42,.06)}
+    .chip-pendiente{background:#dbeafe;color:#1d4ed8;border-color:#bfdbfe}
+    .chip-curso{background:#fef3c7;color:#92400e;border-color:#fde68a}
+    .chip-terminado{background:#dcfce7;color:#166534;border-color:#bbf7d0}
+    .chip-cancelado{background:#fee2e2;color:#991b1b;border-color:#fecaca}
+    .chip-ocupado{background:#111827;color:white;border-color:#111827}
+    .chip-libre{background:#dcfce7;color:#166534;border-color:#bbf7d0}
+    .badge{font-weight:900!important;text-transform:uppercase;letter-spacing:.03em;box-shadow:0 4px 10px rgba(0,0,0,.06)}
+    .badge-pendiente{background:#dbeafe!important;color:#1d4ed8!important}
+    .badge-curso{background:#fef3c7!important;color:#92400e!important}
+    .badge-terminado{background:#dcfce7!important;color:#166534!important}
+    .badge-cancelado{background:#fee2e2!important;color:#991b1b!important}
+    .priority-normal{border-left:10px solid #2563eb!important}
+    .priority-alta{border-left:10px solid #f59e0b!important}
+    .priority-urgente{border-left:10px solid #dc2626!important}
+    .work-card,.task-row{transition:transform .12s ease,box-shadow .12s ease}
+    .work-card:hover,.task-row:hover{transform:translateY(-1px);box-shadow:0 12px 28px rgba(15,23,42,.12)!important}
+    .task-summary{background:linear-gradient(180deg,#ffffff,#f8fafc)}
+    .task-row[open] .task-summary{border-bottom:1px solid #e5e7eb}
+    .task-title{font-size:17px}
+    .blocked-alert{background:#fee2e2;border:2px solid #dc2626;color:#7f1d1d;border-radius:18px;padding:18px;margin:15px 0;font-weight:800;box-shadow:0 8px 22px rgba(220,38,38,.18)}
+    .blocked-alert-title{font-size:22px;margin-bottom:8px}
+    .save-busy{background:#6b7280!important;cursor:not-allowed!important;opacity:.85}
+
   </style>
 </head>
 <body>
@@ -175,6 +202,11 @@ function renderReceptionDetail(qr, harrera, lanakRows){
   document.getElementById('vehicleDetail').innerHTML = `
     <div class="vehicle-card">
       <h2 class="vehicle-title">${escapeHtml(autoa || 'Recepción ocupada')}</h2>
+      <div class="status-strip">
+        <span class="status-chip ${String(qr.EGOERA || '').toLowerCase() === 'libre' ? 'chip-libre' : 'chip-ocupado'}">QR: ${escapeHtml(qr.EGOERA || '')}</span>
+        <span class="status-chip chip-pendiente">Tareas activas: ${activeWorks.length}</span>
+        <span class="status-chip chip-curso">Matrícula: ${escapeHtml(matricula || '-')}</span>
+      </div>
 
       <div class="vehicle-grid">
         <div class="field"><div class="field-label">QR</div><div class="field-value">${escapeHtml(qr.QR_HARRERA)}</div></div>
@@ -433,7 +465,7 @@ function renderReceptionTaskMenu(rows){
                        estado === 'cancelado' ? 'badge-cancelado' :
                        'badge-pendiente';
 
-    const checked = estado === 'terminado' ? '☑' : '☐';
+    const checked = estado === 'terminado' ? '✅' : estado === 'cancelado' ? '⛔' : estado === 'en curso' ? '🟡' : '☐';
 
     return `
       <details class="task-row priority-${escapeAttr(prioridad)}">
