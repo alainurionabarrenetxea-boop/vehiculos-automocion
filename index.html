@@ -516,6 +516,7 @@ let SAVE_LOCKS = {};
 
 function showWorksPanel(){
   if(!currentUser || currentUser.role !== 'profesor') return;
+  clearMessage();
 
   document.getElementById('viewModeText').textContent = 'Panel de trabajos';
   document.getElementById('tableContainer').classList.add('hidden');
@@ -524,6 +525,9 @@ function showWorksPanel(){
   document.getElementById('vehicleDetail').innerHTML = `
     <div class="vehicle-card">
       <h2 class="vehicle-title">Nuevo trabajo</h2>
+      <div class="ficha-box">
+        Esta opción crea una recepción sin escanear QR. La aplicación buscará automáticamente el primer QR libre y te indicará qué QR físico debes coger y colocar en el coche.
+      </div>
 
       <div class="form-grid">
         <div>
@@ -553,7 +557,8 @@ function showWorksPanel(){
       <label><strong>Trabajo a realizar</strong></label>
       <textarea id="workLana"></textarea>
 
-      <button type="button" onclick="createWork()">Crear trabajo</button>
+      <button id="btnCrearTrabajo" type="button" onclick="createWork()">Crear trabajo y asignar QR libre</button>
+      <div id="workCreateResult"></div>
     </div>
 
     <div class="vehicle-card">
@@ -844,7 +849,80 @@ function showWorkHistory(){
   }).join('');
 }
 
-function createWork(){const payload={accion:'crearTrabajo',tailerra:document.getElementById('workTailerra').value,cliente:document.getElementById('workCliente').value.trim(),autoa:document.getElementById('workAutoa').value.trim(),matricula:document.getElementById('workMatricula').value.trim(),fecha:document.getElementById('workFecha').value,hora:document.getElementById('workHora').value,prioridad:document.getElementById('workPrioridad').value,lana:document.getElementById('workLana').value.trim(),usuario:currentUser.username};if(!payload.cliente||!payload.lana){showMessage('Falta cliente o trabajo a realizar.','error');return}callSaveAPI(payload,r=>{if(!r||!r.ok){showMessage('Error creando trabajo:\n'+(r&&r.msg?r.msg:'Error desconocido'),'error');return}showMessage('Trabajo creado correctamente.','success');showWorksPanel()})}
+function createWork(){
+  if(SAVE_LOCKS['crearTrabajo']){
+    showMessage('Ya se está creando el trabajo. Espera unos segundos.', 'error');
+    return;
+  }
+
+  const payload={
+    accion:'crearTrabajo',
+    tailerra:document.getElementById('workTailerra').value,
+    cliente:document.getElementById('workCliente').value.trim(),
+    autoa:document.getElementById('workAutoa').value.trim(),
+    matricula:document.getElementById('workMatricula').value.trim(),
+    fecha:document.getElementById('workFecha').value,
+    hora:document.getElementById('workHora').value,
+    prioridad:document.getElementById('workPrioridad').value,
+    lana:document.getElementById('workLana').value.trim(),
+    usuario:currentUser.username,
+    rol:currentUser.role,
+    taldea:currentUser.taldea || ''
+  };
+
+  if(!payload.cliente||!payload.lana){
+    showMessage('Falta cliente o trabajo a realizar.','error');
+    return;
+  }
+
+  SAVE_LOCKS['crearTrabajo']=true;
+  const btn=document.getElementById('btnCrearTrabajo');
+  if(btn){
+    btn.disabled=true;
+    btn.dataset.oldText=btn.textContent;
+    btn.textContent='Guardando...';
+    btn.classList.add('save-busy');
+  }
+
+  const resultBox=document.getElementById('workCreateResult');
+  if(resultBox) resultBox.innerHTML='<div class="success-box">Guardando trabajo y buscando QR libre...</div>';
+
+  callSaveAPI(payload,r=>{
+    SAVE_LOCKS['crearTrabajo']=false;
+
+    if(btn){
+      btn.disabled=false;
+      btn.textContent=btn.dataset.oldText || 'Crear trabajo y asignar QR libre';
+      btn.classList.remove('save-busy');
+    }
+
+    if(!r||!r.ok){
+      showMessage('Error creando trabajo:\\n'+(r&&r.msg?r.msg:'Error desconocido'),'error');
+      if(resultBox) resultBox.innerHTML='';
+      return;
+    }
+
+    const qrAsignado = r.qrAsignado || r.qr || '';
+    const idRecepcion = r.idRecepcion || '';
+
+    showMessage('Trabajo creado correctamente. QR asignado: '+qrAsignado,'success');
+
+    if(resultBox){
+      resultBox.innerHTML = `
+        <div class="next-qr-box">
+          ✅ Trabajo creado correctamente<br>
+          QR asignado: <strong>${escapeHtml(qrAsignado)}</strong><br>
+          ID recepción: ${escapeHtml(idRecepcion)}
+          <br><br>
+          Debes coger físicamente el cartel ${escapeHtml(qrAsignado)} y colocarlo en el coche.
+        </div>
+      `;
+    }
+
+    setTimeout(()=>loadWorks(),700);
+  });
+}
+
 function saveWorkStatus(idTrabajo){
   const selectEstado = document.getElementById('estado_' + idTrabajo);
   const selectPrioridad = document.getElementById('prioridad_' + idTrabajo);
