@@ -73,7 +73,48 @@ box-shadow:0 8px 18px rgba(220,38,38,.15);
 .qr-occupied-title{font-size:20px;font-weight:900;color:#991b1b}
 .qr-occupied-info{margin-top:8px;font-weight:700}
 
-</style>
+
+    .occupied-summary-card{
+      background:linear-gradient(135deg,#fee2e2,#fff7ed);
+      border:2px solid #dc2626;
+      border-radius:20px;
+      padding:20px;
+      margin:18px 0;
+      box-shadow:0 10px 26px rgba(220,38,38,.18);
+    }
+    .occupied-summary-title{
+      color:#991b1b;
+      font-size:24px;
+      font-weight:900;
+      margin-bottom:12px;
+    }
+    .occupied-summary-line{
+      font-size:17px;
+      line-height:1.55;
+      color:#111827;
+      font-weight:700;
+    }
+    .next-qr-box{
+      margin-top:16px;
+      padding:14px;
+      border-radius:16px;
+      background:#dcfce7;
+      border:1px solid #86efac;
+      color:#166534;
+      font-weight:900;
+      font-size:18px;
+    }
+    .success-box{
+      background:#dcfce7;
+      border:1px solid #86efac;
+      color:#166534;
+      padding:14px;
+      border-radius:14px;
+      font-weight:800;
+      margin:12px 0;
+    }
+
+  </style>
 </head>
 <body>
 <div id="loginView" class="box"><div class="header"><div class="header-logo"><img src="icono-512.png" alt="MENDIcar"><div><h2>MENDIcar</h2><p>Gestión digital de automoción</p></div></div></div><div class="content"><input id="username" type="text" placeholder="Usuario / correo"><input id="password" type="password" placeholder="Contraseña"><button type="button" onclick="login()">Entrar</button><div id="loginError" class="msg error hidden"></div></div><div class="footer-credit">Aplicación realizada por <strong>Alain Urionabarrenetxea</strong></div></div>
@@ -144,28 +185,60 @@ function getLatestWorkRowsByMatricula(rows, matricula){
   });
 }
 
+
+function renderOccupiedQrSummary(qrId, recepcion, sugerido){
+  document.getElementById('viewModeText').textContent='QR ocupado';
+  document.getElementById('tableContainer').classList.add('hidden');
+  document.getElementById('showAllBtn').classList.add('hidden');
+
+  const marca = getReceptionDisplayField(recepcion, ['MARCA','Marca','marka']);
+  const modelo = getReceptionDisplayField(recepcion, ['MODELO','Modelo','modeloa']);
+  const matricula = getReceptionDisplayField(recepcion, ['MATRICULA','MATRIKULA','Matrícula','Matricula','matricula']);
+  const cliente = getReceptionDisplayField(recepcion, ['CLIENTE','BEZEROA','Cliente','Bezeroa','client']);
+  const idRecepcion = getReceptionDisplayField(recepcion, ['ID_RECEPCION','ID RECEPCION','ID_RECEPCIÓN']);
+  const trabajo = getReceptionDisplayField(recepcion, ['TRABAJO_SOLICITADO','TRABAJO_SOLICITADO ','LANA','QUEJA_CLIENTE','Trabajo solicitado','Queja cliente']);
+  const autoa = (marca + ' ' + modelo).trim();
+
+  document.getElementById('vehicleDetail').innerHTML = `
+    <div class="occupied-summary-card">
+      <div class="occupied-summary-title">⚠ QR OCUPADO</div>
+      <div class="occupied-summary-line"><strong>QR escaneado:</strong> ${escapeHtml(qrId)}</div>
+      <div class="occupied-summary-line"><strong>Vehículo asignado:</strong> ${escapeHtml(autoa || 'Sin datos')}</div>
+      <div class="occupied-summary-line"><strong>Matrícula:</strong> ${escapeHtml(matricula || 'Sin matrícula')}</div>
+      <div class="occupied-summary-line"><strong>Cliente:</strong> ${escapeHtml(cliente || 'Sin cliente')}</div>
+      <div class="occupied-summary-line"><strong>ID recepción:</strong> ${escapeHtml(idRecepcion || '-')}</div>
+      ${trabajo ? `<div class="occupied-summary-line"><strong>Trabajo:</strong> ${escapeHtml(trabajo)}</div>` : ''}
+      ${sugerido ? `
+        <div class="next-qr-box">
+          Para crear otra recepción, coge el QR libre: ${escapeHtml(sugerido)}
+        </div>
+        <button type="button" onclick="loadReceptionQR('${escapeJs(sugerido)}')">Usar ${escapeHtml(sugerido)}</button>
+      ` : `
+        <div class="msg error" style="margin-top:12px;">No hay QR libres disponibles.</div>
+      `}
+    </div>
+  `;
+}
+
+
 function loadReceptionQR(qrId){
   clearMessage();
 
   callSaveAPI({accion:'comprobarQrHarrera', qrRecepcion: qrId}, checkResp => {
     if(checkResp && checkResp.ok && checkResp.ocupado){
-      showMessage('Este QR ya está ocupado. No se puede crear otra recepción con el mismo QR.' + (checkResp.sugerido ? ' Si necesitas otro QR, coge el ' + checkResp.sugerido + '.' : ''), 'error');
+      showMessage(
+        'Este QR ya está ocupado. No se puede crear otra recepción con el mismo QR.' +
+        (checkResp.sugerido ? ' Si necesitas otro QR, coge el ' + checkResp.sugerido + '.' : ''),
+        'error'
+      );
 
-      callSaveAPI({accion:'listarQrHarrera'}, qrResp => {
-        const qrRows = qrResp && qrResp.ok ? (qrResp.rows || []) : [];
-        let qr = qrRows.find(r => String(r.QR_HARRERA || '').trim() === String(qrId).trim()) || {QR_HARRERA: qrId, EGOERA:'ocupado'};
-        qr.EGOERA = 'ocupado';
+      renderOccupiedQrSummary(qrId, checkResp.recepcion || {}, checkResp.sugerido || '');
 
-        callSaveAPI({accion:'listarHarrera'}, hResp => {
-          const harreraRows = hResp && hResp.ok ? (hResp.rows || []) : [];
-          const harrera = getLatestByQR(harreraRows, qrId);
-
-          callSaveAPI({accion:'listarLanak'}, lResp => {
-            const lanakRows = lResp && lResp.ok ? (lResp.rows || []) : [];
-            WORK_ROWS_CACHE = lanakRows;
-            renderReceptionDetail(qr, harrera, lanakRows);
-          });
-        });
+      // Carga trabajos/histórico debajo si existen, pero la tarjeta básica ya queda visible aunque falle la lectura.
+      callSaveAPI({accion:'listarLanak'}, lResp => {
+        if(lResp && lResp.ok){
+          WORK_ROWS_CACHE = lResp.rows || [];
+        }
       });
 
       return;
@@ -193,21 +266,11 @@ function loadReceptionQR(qrId){
       }
 
       callSaveAPI({accion:'listarHarrera'}, hResp => {
-        if(!hResp || !hResp.ok){
-          showMessage('Error cargando HARRERA.', 'error');
-          return;
-        }
-
-        const harreraRows = hResp.rows || [];
-        const harrera = getLatestByQR(harreraRows, qrId);
+        const harreraRows = hResp && hResp.ok ? (hResp.rows || []) : [];
+        let harrera = getLatestByQR(harreraRows, qrId);
 
         callSaveAPI({accion:'listarLanak'}, lResp => {
-          if(!lResp || !lResp.ok){
-            showMessage('Error cargando LANAK.', 'error');
-            return;
-          }
-
-          const lanakRows = lResp.rows || [];
+          const lanakRows = lResp && lResp.ok ? (lResp.rows || []) : [];
           WORK_ROWS_CACHE = lanakRows;
           renderReceptionDetail(qr, harrera, lanakRows);
         });
@@ -216,7 +279,7 @@ function loadReceptionQR(qrId){
   });
 }
 
-function renderReceptionForm(qrId){document.getElementById('viewModeText').textContent='Nueva recepción de taller';document.getElementById('tableContainer').classList.add('hidden');document.getElementById('showAllBtn').classList.add('hidden');document.getElementById('vehicleDetail').innerHTML=`<div class="vehicle-card"><h2 class="vehicle-title">Recepción vehículo externo</h2><div class="field" style="margin-bottom:12px;"><div class="field-label">QR recepción</div><div class="field-value">${escapeHtml(qrId)}</div></div><div class="form-grid"><div><label><strong>Matrícula</strong></label><input id="recMatricula"></div><div><label><strong>Marca</strong></label><input id="recMarca"></div><div><label><strong>Modelo</strong></label><input id="recModelo"></div><div><label><strong>Kilómetros</strong></label><input id="recKm"></div><div><label><strong>Cliente</strong></label><input id="recCliente"></div><div><label><strong>Teléfono</strong></label><input id="recTelefono"></div><div><label><strong>Email</strong></label><input id="recEmail"></div><div><label><strong>Tipo de trabajo</strong></label><select id="recTipoTrabajo"><option value="MEKANIKA">Mecánica</option><option value="KARROZERIA">Carrocería</option><option value="BIAK">Mecánica + Carrocería</option></select></div><div><label><strong>Prioridad</strong></label><select id="recPrioridad"><option value="normal">normal</option><option value="alta">alta</option><option value="urgente">urgente</option></select></div><div><label><strong>Estado recepción</strong></label><select id="recEstadoRecepcion"><option value="abierta">abierta</option><option value="en curso">en curso</option><option value="cerrada">cerrada</option></select></div></div><label><strong>Queja del cliente</strong></label><textarea id="recQuejaCliente"></textarea><label><strong>Trabajo solicitado</strong></label><textarea id="recTrabajoSolicitado" placeholder="Ejemplo: frenos, ruido motor, ruedas. Cada coma crea una tarea independiente."></textarea><label><strong>Daños visibles</strong></label><textarea id="recDanosVisibles"></textarea><label><strong>Fotos</strong></label><textarea id="recFotos"></textarea><label><strong>Observaciones</strong></label><textarea id="recObservaciones"></textarea><button type="button" onclick="createReception('${escapeJs(qrId)}')">Crear recepción</button></div>`}
+function renderReceptionForm(qrId){document.getElementById('viewModeText').textContent='Nueva recepción de taller';document.getElementById('tableContainer').classList.add('hidden');document.getElementById('showAllBtn').classList.add('hidden');document.getElementById('vehicleDetail').innerHTML=`<div class="vehicle-card"><h2 class="vehicle-title">Recepción vehículo externo</h2><div class="field" style="margin-bottom:12px;"><div class="field-label">QR recepción</div><div class="field-value">${escapeHtml(qrId)}</div></div><div class="form-grid"><div><label><strong>Matrícula</strong></label><input id="recMatricula"></div><div><label><strong>Marca</strong></label><input id="recMarca"></div><div><label><strong>Modelo</strong></label><input id="recModelo"></div><div><label><strong>Kilómetros</strong></label><input id="recKm"></div><div><label><strong>Cliente</strong></label><input id="recCliente"></div><div><label><strong>Teléfono</strong></label><input id="recTelefono"></div><div><label><strong>Email</strong></label><input id="recEmail"></div><div><label><strong>Tipo de trabajo</strong></label><select id="recTipoTrabajo"><option value="MEKANIKA">Mecánica</option><option value="KARROZERIA">Carrocería</option><option value="BIAK">Mecánica + Carrocería</option></select></div><div><label><strong>Prioridad</strong></label><select id="recPrioridad"><option value="normal">normal</option><option value="alta">alta</option><option value="urgente">urgente</option></select></div><div><label><strong>Estado recepción</strong></label><select id="recEstadoRecepcion"><option value="abierta">abierta</option><option value="en curso">en curso</option><option value="cerrada">cerrada</option></select></div></div><label><strong>Queja del cliente</strong></label><textarea id="recQuejaCliente"></textarea><label><strong>Trabajo solicitado</strong></label><textarea id="recTrabajoSolicitado" placeholder="Ejemplo: frenos, ruido motor, ruedas. Cada coma crea una tarea independiente."></textarea><label><strong>Daños visibles</strong></label><textarea id="recDanosVisibles"></textarea><label><strong>Observaciones</strong></label><textarea id="recObservaciones"></textarea><button id="btnCrearRecepcion" type="button" onclick="createReception('${escapeJs(qrId)}')">Crear recepción</button></div>`}
 
 
 function getReceptionDisplayField(row, names){
@@ -377,7 +440,76 @@ function renderHistoryByMatricula(matricula){
   }).join('');
 }
 
-function createReception(qrId){if(!currentUser)return;const payload={accion:'crearRecepcion',qrRecepcion:qrId,usuario:currentUser.username,rol:currentUser.role,taldea:currentUser.taldea,matricula:document.getElementById('recMatricula').value.trim(),marca:document.getElementById('recMarca').value.trim(),modelo:document.getElementById('recModelo').value.trim(),km:document.getElementById('recKm').value.trim(),cliente:document.getElementById('recCliente').value.trim(),telefono:document.getElementById('recTelefono').value.trim(),email:document.getElementById('recEmail').value.trim(),tipoTrabajo:document.getElementById('recTipoTrabajo').value,prioridad:document.getElementById('recPrioridad').value,quejaCliente:document.getElementById('recQuejaCliente').value.trim(),trabajoSolicitado:document.getElementById('recTrabajoSolicitado').value.trim(),estadoVehiculo:'',danosVisibles:document.getElementById('recDanosVisibles').value.trim(),fotos:document.getElementById('recFotos').value.trim(),observaciones:document.getElementById('recObservaciones').value.trim(),estadoRecepcion:document.getElementById('recEstadoRecepcion').value};if(!payload.matricula||!payload.cliente){showMessage('Rellena al menos matrícula y cliente.','error');return}callSaveAPI(payload,r=>{if(!r||!r.ok){showMessage('Error creando recepción:\n'+(r&&r.msg?r.msg:'Error desconocido'),'error');return}showMessage('Recepción creada correctamente.','success');loadReceptionQR(qrId)})}
+function createReception(qrId){
+  if(!currentUser)return;
+
+  if(SAVE_LOCKS['crearRecepcion']){
+    showMessage('Ya se está guardando la recepción. Espera unos segundos.', 'error');
+    return;
+  }
+
+  const payload={
+    accion:'crearRecepcion',
+    qrRecepcion:qrId,
+    usuario:currentUser.username,
+    rol:currentUser.role,
+    taldea:currentUser.taldea,
+    matricula:document.getElementById('recMatricula').value.trim(),
+    marca:document.getElementById('recMarca').value.trim(),
+    modelo:document.getElementById('recModelo').value.trim(),
+    km:document.getElementById('recKm').value.trim(),
+    cliente:document.getElementById('recCliente').value.trim(),
+    telefono:document.getElementById('recTelefono').value.trim(),
+    email:document.getElementById('recEmail').value.trim(),
+    tipoTrabajo:document.getElementById('recTipoTrabajo').value,
+    prioridad:document.getElementById('recPrioridad').value,
+    quejaCliente:document.getElementById('recQuejaCliente').value.trim(),
+    trabajoSolicitado:document.getElementById('recTrabajoSolicitado').value.trim(),
+    estadoVehiculo:'',
+    danosVisibles:document.getElementById('recDanosVisibles').value.trim(),
+    fotos:'',
+    observaciones:document.getElementById('recObservaciones').value.trim(),
+    estadoRecepcion:document.getElementById('recEstadoRecepcion').value
+  };
+
+  if(!payload.matricula||!payload.cliente){
+    showMessage('Rellena al menos matrícula y cliente.','error');
+    return;
+  }
+
+  SAVE_LOCKS['crearRecepcion']=true;
+
+  const btn = document.getElementById('btnCrearRecepcion');
+  if(btn){
+    btn.disabled = true;
+    btn.dataset.oldText = btn.textContent;
+    btn.textContent = 'Guardando...';
+    btn.classList.add('save-busy');
+  }
+
+  showMessage('Guardando recepción. No cierres la aplicación ni pulses varias veces.', 'success');
+
+  callSaveAPI(payload,r=>{
+    SAVE_LOCKS['crearRecepcion']=false;
+
+    if(btn){
+      btn.disabled = false;
+      btn.textContent = btn.dataset.oldText || 'Crear recepción';
+      btn.classList.remove('save-busy');
+    }
+
+    if(!r||!r.ok){
+      showMessage('Error creando recepción:\n'+(r&&r.msg?r.msg:'Error desconocido'),'error');
+      return;
+    }
+
+    showMessage('Recepción creada correctamente. Guardado con éxito.', 'success');
+    document.getElementById('vehicleDetail').insertAdjacentHTML('afterbegin', '<div class="success-box">✅ Recepción guardada con éxito</div>');
+
+    setTimeout(()=>loadReceptionQR(qrId),800);
+  });
+}
+
 function closeReceptionQR(qrId){if(!confirm('¿Cerrar esta recepción y liberar el QR?'))return;callSaveAPI({accion:'cerrarRecepcion',qrRecepcion:qrId,usuario:currentUser.username,rol:currentUser.role},r=>{if(!r||!r.ok){showMessage('Error cerrando recepción:\n'+(r&&r.msg?r.msg:'Error desconocido'),'error');return}showMessage('Recepción cerrada y QR liberado.','success');loadReceptionQR(qrId)})}
 let WORK_ROWS_CACHE = [];
 let SAVE_LOCKS = {};
