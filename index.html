@@ -218,19 +218,47 @@ function loadReceptionQR(qrId){
 
 function renderReceptionForm(qrId){document.getElementById('viewModeText').textContent='Nueva recepción de taller';document.getElementById('tableContainer').classList.add('hidden');document.getElementById('showAllBtn').classList.add('hidden');document.getElementById('vehicleDetail').innerHTML=`<div class="vehicle-card"><h2 class="vehicle-title">Recepción vehículo externo</h2><div class="field" style="margin-bottom:12px;"><div class="field-label">QR recepción</div><div class="field-value">${escapeHtml(qrId)}</div></div><div class="form-grid"><div><label><strong>Matrícula</strong></label><input id="recMatricula"></div><div><label><strong>Marca</strong></label><input id="recMarca"></div><div><label><strong>Modelo</strong></label><input id="recModelo"></div><div><label><strong>Kilómetros</strong></label><input id="recKm"></div><div><label><strong>Cliente</strong></label><input id="recCliente"></div><div><label><strong>Teléfono</strong></label><input id="recTelefono"></div><div><label><strong>Email</strong></label><input id="recEmail"></div><div><label><strong>Tipo de trabajo</strong></label><select id="recTipoTrabajo"><option value="MEKANIKA">Mecánica</option><option value="KARROZERIA">Carrocería</option><option value="BIAK">Mecánica + Carrocería</option></select></div><div><label><strong>Prioridad</strong></label><select id="recPrioridad"><option value="normal">normal</option><option value="alta">alta</option><option value="urgente">urgente</option></select></div><div><label><strong>Estado recepción</strong></label><select id="recEstadoRecepcion"><option value="abierta">abierta</option><option value="en curso">en curso</option><option value="cerrada">cerrada</option></select></div></div><label><strong>Queja del cliente</strong></label><textarea id="recQuejaCliente"></textarea><label><strong>Trabajo solicitado</strong></label><textarea id="recTrabajoSolicitado" placeholder="Ejemplo: frenos, ruido motor, ruedas. Cada coma crea una tarea independiente."></textarea><label><strong>Daños visibles</strong></label><textarea id="recDanosVisibles"></textarea><label><strong>Fotos</strong></label><textarea id="recFotos"></textarea><label><strong>Observaciones</strong></label><textarea id="recObservaciones"></textarea><button type="button" onclick="createReception('${escapeJs(qrId)}')">Crear recepción</button></div>`}
 
+
+function getReceptionDisplayField(row, names){
+  if(!row) return '';
+
+  for(let i = 0; i < names.length; i++){
+    const name = names[i];
+
+    if(row[name] !== undefined && row[name] !== null && String(row[name]).trim() !== ''){
+      return String(row[name]).trim();
+    }
+  }
+
+  const normalized = {};
+  Object.keys(row).forEach(k => {
+    normalized[String(k).trim().toUpperCase()] = row[k];
+  });
+
+  for(let i = 0; i < names.length; i++){
+    const key = String(names[i]).trim().toUpperCase();
+
+    if(normalized[key] !== undefined && normalized[key] !== null && String(normalized[key]).trim() !== ''){
+      return String(normalized[key]).trim();
+    }
+  }
+
+  return '';
+}
+
 function renderReceptionDetail(qr, harrera, lanakRows){
   document.getElementById('viewModeText').textContent = 'Orden de trabajo por QR';
   document.getElementById('tableContainer').classList.add('hidden');
   document.getElementById('showAllBtn').classList.add('hidden');
 
-  const matricula = getField(harrera, ['MATRICULA','MATRIKULA']);
-  const marca = getField(harrera, ['MARCA']);
-  const modelo = getField(harrera, ['MODELO']);
+  const matricula = getReceptionDisplayField(harrera, ['MATRICULA','MATRIKULA','Matrícula','Matricula','matricula']);
+  const marca = getReceptionDisplayField(harrera, ['MARCA','Marca','marka']);
+  const modelo = getReceptionDisplayField(harrera, ['MODELO','Modelo','modeloa']);
   const autoa = (marca + ' ' + modelo).trim();
-  const cliente = getField(harrera, ['CLIENTE','BEZEROA']);
-  const tipoTrabajo = getField(harrera, ['TIPO_TRABAJO','TAILERRA']);
-  const idRecepcion = getField(harrera, ['ID_RECEPCION']);
-  const trabajoSolicitado = getField(harrera, ['TRABAJO_SOLICITADO','TRABAJO_SOLICITADO ','LANA','QUEJA_CLIENTE']);
+  const cliente = getReceptionDisplayField(harrera, ['CLIENTE','BEZEROA','Cliente','Bezeroa','client']);
+  const tipoTrabajo = getReceptionDisplayField(harrera, ['TIPO_TRABAJO','TAILERRA','Tipo trabajo','Taller']);
+  const idRecepcion = getReceptionDisplayField(harrera, ['ID_RECEPCION','ID RECEPCION','ID_RECEPCIÓN']);
+  const trabajoSolicitado = getReceptionDisplayField(harrera, ['TRABAJO_SOLICITADO','TRABAJO_SOLICITADO ','LANA','QUEJA_CLIENTE','Trabajo solicitado','Queja cliente']);
 
   const activeWorks = getLatestWorkRowsByRecepcion(lanakRows || [], idRecepcion, matricula);
   const mekanika = activeWorks.filter(r => String(r.TAILERRA || '').trim() === 'MEKANIKA');
@@ -239,15 +267,16 @@ function renderReceptionDetail(qr, harrera, lanakRows){
   document.getElementById('vehicleDetail').innerHTML = `
     <div class="vehicle-card">
       <div class="qr-occupied-banner">
-<div class="qr-occupied-title">⚠ QR OCUPADO</div>
-<div class="qr-occupied-info">
-QR: ${escapeHtml(qr.QR_HARRERA || '')}<br>
-Vehículo: ${escapeHtml(autoa || '-')}<br>
-Matrícula: ${escapeHtml(matricula || '-')}<br>
-Cliente: ${escapeHtml(cliente || '-')}
-</div>
-</div>
-<h2 class="vehicle-title">${escapeHtml(autoa || 'Recepción ocupada')}</h2>
+        <div class="qr-occupied-title">⚠ QR OCUPADO</div>
+        <div class="qr-occupied-info">
+          <strong>QR:</strong> ${escapeHtml(qr.QR_HARRERA || qr.QR_RECEPCION || '')}<br>
+          <strong>Vehículo asignado:</strong> ${escapeHtml(autoa || 'Sin datos de vehículo')}<br>
+          <strong>Matrícula:</strong> ${escapeHtml(matricula || 'Sin matrícula')}<br>
+          <strong>Cliente:</strong> ${escapeHtml(cliente || 'Sin cliente')}<br>
+          <strong>ID recepción:</strong> ${escapeHtml(idRecepcion || '-')}
+        </div>
+      </div>
+      <h2 class="vehicle-title">${escapeHtml(autoa || 'Recepción ocupada')}</h2>
       <div class="status-strip">
         <span class="status-chip ${String(qr.EGOERA || '').toLowerCase() === 'libre' ? 'chip-libre' : 'chip-ocupado'}">QR: ${escapeHtml(qr.EGOERA || '')}</span>
         <span class="status-chip chip-pendiente">Tareas activas: ${activeWorks.length}</span>
