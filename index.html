@@ -61,7 +61,19 @@
     .blocked-alert-title{font-size:22px;margin-bottom:8px}
     .save-busy{background:#6b7280!important;cursor:not-allowed!important;opacity:.85}
 
-  </style>
+  
+.qr-occupied-banner{
+background:#fee2e2;
+border:2px solid #dc2626;
+padding:16px;
+border-radius:16px;
+margin-bottom:14px;
+box-shadow:0 8px 18px rgba(220,38,38,.15);
+}
+.qr-occupied-title{font-size:20px;font-weight:900;color:#991b1b}
+.qr-occupied-info{margin-top:8px;font-weight:700}
+
+</style>
 </head>
 <body>
 <div id="loginView" class="box"><div class="header"><div class="header-logo"><img src="icono-512.png" alt="MENDIcar"><div><h2>MENDIcar</h2><p>Gestión digital de automoción</p></div></div></div><div class="content"><input id="username" type="text" placeholder="Usuario / correo"><input id="password" type="password" placeholder="Contraseña"><button type="button" onclick="login()">Entrar</button><div id="loginError" class="msg error hidden"></div></div><div class="footer-credit">Aplicación realizada por <strong>Alain Urionabarrenetxea</strong></div></div>
@@ -135,45 +147,70 @@ function getLatestWorkRowsByMatricula(rows, matricula){
 function loadReceptionQR(qrId){
   clearMessage();
 
-  callSaveAPI({accion:'listarQrHarrera'}, qrResp => {
-    if(!qrResp || !qrResp.ok){
-      showMessage('Error cargando QR de recepción.', 'error');
+  callSaveAPI({accion:'comprobarQrHarrera', qrRecepcion: qrId}, checkResp => {
+    if(checkResp && checkResp.ok && checkResp.ocupado){
+      showMessage('Este QR ya está ocupado. No se puede crear otra recepción con el mismo QR.' + (checkResp.sugerido ? ' Si necesitas otro QR, coge el ' + checkResp.sugerido + '.' : ''), 'error');
+
+      callSaveAPI({accion:'listarQrHarrera'}, qrResp => {
+        const qrRows = qrResp && qrResp.ok ? (qrResp.rows || []) : [];
+        let qr = qrRows.find(r => String(r.QR_HARRERA || '').trim() === String(qrId).trim()) || {QR_HARRERA: qrId, EGOERA:'ocupado'};
+        qr.EGOERA = 'ocupado';
+
+        callSaveAPI({accion:'listarHarrera'}, hResp => {
+          const harreraRows = hResp && hResp.ok ? (hResp.rows || []) : [];
+          const harrera = getLatestByQR(harreraRows, qrId);
+
+          callSaveAPI({accion:'listarLanak'}, lResp => {
+            const lanakRows = lResp && lResp.ok ? (lResp.rows || []) : [];
+            WORK_ROWS_CACHE = lanakRows;
+            renderReceptionDetail(qr, harrera, lanakRows);
+          });
+        });
+      });
+
       return;
     }
 
-    const rows = qrResp.rows || [];
-    const qr = rows.find(r => String(r.QR_HARRERA || '').trim() === String(qrId).trim());
-
-    if(!qr){
-      showMessage('No existe este QR de recepción: ' + qrId, 'error');
-      return;
-    }
-
-    const estado = String(qr.EGOERA || '').trim().toLowerCase();
-
-    if(estado === 'libre'){
-      renderReceptionForm(qrId);
-      return;
-    }
-
-    callSaveAPI({accion:'listarHarrera'}, hResp => {
-      if(!hResp || !hResp.ok){
-        showMessage('Error cargando HARRERA.', 'error');
+    callSaveAPI({accion:'listarQrHarrera'}, qrResp => {
+      if(!qrResp || !qrResp.ok){
+        showMessage('Error cargando QR de recepción.', 'error');
         return;
       }
 
-      const harreraRows = hResp.rows || [];
-      const harrera = getLatestByQR(harreraRows, qrId);
+      const rows = qrResp.rows || [];
+      const qr = rows.find(r => String(r.QR_HARRERA || '').trim() === String(qrId).trim());
 
-      callSaveAPI({accion:'listarLanak'}, lResp => {
-        if(!lResp || !lResp.ok){
-          showMessage('Error cargando LANAK.', 'error');
+      if(!qr){
+        showMessage('No existe este QR de recepción: ' + qrId, 'error');
+        return;
+      }
+
+      const estado = String(qr.EGOERA || '').trim().toLowerCase();
+
+      if(estado === 'libre'){
+        renderReceptionForm(qrId);
+        return;
+      }
+
+      callSaveAPI({accion:'listarHarrera'}, hResp => {
+        if(!hResp || !hResp.ok){
+          showMessage('Error cargando HARRERA.', 'error');
           return;
         }
 
-        const lanakRows = lResp.rows || [];
-        WORK_ROWS_CACHE = lanakRows;
-        renderReceptionDetail(qr, harrera, lanakRows);
+        const harreraRows = hResp.rows || [];
+        const harrera = getLatestByQR(harreraRows, qrId);
+
+        callSaveAPI({accion:'listarLanak'}, lResp => {
+          if(!lResp || !lResp.ok){
+            showMessage('Error cargando LANAK.', 'error');
+            return;
+          }
+
+          const lanakRows = lResp.rows || [];
+          WORK_ROWS_CACHE = lanakRows;
+          renderReceptionDetail(qr, harrera, lanakRows);
+        });
       });
     });
   });
@@ -201,7 +238,16 @@ function renderReceptionDetail(qr, harrera, lanakRows){
 
   document.getElementById('vehicleDetail').innerHTML = `
     <div class="vehicle-card">
-      <h2 class="vehicle-title">${escapeHtml(autoa || 'Recepción ocupada')}</h2>
+      <div class="qr-occupied-banner">
+<div class="qr-occupied-title">⚠ QR OCUPADO</div>
+<div class="qr-occupied-info">
+QR: ${escapeHtml(qr.QR_HARRERA || '')}<br>
+Vehículo: ${escapeHtml(autoa || '-')}<br>
+Matrícula: ${escapeHtml(matricula || '-')}<br>
+Cliente: ${escapeHtml(cliente || '-')}
+</div>
+</div>
+<h2 class="vehicle-title">${escapeHtml(autoa || 'Recepción ocupada')}</h2>
       <div class="status-strip">
         <span class="status-chip ${String(qr.EGOERA || '').toLowerCase() === 'libre' ? 'chip-libre' : 'chip-ocupado'}">QR: ${escapeHtml(qr.EGOERA || '')}</span>
         <span class="status-chip chip-pendiente">Tareas activas: ${activeWorks.length}</span>
