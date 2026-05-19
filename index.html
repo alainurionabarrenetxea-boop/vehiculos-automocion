@@ -154,6 +154,91 @@ box-shadow:0 8px 18px rgba(220,38,38,.15);
     .check-item-done{background:#dcfce7;border-color:#86efac;color:#166534}
     .task-state-select{width:150px;margin-left:auto;padding:8px;border-radius:10px}
 
+  
+    /* ===== MENDIcar v3.2 checklist estable ===== */
+    .work-reception-card{
+      background:#fff;
+      border:1px solid #e5e7eb;
+      border-radius:20px;
+      margin:14px 0;
+      padding:0;
+      overflow:hidden;
+      box-shadow:0 10px 26px rgba(15,23,42,.08);
+      border-left:10px solid #2563eb;
+    }
+    .work-reception-summary{
+      list-style:none;
+      cursor:pointer;
+      padding:18px;
+      background:linear-gradient(180deg,#ffffff,#f8fafc);
+    }
+    .work-reception-summary::-webkit-details-marker{display:none;}
+    .qr-line{
+      display:inline-block;
+      margin-top:8px;
+      padding:8px 12px;
+      background:#111827;
+      color:white;
+      border-radius:999px;
+      font-weight:900;
+      font-size:14px;
+    }
+    .pending-line{
+      color:#2563eb;
+      font-weight:800;
+      margin-top:7px;
+    }
+    .checklist-card{
+      background:white;
+      border-top:1px solid #e5e7eb;
+      padding:16px;
+    }
+    .check-item{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      padding:12px;
+      margin:8px 0;
+      border:1px solid #e5e7eb;
+      border-radius:14px;
+      background:#f8fafc;
+      font-size:17px;
+      font-weight:750;
+    }
+    .check-item input{
+      width:24px;
+      height:24px;
+      flex-shrink:0;
+    }
+    .check-item-done{
+      background:#dcfce7;
+      border-color:#86efac;
+      color:#166534;
+    }
+    .check-item-cancelled{
+      background:#fee2e2;
+      border-color:#fecaca;
+      color:#991b1b;
+    }
+    .task-state-select{
+      width:145px;
+      margin-left:auto;
+      padding:8px;
+      border-radius:10px;
+      border:1px solid #d1d5db;
+      background:white;
+      font-weight:700;
+    }
+    .check-actions{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      margin-top:12px;
+    }
+    @media (min-width: 700px){
+      .check-actions{flex-direction:row;}
+    }
+
   </style>
 </head>
 <body>
@@ -350,6 +435,32 @@ function getReceptionDisplayField(row, names){
 }
 
 
+
+function getReceptionWorkshop(row){
+  const candidates = [
+    row.TIPO_TRABAJO,
+    row.TAILERRA,
+    row.TALLER,
+    row.QUEJA_CLIENTE,
+    row.TRABAJO_SOLICITADO
+  ];
+
+  for(const value of candidates){
+    const s = String(value || '').trim().toUpperCase();
+
+    if(s === 'MEKANIKA' || s === 'MECANICA' || s === 'MECÁNICA'){
+      return 'MEKANIKA';
+    }
+
+    if(s === 'KARROZERIA' || s === 'CARROCERIA' || s === 'CARROCERÍA'){
+      return 'KARROZERIA';
+    }
+  }
+
+  return 'SIN_TALLER';
+}
+
+
 function parseTrabajosJsonFront(row){
   const raw = getReceptionDisplayField(row, ['TRABAJOS_JSON','trabajos_json']);
   const trabajoSolicitado = getReceptionDisplayField(row, ['TRABAJO_SOLICITADO','Trabajo solicitado','LANA']);
@@ -424,6 +535,7 @@ function guardarChecklistRecepcion(idRecepcion){
 }
 
 function renderReceptionDetail(qr, harrera, lanakRows){
+  window.RECEPCIONES_CACHE = harrera ? [harrera] : (window.RECEPCIONES_CACHE || []);
   window.RECEPCIONES_CACHE = harrera ? [harrera] : (window.RECEPCIONES_CACHE || []);
   document.getElementById('viewModeText').textContent = 'Orden de trabajo por QR';
   document.getElementById('tableContainer').classList.add('hidden');
@@ -703,17 +815,261 @@ function showWorksPanel(){
   loadWorks();
 }
 
+
+// MENDICAR_V3_2_FRONT_HELPERS
+
+function normalizeHeaderName(name){
+  return String(name || '')
+    .trim()
+    .toUpperCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g,'')
+    .replace(/\s+/g,'_');
+}
+
+function getAnyField(row, names){
+  if(!row) return '';
+
+  for(const n of names){
+    if(row[n] !== undefined && row[n] !== null && String(row[n]).trim() !== ''){
+      return String(row[n]).trim();
+    }
+  }
+
+  const normalized = {};
+  Object.keys(row || {}).forEach(k => {
+    normalized[normalizeHeaderName(k)] = row[k];
+  });
+
+  for(const n of names){
+    const key = normalizeHeaderName(n);
+    if(normalized[key] !== undefined && normalized[key] !== null && String(normalized[key]).trim() !== ''){
+      return String(normalized[key]).trim();
+    }
+  }
+
+  return '';
+}
+
+function parseTrabajosJsonFront(row){
+  // 1) Lectura principal desde TRABAJOS_JSON
+  let raw = getAnyField(row, ['TRABAJOS_JSON','TRABAJOS JSON','trabajos_json']);
+
+  // 2) Si por cualquier desplazamiento de columna viene en una clave rara,
+  // buscamos en todos los valores de la fila un texto que parezca JSON de trabajos.
+  if(!raw){
+    for(const k of Object.keys(row || {})){
+      const v = String(row[k] || '').trim();
+      if(v.startsWith('[{') && v.includes('"texto"')){
+        raw = v;
+        break;
+      }
+    }
+  }
+
+  try{
+    const parsed = JSON.parse(raw || '[]');
+    if(Array.isArray(parsed) && parsed.length){
+      return parsed.map((t,i)=>({
+        id: t.id || ('T'+(i+1)),
+        texto: t.texto || t.lana || t.trabajo || '',
+        estado: t.estado || 'pendiente',
+        obs: t.obs || '',
+        evidencias: Array.isArray(t.evidencias) ? t.evidencias : []
+      })).filter(t => String(t.texto || '').trim() !== '');
+    }
+  }catch(e){}
+
+  // 3) Fallback: reconstruir desde TRABAJO_SOLICITADO
+  const trabajoSolicitado = getAnyField(row, ['TRABAJO_SOLICITADO','TRABAJO SOLICITADO','LANA','QUEJA_CLIENTE']);
+  return String(trabajoSolicitado || '')
+    .split(',')
+    .map(x=>x.trim())
+    .filter(Boolean)
+    .map((texto,i)=>({
+      id:'T'+(i+1),
+      texto:texto,
+      estado:'pendiente',
+      obs:'',
+      evidencias:[]
+    }));
+}
+
+function getReceptionWorkshop(row){
+  const candidates = [
+    getAnyField(row, ['TIPO_TRABAJO','TIPO TRABAJO']),
+    getAnyField(row, ['TAILERRA','TALLER']),
+    getAnyField(row, ['QUEJA_CLIENTE','QUEJA CLIENTE'])
+  ];
+
+  for(const value of candidates){
+    const s = String(value || '').trim().toUpperCase();
+    if(s === 'MEKANIKA' || s === 'MECANICA' || s === 'MECÁNICA') return 'MEKANIKA';
+    if(s === 'KARROZERIA' || s === 'CARROCERIA' || s === 'CARROCERÍA') return 'KARROZERIA';
+  }
+
+  return 'SIN_TALLER';
+}
+
+function renderChecklist(idRecepcion, trabajos){
+  if(!trabajos || !trabajos.length){
+    return "<div class='ficha-box'>Sin trabajos definidos</div>";
+  }
+
+  return `
+    <div class="checklist-card">
+      <h3>Trabajos / Lanak</h3>
+
+      ${trabajos.map(t=>{
+        const estado = String(t.estado || 'pendiente').toLowerCase();
+        const done = estado === 'terminado';
+        const cancelled = estado === 'cancelado';
+        return `
+          <div class="check-item ${done ? 'check-item-done' : ''} ${cancelled ? 'check-item-cancelled' : ''}">
+            <input
+              type="checkbox"
+              data-idrecepcion="${escapeAttr(idRecepcion)}"
+              data-idtarea="${escapeAttr(t.id)}"
+              ${done ? 'checked' : ''}
+              onchange="toggleChecklistItem('${escapeJs(idRecepcion)}','${escapeJs(t.id)}',this.checked)"
+            >
+            <span>${escapeHtml(t.texto || '')}</span>
+            <select
+              class="task-state-select"
+              id="estado_${escapeAttr(idRecepcion)}_${escapeAttr(t.id)}"
+              onchange="selectChecklistState('${escapeJs(idRecepcion)}','${escapeJs(t.id)}',this.value)"
+            >
+              <option value="pendiente" ${estado==='pendiente'?'selected':''}>pendiente</option>
+              <option value="en curso" ${estado==='en curso'?'selected':''}>en curso</option>
+              <option value="terminado" ${estado==='terminado'?'selected':''}>terminado</option>
+              <option value="cancelado" ${estado==='cancelado'?'selected':''}>cancelado</option>
+            </select>
+          </div>
+        `;
+      }).join('')}
+
+      <label><strong>Observaciones / Oharrak</strong></label>
+      <textarea id="obsChecklist_${escapeAttr(idRecepcion)}" placeholder="Ejemplo: radiador desmontado, falta material..."></textarea>
+
+      <div class="check-actions">
+        <button type="button" onclick="guardarChecklistRecepcion('${escapeJs(idRecepcion)}')">Guardar checklist</button>
+      </div>
+    </div>
+  `;
+}
+
+function getRecepcionById(idRecepcion){
+  return (window.RECEPCIONES_CACHE || []).find(r =>
+    String(getAnyField(r, ['ID_RECEPCION','ID RECEPCION']) || '').trim() === String(idRecepcion).trim()
+  );
+}
+
+function toggleChecklistItem(idRecepcion, idTarea, checked){
+  const r = getRecepcionById(idRecepcion);
+  if(!r) return;
+
+  const trabajos = parseTrabajosJsonFront(r);
+  const t = trabajos.find(x => String(x.id) === String(idTarea));
+  if(!t) return;
+
+  t.estado = checked ? 'terminado' : 'pendiente';
+  r.TRABAJOS_JSON = JSON.stringify(trabajos);
+
+  const sel = document.getElementById('estado_' + idRecepcion + '_' + idTarea);
+  if(sel) sel.value = t.estado;
+}
+
+function selectChecklistState(idRecepcion, idTarea, estado){
+  const r = getRecepcionById(idRecepcion);
+  if(!r) return;
+
+  const trabajos = parseTrabajosJsonFront(r);
+  const t = trabajos.find(x => String(x.id) === String(idTarea));
+  if(!t) return;
+
+  t.estado = estado;
+  r.TRABAJOS_JSON = JSON.stringify(trabajos);
+
+  document
+    .querySelectorAll('input[data-idrecepcion="'+idRecepcion+'"][data-idtarea="'+idTarea+'"]')
+    .forEach(ch => { ch.checked = estado === 'terminado'; });
+}
+
+function guardarChecklistRecepcion(idRecepcion){
+  if(SAVE_LOCKS['checklist_'+idRecepcion]){
+    showMessage('Ya se está guardando este checklist. Espera unos segundos.', 'error');
+    return;
+  }
+
+  const r = getRecepcionById(idRecepcion);
+  if(!r){
+    showMessage('No se ha encontrado la recepción.', 'error');
+    return;
+  }
+
+  const trabajos = parseTrabajosJsonFront(r);
+  const obsEl = document.getElementById('obsChecklist_' + idRecepcion);
+  const obs = obsEl ? obsEl.value : '';
+
+  SAVE_LOCKS['checklist_'+idRecepcion] = true;
+  showMessage('Guardando checklist...', 'success');
+
+  callSaveAPI({
+    accion:'actualizarTrabajosRecepcion',
+    idRecepcion:idRecepcion,
+    trabajosJson:JSON.stringify(trabajos),
+    usuario:currentUser ? currentUser.username : '',
+    oharrak:obs
+  }, resp => {
+    SAVE_LOCKS['checklist_'+idRecepcion] = false;
+
+    if(!resp || !resp.ok){
+      showMessage('Error guardando checklist: ' + (resp && resp.msg ? resp.msg : 'Error desconocido'), 'error');
+      return;
+    }
+
+    showMessage(resp.msg || 'Checklist guardado correctamente.', 'success');
+
+    setTimeout(()=>{
+      const entry = getEntryParams();
+      if(entry.qrHarrera){
+        loadReceptionQR(entry.qrHarrera);
+      }else{
+        showWorksPanel();
+      }
+    },700);
+  });
+}
+
 function loadWorks(){
   clearMessage();
+
   callSaveAPI({accion:'listarHarrera'}, hResp=>{
-    if(!hResp||!hResp.ok){
+    if(!hResp || !hResp.ok){
       document.getElementById('worksList').innerHTML="<div class='msg error'>Error cargando recepciones</div>";
       return;
     }
-    window.RECEPCIONES_CACHE=(hResp.rows||[]).filter(r=>{
-      const estado=String(r.ESTADO_RECEPCION||'abierta').trim().toLowerCase();
-      return estado!=='cerrada' && estado!=='cerrado';
+
+    const rows = hResp.rows || [];
+
+    window.RECEPCIONES_CACHE = rows.filter(r=>{
+      const estadoRecepcion = String(getAnyField(r, ['ESTADO_RECEPCION','ESTADO RECEPCION']) || 'abierta').trim().toLowerCase();
+      const idRecepcion = getAnyField(r, ['ID_RECEPCION','ID RECEPCION']);
+      const qr = getAnyField(r, ['QR_RECEPCION','QR RECEPCION']);
+      const trabajos = parseTrabajosJsonFront(r);
+
+      if(!idRecepcion && !qr) return false;
+      if(estadoRecepcion === 'cerrada' || estadoRecepcion === 'cerrado') return false;
+
+      // Activa si tiene tareas pendientes/en curso o si no hay JSON todavía pero hay trabajo solicitado
+      if(!trabajos.length) return true;
+
+      return !trabajos.every(t=>{
+        const e = String(t.estado || '').toLowerCase();
+        return e === 'terminado' || e === 'cancelado';
+      });
     });
+
     renderWorks(window.RECEPCIONES_CACHE);
   });
 }
@@ -738,51 +1094,77 @@ function getPriorityValue(r){
 
 function getProgressValue(r){return String(r.AURRERAPENA||r.PROGRESO||r.OHARRAK||r.OBSERVACIONES||'').trim()}
 function renderWorks(rows){
-  const activeRows=(rows||[]).filter(r=>{
-    const trabajos=parseTrabajosJsonFront(r);
-    if(!trabajos.length)return true;
-    return !trabajos.every(t=>{
-      const e=String(t.estado||'').toLowerCase();
-      return e==='terminado'||e==='cancelado';
-    });
-  });
+  const activeRows = rows || [];
 
-  const mekanika=activeRows.filter(r=>String(r.TIPO_TRABAJO||r.TAILERRA||'').trim()==='MEKANIKA');
-  const karrozeria=activeRows.filter(r=>String(r.TIPO_TRABAJO||r.TAILERRA||'').trim()==='KARROZERIA');
+  const mekanika = activeRows.filter(r=>getReceptionWorkshop(r)==='MEKANIKA');
+  const karrozeria = activeRows.filter(r=>getReceptionWorkshop(r)==='KARROZERIA');
+  const sinTaller = activeRows.filter(r=>getReceptionWorkshop(r)==='SIN_TALLER');
 
   document.getElementById('worksList').innerHTML=`
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px;">
-      <div><h3 style="font-size:24px;margin-bottom:12px;">MEKANIKA</h3>${renderReceptionWorkList(mekanika)}</div>
-      <div><h3 style="font-size:24px;margin-bottom:12px;">KARROZERIA</h3>${renderReceptionWorkList(karrozeria)}</div>
-    </div>`;
+      <div>
+        <h3 style="font-size:24px;margin-bottom:12px;">MEKANIKA</h3>
+        ${renderReceptionWorkList(mekanika)}
+      </div>
+
+      <div>
+        <h3 style="font-size:24px;margin-bottom:12px;">KARROZERIA</h3>
+        ${renderReceptionWorkList(karrozeria)}
+      </div>
+
+      ${sinTaller.length ? `
+        <div>
+          <h3 style="font-size:24px;margin-bottom:12px;">SIN TALLER</h3>
+          ${renderReceptionWorkList(sinTaller)}
+        </div>
+      ` : ''}
+    </div>
+  `;
 }
 
 function renderReceptionWorkList(rows){
-  if(!rows.length)return "<div class='ficha-box'>Sin trabajos</div>";
+  if(!rows.length){
+    return "<div class='ficha-box'>Sin trabajos</div>";
+  }
+
   return rows.map(r=>{
-    const idRecepcion=String(r.ID_RECEPCION||'').trim();
-    const qr=String(r.QR_RECEPCION||'').trim();
-    const autoa=((r.MARCA||'')+' '+(r.MODELO||'')).trim()||'Vehículo';
-    const matricula=String(r.MATRICULA||'').trim();
-    const cliente=String(r.CLIENTE||r.BEZEROA||'').trim();
-    const trabajos=parseTrabajosJsonFront(r);
-    const pendientes=trabajos.filter(t=>{const e=String(t.estado||'').toLowerCase();return e!=='terminado'&&e!=='cancelado'}).length;
+    const idRecepcion = String(getAnyField(r, ['ID_RECEPCION','ID RECEPCION']) || '').trim();
+    const qr = String(getAnyField(r, ['QR_RECEPCION','QR RECEPCION']) || '').trim();
+    const marca = getAnyField(r, ['MARCA','Marca']);
+    const modelo = getAnyField(r, ['MODELO','Modelo']);
+    const autoa = ((marca || '') + ' ' + (modelo || '')).trim() || 'Vehículo';
+    const matricula = getAnyField(r, ['MATRICULA','MATRIKULA','Matrícula']);
+    const cliente = getAnyField(r, ['CLIENTE','BEZEROA','Cliente']);
+    const taller = getReceptionWorkshop(r);
+    const trabajos = parseTrabajosJsonFront(r);
+
+    const pendientes = trabajos.filter(t=>{
+      const e = String(t.estado || '').toLowerCase();
+      return e !== 'terminado' && e !== 'cancelado';
+    }).length;
+
     return `
-      <details class="work-card priority-normal" style="padding:0;overflow:hidden;">
-        <summary style="list-style:none;cursor:pointer;padding:18px;">
+      <details class="work-reception-card" open>
+        <summary class="work-reception-summary">
           <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;">
             <div>
-              <strong style="font-size:20px;">${escapeHtml(autoa)}</strong>
-              ${matricula?`<span style="color:#6b7280;"> · ${escapeHtml(matricula)}</span>`:''}
-              <br><span style="color:#6b7280;">${escapeHtml(cliente)}</span>
-              <br><span style="color:#111827;font-weight:900;">QR asignado: ${escapeHtml(qr||'-')}</span>
-              <br><span style="color:#2563eb;font-weight:700;">Pendientes: ${pendientes} · Tocar para abrir</span>
+              <strong style="font-size:21px;">${escapeHtml(autoa)}</strong>
+              ${matricula ? `<span style="color:#6b7280;"> · ${escapeHtml(matricula)}</span>` : ''}
+              <br>
+              <span style="color:#6b7280;">${escapeHtml(cliente || '')}</span>
+              <br>
+              <span class="qr-line">QR asignado: ${escapeHtml(qr || '-')}</span>
+              <br>
+              <span style="color:#6b7280;font-weight:800;">Taller: ${escapeHtml(taller)}</span>
+              <div class="pending-line">Pendientes: ${pendientes} · Tocar para abrir/cerrar</div>
             </div>
-            <span class="badge ${pendientes?'badge-pendiente':'badge-terminado'}">${pendientes?'activo':'cerrado'}</span>
+            <span class="badge ${pendientes ? 'badge-pendiente' : 'badge-terminado'}">${pendientes ? 'activo' : 'cerrado'}</span>
           </div>
         </summary>
-        <div style="padding:0 18px 18px;">${renderChecklist(idRecepcion,trabajos)}</div>
-      </details>`;
+
+        ${renderChecklist(idRecepcion, trabajos)}
+      </details>
+    `;
   }).join('');
 }
 
