@@ -466,6 +466,59 @@ box-shadow:0 8px 18px rgba(220,38,38,.15);
       .dashboard-subtitle{font-size:13px;}
     }
 
+  
+    /* ===== MENDIcar v4.5 trabajos plegados ===== */
+    .work-reception-card{
+      scroll-margin-top:18px;
+    }
+    .work-reception-card:not([open]) .work-reception-summary{
+      border-bottom:none;
+    }
+    .work-head-main{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:12px;
+      width:100%;
+    }
+    .work-head-left{
+      min-width:0;
+    }
+    .work-head-title{
+      font-size:22px;
+      font-weight:950;
+      color:#111827;
+      line-height:1.18;
+    }
+    .work-head-qr{
+      display:inline-block;
+      margin-bottom:8px;
+      padding:8px 12px;
+      background:#111827;
+      color:white;
+      border-radius:999px;
+      font-weight:950;
+      font-size:14px;
+    }
+    .work-head-meta{
+      margin-top:4px;
+      color:#6b7280;
+      font-weight:800;
+      line-height:1.35;
+    }
+    .work-head-open{
+      margin-top:10px;
+      color:#2563eb;
+      font-weight:900;
+      font-size:16px;
+    }
+    .work-reception-card[open] .work-head-open::after{
+      content:" abierto";
+    }
+    .work-reception-card:not([open]) .work-head-open::after{
+      content:" tocar para desplegar";
+    }
+
   </style>
 </head>
 <body>
@@ -1823,6 +1876,7 @@ function renderReceptionWorkList(rows){
     const autoa = ((marca || '') + ' ' + (modelo || '')).trim() || 'Vehículo';
     const matricula = getAnyField(r, ['MATRICULA','MATRIKULA','Matrícula']);
     const cliente = getAnyField(r, ['CLIENTE','BEZEROA','Cliente']);
+    const profesor = getAnyField(r,['ERABILTZAILEA','USUARIO','IRAKASLEA','PROFESOR']) || '';
     const taller = getReceptionWorkshop(r);
     const trabajos = parseTrabajosJsonFront(r);
 
@@ -1831,22 +1885,29 @@ function renderReceptionWorkList(rows){
       return e !== 'terminado' && e !== 'cancelado';
     }).length;
 
+    const estadoCard = pendientes ? 'ACTIVO' : 'CERRADO';
+    const badgeClass = pendientes ? 'badge-pendiente' : 'badge-terminado';
+
     return `
-      <details class="work-reception-card" open>
+      <details class="work-reception-card">
         <summary class="work-reception-summary">
-          <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;">
-            <div>
-              <strong style="font-size:21px;">${escapeHtml(autoa)}</strong>
-              ${matricula ? `<span style="color:#6b7280;"> · ${escapeHtml(matricula)}</span>` : ''}
-              <br>
-              <span style="color:#6b7280;">${escapeHtml(cliente || '')}</span>
-              <br>
-              <span class="qr-line">QR asignado: ${escapeHtml(qr || '-')}</span>
-              <br>
-              <span style="color:#6b7280;font-weight:800;">Taller: ${escapeHtml(taller)}</span>
-              <div class="pending-line">Pendientes: ${pendientes} · Tocar para abrir/cerrar</div>
+          <div class="work-head-main">
+            <div class="work-head-left">
+              <span class="work-head-qr">${escapeHtml(qr || '-')}</span>
+              <div class="work-head-title">
+                ${escapeHtml(autoa)}
+                ${matricula ? `<span style="color:#6b7280;font-weight:800;"> · ${escapeHtml(matricula)}</span>` : ''}
+              </div>
+              <div class="work-head-meta">
+                ${escapeHtml(cliente || '')}
+                ${cliente ? '<br>' : ''}
+                ${profesor ? `Profesor responsable: ${escapeHtml(profesor)}<br>` : ''}
+                Taller: ${escapeHtml(taller)} · Pendientes: ${pendientes}
+              </div>
+              <div class="work-head-open">Pulsa para</div>
             </div>
-            <span class="badge ${pendientes ? 'badge-pendiente' : 'badge-terminado'}">${pendientes ? 'activo' : 'cerrado'}</span>
+
+            <span class="badge ${badgeClass}">${estadoCard}</span>
           </div>
         </summary>
 
