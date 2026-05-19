@@ -243,13 +243,13 @@ box-shadow:0 8px 18px rgba(220,38,38,.15);
 </head>
 <body>
 <div id="loginView" class="box"><div class="header"><div class="header-logo"><img src="icono-512.png" alt="MENDIcar"><div><h2>MENDIcar</h2><p>Gestión digital de automoción</p></div></div></div><div class="content"><input id="username" type="text" placeholder="Usuario / correo"><input id="password" type="password" placeholder="Contraseña"><button type="button" onclick="login()">Entrar</button><div id="loginError" class="msg error hidden"></div></div><div class="footer-credit">Aplicación realizada por <strong>Alain Urionabarrenetxea</strong></div></div>
-<div id="appView" class="box hidden"><div class="header"><div class="header-logo"><img src="icono-512.png" alt="MENDIcar"><div><h2>MENDIcar</h2><p id="welcomeText"></p></div></div></div><div class="content"><div class="topbar"><div id="viewModeText">Consulta de vehículo</div><div class="topbar-actions"><button id="showAllBtn" class="small-btn hidden" type="button" onclick="showAllVehicles()">Ver todos</button><button id="showWorksBtn" class="small-btn hidden" type="button" onclick="showWorksPanel()">Trabajos</button><button class="small-btn secondary-btn" type="button" onclick="logout()">Cerrar sesión</button></div></div><div id="appMessage" class="msg info hidden"></div><div id="vehicleDetail"></div><div id="tableContainer" class="table-wrap hidden"><table><thead><tr><th>ID</th><th>Vehículo</th><th>Color</th><th>VIN</th><th>Estado</th><th>Observaciones</th></tr></thead><tbody id="tableBody"></tbody></table></div></div><div class="footer-credit">Aplicación realizada por <strong>Alain Urionabarrenetxea</strong></div></div>
+<div id="appView" class="box hidden"><div class="header"><div class="header-logo"><img src="icono-512.png" alt="MENDIcar"><div><h2>MENDIcar</h2><p id="welcomeText"></p></div></div></div><div class="content"><div class="topbar"><div id="viewModeText">Consulta de vehículo</div><div class="topbar-actions"><button id="showAllBtn" class="small-btn hidden" type="button" onclick="showAllVehicles()">Ver todos</button><button id="showWorksBtn" class="small-btn hidden" type="button" onclick="showWorksPanel()">Trabajos</button><button id="showCalendarBtn" class="small-btn hidden" type="button" onclick="showCalendarPanel()">Calendario</button><button id="showQrHistoryBtn" class="small-btn hidden" type="button" onclick="showQrHistoryPanel()">Historial QR</button><button class="small-btn secondary-btn" type="button" onclick="logout()">Cerrar sesión</button></div></div><div id="appMessage" class="msg info hidden"></div><div id="vehicleDetail"></div><div id="tableContainer" class="table-wrap hidden"><table><thead><tr><th>ID</th><th>Vehículo</th><th>Color</th><th>VIN</th><th>Estado</th><th>Observaciones</th></tr></thead><tbody id="tableBody"></tbody></table></div></div><div class="footer-credit">Aplicación realizada por <strong>Alain Urionabarrenetxea</strong></div></div>
 <button id="helpBtn" class="help-floating hidden" type="button" onclick="startTutorial(true)">❓ Ayuda</button>
 
 <script>
 let USERS=[],vehicles=[],currentUser=null;const SHEET_ID="1sf2TS8gCKachrkz66S6E_zQuafVpu7F_AhSLdhi-W-g",SHEET_GID="0",SAVE_API_URL="https://script.google.com/macros/s/AKfycbwBYs2oADcw-Za-nLVbR0oF5L6ZHx2gYd1JS-0vjIW9IbD53P9j7U68R09-WGieM2Er2A/exec";
 function showLoginError(t){const e=document.getElementById('loginError');e.textContent=t;e.classList.remove('hidden')}function clearLoginError(){const e=document.getElementById('loginError');e.textContent='';e.classList.add('hidden')}function showMessage(t,type='info'){const e=document.getElementById('appMessage');e.textContent=t;e.className='msg '+type;e.classList.remove('hidden')}function clearMessage(){const e=document.getElementById('appMessage');e.textContent='';e.classList.add('hidden')}function value(v){return v==null?'':String(v).trim()}function normalizeYesNo(v){const x=String(v||'').trim().toLowerCase();if(['bai','si','sí','yes'].includes(x))return'Bai';if(['ez','no'].includes(x))return'Ez';return'Ez'}function normalizeRole(v){const x=String(v||'').trim().toLowerCase();if(x==='profesor'||x==='irakaslea')return'profesor';if(x==='alumno'||x==='ikaslea')return'alumno';return x}function isActive(v){const x=String(v||'').trim().toLowerCase();return ['bai','si','sí','yes','1','true'].includes(x)}function escapeHtml(v){return String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}function escapeAttr(v){return escapeHtml(v)}function escapeJs(v){return String(v??'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'\\"')}function getEntryParams(){const p=new URLSearchParams(location.search);return{id:p.get('id'),trabajo:p.get('trabajo'),profesor:p.get('profesor'),panel:p.get('panel'),qrHarrera:p.get('qrHarrera')||p.get('harrera')||p.get('qr')}}
-async function login(){clearLoginError();const username=document.getElementById('username').value.trim().toLowerCase(),password=document.getElementById('password').value.trim();try{const r=await fetch('https://opensheet.elk.sh/'+SHEET_ID+'/ERABILTZAILEAK');USERS=await r.json();const user=USERS.find(u=>String(u.usuario||'').trim().toLowerCase()===username&&String(u.password||'').trim()===password&&isActive(u.activo));if(!user){showLoginError('Usuario o contraseña incorrectos, o usuario inactivo.');return}const role=normalizeRole(user.rol),entry=getEntryParams();if(role==='alumno'&&!entry.id&&!entry.trabajo&&!entry.qrHarrera){showLoginError('Acceso solo permitido mediante QR del coche, ficha de trabajo o QR de recepción.');return}currentUser={username:String(user.usuario||'').trim(),role,name:String(user.nombre||user.usuario||'').trim(),taldea:String(user.taldea||'').trim()};document.getElementById('loginView').classList.add('hidden');document.getElementById('appView').classList.remove('hidden');document.getElementById('helpBtn').classList.remove('hidden');document.getElementById('welcomeText').textContent='Bienvenido, '+currentUser.name+' · Rol: '+currentUser.role;if(currentUser.role==='profesor')document.getElementById('showWorksBtn').classList.remove('hidden');loadVehiclesJSONP();maybeStartTutorial()}catch(err){showLoginError('Error cargando usuarios:\n'+err.message)}}
+async function login(){clearLoginError();const username=document.getElementById('username').value.trim().toLowerCase(),password=document.getElementById('password').value.trim();try{const r=await fetch('https://opensheet.elk.sh/'+SHEET_ID+'/ERABILTZAILEAK');USERS=await r.json();const user=USERS.find(u=>String(u.usuario||'').trim().toLowerCase()===username&&String(u.password||'').trim()===password&&isActive(u.activo));if(!user){showLoginError('Usuario o contraseña incorrectos, o usuario inactivo.');return}const role=normalizeRole(user.rol),entry=getEntryParams();if(role==='alumno'&&!entry.id&&!entry.trabajo&&!entry.qrHarrera){showLoginError('Acceso solo permitido mediante QR del coche, ficha de trabajo o QR de recepción.');return}currentUser={username:String(user.usuario||'').trim(),role,name:String(user.nombre||user.usuario||'').trim(),taldea:String(user.taldea||'').trim()};document.getElementById('loginView').classList.add('hidden');document.getElementById('appView').classList.remove('hidden');document.getElementById('helpBtn').classList.remove('hidden');document.getElementById('welcomeText').textContent='Bienvenido, '+currentUser.name+' · Rol: '+currentUser.role;if(currentUser.role==='profesor'){document.getElementById('showWorksBtn').classList.remove('hidden');document.getElementById('showCalendarBtn').classList.remove('hidden');document.getElementById('showQrHistoryBtn').classList.remove('hidden');}loadVehiclesJSONP();registrarUsoApp('LOGIN','Entrada en la aplicación','','','');maybeStartTutorial()}catch(err){showLoginError('Error cargando usuarios:\n'+err.message)}}
 function logout(){currentUser=null;vehicles=[];document.getElementById('appView').classList.add('hidden');document.getElementById('loginView').classList.remove('hidden');['username','password'].forEach(id=>document.getElementById(id).value='');document.getElementById('vehicleDetail').innerHTML='';document.getElementById('tableBody').innerHTML='';document.getElementById('tableContainer').classList.add('hidden');document.getElementById('showAllBtn').classList.add('hidden');document.getElementById('showWorksBtn').classList.add('hidden');clearMessage();clearLoginError()}
 function loadVehiclesJSONP(){clearMessage();const old=document.getElementById('sheetJsonpScript');if(old)old.remove();window.handleSheetData=function(response){try{const cols=response.table.cols.map((c,i)=>(c.label||'').trim()||'Columna '+(i+1));const rows=response.table.rows.map(row=>{const o={};cols.forEach((name,i)=>o[name]=row.c[i]&&row.c[i].v!=null?row.c[i].v:'');return o});vehicles=rows.map(r=>({id:value(r.ID),qr:value(r.QR),tailerra:value(r.TAILERRA),autoa:value(r.Autoa),color:value(r.Kolorea),vin:value(r.VIN),fitxaTeknika:value(r['Fitxa teknika']),rta:value(r.RTA),egokitua:value(r.Egokitua),erabilpena:value(r.Erabilpena),estado:value(r.Egoera),piztenDu:normalizeYesNo(value(r['Pizten du'])),piztuBeharDu:normalizeYesNo(value(r['Piztu behar du'])),observaciones:value(r.Oharrak),blokatuta:normalizeYesNo(value(r.BLOKATUTA)),idBlokeoa:value(r['ID BLOKEOA']),blokeoData:value(r['BLOKEO DATA']),blokeoZergatia:value(r['BLOKEO ZERGATIA'])})).filter(v=>v.id!=='');routeAfterLoad()}catch(e){showMessage('Error procesando la hoja:\n'+e.message,'error')}};const s=document.createElement('script');s.id='sheetJsonpScript';s.src='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?gid='+SHEET_GID+'&tqx=responseHandler:handleSheetData';s.onerror=()=>showMessage('No se ha podido cargar la hoja desde Google Sheets.','error');document.body.appendChild(s)}
 function routeAfterLoad(){const entry=getEntryParams();if(!currentUser)return;if(entry.qrHarrera){loadReceptionQR(entry.qrHarrera);return}if(currentUser.role==='profesor'){if(entry.panel==='irakaslea'){showWorksPanel();return}if(entry.id){const v=vehicles.find(x=>String(x.id)===String(entry.id));if(!v){showMessage('No se ha encontrado ningún vehículo con ese ID.','error');return}renderVehicleDetail(v);return}document.getElementById('viewModeText').textContent='Panel general de profesor';document.getElementById('tableContainer').classList.remove('hidden');document.getElementById('showAllBtn').classList.add('hidden');renderVehiclesTable();return}if(currentUser.role==='alumno'){if(entry.id){const v=vehicles.find(x=>String(x.id)===String(entry.id));if(!v){showMessage('No se ha encontrado ningún vehículo con ese ID.','error');return}renderVehicleDetail(v);return}showMessage('Acceso denegado. El alumnado solo puede entrar desde QR o ficha de trabajo.','error')}}
@@ -348,6 +348,7 @@ function renderOccupiedQrSummary(qrId, recepcion, sugerido){
 
 function loadReceptionQR(qrId){
   clearMessage();
+  registrarActividadQR('HARRERA', qrId, 'ENTRA_QR', 'Entrada al QR de recepción');
 
   callSaveAPI({accion:'comprobarQrHarrera', qrRecepcion: qrId}, checkResp => {
     if(checkResp && checkResp.ok && checkResp.ocupado){
@@ -742,9 +743,280 @@ function closeReceptionQR(qrId){if(!confirm('¿Cerrar esta recepción y liberar 
 let WORK_ROWS_CACHE = [];
 let SAVE_LOCKS = {};
 
+
+function registrarUsoApp(accion, detalle, idRecepcion, qr, matricula){
+  if(!currentUser) return;
+
+  try{
+    callSaveAPI({
+      accion:'registrarLog',
+      usuario:currentUser.username || '',
+      rol:currentUser.role || '',
+      taldea:currentUser.taldea || '',
+      idRecepcion:idRecepcion || '',
+      qrRecepcion:qr || '',
+      matricula:matricula || '',
+      cambio:accion || '',
+      oharrak:detalle || ''
+    }, ()=>{});
+  }catch(e){}
+}
+
+function getPlannedDate(row){
+  return getAnyField(row, ['NOIZKO','FECHA_PROGRAMADA','FECHA','DATA']);
+}
+
+function getPlannedTime(row){
+  return getAnyField(row, ['N.ORDUA','N_ORDUA','HORA_PROGRAMADA','HORA','ORDUA']);
+}
+
+function getCalendarStatus(row){
+  const trabajos = parseTrabajosJsonFront(row);
+  if(!trabajos.length) return 'sin trabajos';
+
+  const pendientes = trabajos.filter(t=>{
+    const e = String(t.estado || '').toLowerCase();
+    return e !== 'terminado' && e !== 'cancelado';
+  }).length;
+
+  if(pendientes === 0) return 'cerrado';
+
+  if(trabajos.some(t=>String(t.estado || '').toLowerCase()==='en curso')) return 'en curso';
+
+  return 'pendiente';
+}
+
+
+// ===== MENDIcar v3.4 Registro básico QR =====
+function getQrTypeFromValue(qr){
+  return String(qr || '').toUpperCase().includes('HARRERA') ? 'HARRERA' : 'AUTOAK';
+}
+function registrarActividadQR(tipoQr, qr, accion, detalle){
+  if(!currentUser) return;
+  try{
+    callSaveAPI({
+      accion:'registrarActividadQR',
+      usuario:currentUser.username || '',
+      rol:currentUser.role || '',
+      taldea:currentUser.taldea || '',
+      tipoQr:tipoQr || getQrTypeFromValue(qr),
+      qr:qr || '',
+      accionRegistro:accion || '',
+      detalle:detalle || ''
+    }, ()=>{});
+  }catch(e){}
+}
+function showQrHistoryPanel(){
+  if(!currentUser || currentUser.role !== 'profesor'){
+    showMessage('Solo el profesorado puede consultar el historial.', 'error');
+    return;
+  }
+  clearMessage();
+  document.getElementById('viewModeText').textContent='Historial QR';
+  document.getElementById('tableContainer').classList.add('hidden');
+  document.getElementById('showAllBtn').classList.remove('hidden');
+  document.getElementById('vehicleDetail').innerHTML = `
+    <div class="vehicle-card">
+      <h2 class="vehicle-title">Historial QR</h2>
+      <p class="muted">Quién ha entrado o modificado un QR, cuándo y qué acción ha realizado.</p>
+      <div class="form-grid">
+        <div>
+          <label><strong>Buscar QR / ID coche</strong></label>
+          <input id="histQrSearch" placeholder="QR-HARRERA-01, ID-7..." oninput="renderQrHistoryFromCache()">
+        </div>
+        <div>
+          <label><strong>Acción</strong></label>
+          <select id="histActionFilter" onchange="renderQrHistoryFromCache()">
+            <option value="">Todas</option>
+            <option value="ENTRA_QR">Entradas QR</option>
+            <option value="GUARDA_CHECKLIST">Guardados</option>
+            <option value="TERMINA_TAREA">Terminadas</option>
+            <option value="CANCELA_TAREA">Canceladas</option>
+            <option value="BLOQUEA_COCHE">Bloqueos</option>
+            <option value="DESBLOQUEA_COCHE">Desbloqueos</option>
+          </select>
+        </div>
+      </div>
+      <div id="qrHistoryList" style="margin-top:18px;"></div>
+    </div>`;
+  loadQrHistory();
+}
+function loadQrHistory(){
+  callSaveAPI({accion:'listarRegistro'}, resp=>{
+    if(!resp || !resp.ok){
+      document.getElementById('qrHistoryList').innerHTML = "<div class='msg error'>Error cargando REGISTRO</div>";
+      return;
+    }
+    window.REGISTRO_CACHE = resp.rows || [];
+    renderQrHistoryFromCache();
+  });
+}
+function renderQrHistoryFromCache(){
+  const q = String(document.getElementById('histQrSearch')?.value || '').trim().toUpperCase();
+  const action = String(document.getElementById('histActionFilter')?.value || '').trim().toUpperCase();
+  let rows = (window.REGISTRO_CACHE || []).filter(r=>{
+    const qr = String(getAnyField(r,['QR','ID','QR_RECEPCION']) || '').toUpperCase();
+    const acc = String(getAnyField(r,['ACCION','CAMBIO','LANA']) || '').toUpperCase();
+    const detail = String(getAnyField(r,['DETALLE','OHARRAK','DESCRIPCION','test']) || '').toUpperCase();
+    if(q && !(qr.includes(q) || detail.includes(q))) return false;
+    if(action && acc !== action) return false;
+    return qr || acc || detail;
+  }).reverse().slice(0,150);
+  if(!rows.length){
+    document.getElementById('qrHistoryList').innerHTML = "<div class='ficha-box'>No hay registros.</div>";
+    return;
+  }
+  document.getElementById('qrHistoryList').innerHTML = rows.map(r=>{
+    const fecha = getAnyField(r,['FECHA','DATA','data']);
+    const hora = getAnyField(r,['HORA','ORDUA','hora']);
+    const usuario = getAnyField(r,['USUARIO','ERABILTZAILEA','usuario']);
+    const rol = getAnyField(r,['ROL','rol']);
+    const taldea = getAnyField(r,['TALDEA','taldea']);
+    const tipoQr = getAnyField(r,['TIPO_QR','TIPO QR']);
+    const qr = getAnyField(r,['QR','ID','QR_RECEPCION']);
+    const accion = getAnyField(r,['ACCION','CAMBIO','LANA']);
+    const detalle = getAnyField(r,['DETALLE','OHARRAK','DESCRIPCION','test']);
+    return `<div class="work-reception-card" style="border-left-color:#111827;">
+      <div class="work-reception-summary">
+        <strong>${escapeHtml(fecha || '-')} ${escapeHtml(hora || '')}</strong><br>
+        <span class="qr-line">${escapeHtml(qr || '-')}</span><br>
+        <strong>${escapeHtml(accion || '-')}</strong>
+        <div style="margin-top:8px;color:#374151;">${escapeHtml(detalle || '')}</div>
+        <div style="margin-top:8px;color:#6b7280;font-weight:800;">${escapeHtml(usuario || '-')} · ${escapeHtml(rol || '-')} ${taldea ? '· '+escapeHtml(taldea) : ''} ${tipoQr ? '· '+escapeHtml(tipoQr) : ''}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function showCalendarPanel(){
+  if(!currentUser || currentUser.role !== 'profesor') return;
+
+  clearMessage();
+  registrarUsoApp('CALENDARIO','Consulta de planificación semanal','','','');
+
+  document.getElementById('viewModeText').textContent='Calendario / Planificación';
+  document.getElementById('tableContainer').classList.add('hidden');
+  document.getElementById('showAllBtn').classList.remove('hidden');
+
+  document.getElementById('vehicleDetail').innerHTML = `
+    <div class="vehicle-card">
+      <h2 class="vehicle-title">Calendario / Planificación</h2>
+      <p class="muted">Vista diaria y semanal de trabajos abiertos. Se alimenta de HARRERA y de las fechas programadas.</p>
+
+      <div class="form-grid">
+        <div>
+          <label><strong>Vista</strong></label>
+          <select id="calendarViewMode" onchange="loadCalendar()">
+            <option value="today">Hoy</option>
+            <option value="week" selected>Semana</option>
+            <option value="all">Todos abiertos</option>
+          </select>
+        </div>
+        <div>
+          <label><strong>Fecha base</strong></label>
+          <input type="date" id="calendarBaseDate" onchange="loadCalendar()">
+        </div>
+      </div>
+
+      <div id="calendarList" style="margin-top:18px;"></div>
+    </div>
+  `;
+
+  const d = new Date();
+  document.getElementById('calendarBaseDate').value = d.toISOString().slice(0,10);
+  loadCalendar();
+}
+
+function loadCalendar(){
+  const mode = document.getElementById('calendarViewMode')?.value || 'week';
+  const base = document.getElementById('calendarBaseDate')?.value || new Date().toISOString().slice(0,10);
+
+  callSaveAPI({accion:'listarHarrera'}, resp=>{
+    if(!resp || !resp.ok){
+      document.getElementById('calendarList').innerHTML = "<div class='msg error'>Error cargando planificación</div>";
+      return;
+    }
+
+    const rows = (resp.rows || []).filter(r=>{
+      const estado = String(getAnyField(r,['ESTADO_RECEPCION','ESTADO RECEPCION']) || 'abierta').toLowerCase();
+      return estado !== 'cerrada' && estado !== 'cerrado';
+    });
+
+    renderCalendar(rows, mode, base);
+  });
+}
+
+function dateDiffDays(a,b){
+  const da = new Date(a + 'T00:00:00');
+  const db = new Date(b + 'T00:00:00');
+  return Math.round((da - db) / 86400000);
+}
+
+function renderCalendar(rows, mode, base){
+  const filtered = rows.filter(r=>{
+    const fecha = getPlannedDate(r);
+    if(mode === 'all') return true;
+    if(!fecha) return mode === 'all';
+
+    const diff = dateDiffDays(fecha, base);
+    if(mode === 'today') return diff === 0;
+    if(mode === 'week') return diff >= 0 && diff <= 6;
+    return true;
+  }).sort((a,b)=>{
+    const av = (getPlannedDate(a)||'9999-99-99') + ' ' + (getPlannedTime(a)||'99:99');
+    const bv = (getPlannedDate(b)||'9999-99-99') + ' ' + (getPlannedTime(b)||'99:99');
+    return av.localeCompare(bv);
+  });
+
+  if(!filtered.length){
+    document.getElementById('calendarList').innerHTML = "<div class='ficha-box'>No hay trabajos planificados en esta vista.</div>";
+    return;
+  }
+
+  const grouped = {};
+  filtered.forEach(r=>{
+    const fecha = getPlannedDate(r) || 'Sin fecha';
+    if(!grouped[fecha]) grouped[fecha] = [];
+    grouped[fecha].push(r);
+  });
+
+  document.getElementById('calendarList').innerHTML = Object.keys(grouped).map(fecha=>{
+    return `
+      <h3 style="margin-top:18px;font-size:22px;">${escapeHtml(fecha)}</h3>
+      ${grouped[fecha].map(r=>{
+        const hora = getPlannedTime(r) || '-';
+        const qr = getAnyField(r,['QR_RECEPCION','QR RECEPCION']);
+        const marca = getAnyField(r,['MARCA']);
+        const modelo = getAnyField(r,['MODELO']);
+        const matricula = getAnyField(r,['MATRICULA','MATRIKULA']);
+        const cliente = getAnyField(r,['CLIENTE','BEZEROA']);
+        const taller = getReceptionWorkshop(r);
+        const trabajos = parseTrabajosJsonFront(r);
+        const estado = getCalendarStatus(r);
+        const tareas = trabajos.map(t=>`${t.estado==='terminado'?'☑':'☐'} ${escapeHtml(t.texto||'')}`).join('<br>');
+
+        return `
+          <div class="work-reception-card" style="border-left-color:${estado==='en curso'?'#f59e0b':estado==='cerrado'?'#16a34a':'#2563eb'};">
+            <div class="work-reception-summary">
+              <strong style="font-size:20px;">${escapeHtml(hora)} · ${escapeHtml((marca+' '+modelo).trim() || 'Vehículo')}</strong>
+              ${matricula ? `<span style="color:#6b7280;"> · ${escapeHtml(matricula)}</span>` : ''}
+              <br>
+              <span class="qr-line">${escapeHtml(qr || '-')}</span>
+              <br>
+              <span style="color:#6b7280;font-weight:800;">${escapeHtml(taller)} · ${escapeHtml(cliente || '')} · ${escapeHtml(estado)}</span>
+              <div style="margin-top:10px;line-height:1.5;">${tareas}</div>
+            </div>
+          </div>
+        `;
+      }).join('')}
+    `;
+  }).join('');
+}
+
 function showWorksPanel(){
   if(!currentUser || currentUser.role !== 'profesor') return;
   clearMessage();
+  registrarUsoApp('TRABAJOS','Consulta de trabajos activos','','','');
 
   document.getElementById('viewModeText').textContent = 'Panel de trabajos';
   document.getElementById('tableContainer').classList.add('hidden');
@@ -1012,6 +1284,12 @@ function guardarChecklistRecepcion(idRecepcion){
   const obs = obsEl ? obsEl.value : '';
 
   SAVE_LOCKS['checklist_'+idRecepcion] = true;
+  const tareasCerradas = trabajos.filter(t=>String(t.estado||'').toLowerCase()==='terminado').map(t=>t.texto).join(', ');
+  const tareasCanceladas = trabajos.filter(t=>String(t.estado||'').toLowerCase()==='cancelado').map(t=>t.texto).join(', ');
+  const qrLog = getAnyField(r,['QR_RECEPCION','QR RECEPCION']);
+  if(tareasCerradas) registrarActividadQR('HARRERA', qrLog, 'TERMINA_TAREA', tareasCerradas);
+  if(tareasCanceladas) registrarActividadQR('HARRERA', qrLog, 'CANCELA_TAREA', tareasCanceladas);
+  registrarActividadQR('HARRERA', qrLog, 'GUARDA_CHECKLIST', obs || 'Checklist actualizado');
   showMessage('Guardando checklist...', 'success');
 
   callSaveAPI({
@@ -1029,6 +1307,7 @@ function guardarChecklistRecepcion(idRecepcion){
     }
 
     showMessage(resp.msg || 'Checklist guardado correctamente.', 'success');
+    registrarUsoApp('GUARDAR_CHECKLIST','Checklist actualizado',idRecepcion,getAnyField(r,['QR_RECEPCION','QR RECEPCION']),getAnyField(r,['MATRICULA','MATRIKULA']));
 
     setTimeout(()=>{
       const entry = getEntryParams();
@@ -1417,6 +1696,7 @@ function createWork(){
     const idRecepcion = r.idRecepcion || '';
 
     showMessage('Trabajo creado correctamente. QR asignado automáticamente: '+qrAsignado,'success');
+    registrarUsoApp('CREAR_ORDEN','Orden creada desde Trabajos',idRecepcion,qrAsignado,payload.matricula);
 
     if(resultBox){
       resultBox.innerHTML = `
