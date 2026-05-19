@@ -239,6 +239,77 @@ box-shadow:0 8px 18px rgba(220,38,38,.15);
       .check-actions{flex-direction:row;}
     }
 
+  
+    /* ===== MENDIcar v3.5 calendario mensual ===== */
+    .calendar-nav{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      margin:14px 0;
+    }
+    .calendar-month-title{
+      font-size:24px;
+      font-weight:900;
+      color:#111827;
+    }
+    .month-grid{
+      display:grid;
+      grid-template-columns:repeat(7,1fr);
+      gap:8px;
+      margin-top:14px;
+    }
+    .day-head{
+      font-weight:900;
+      text-align:center;
+      color:#374151;
+      padding:8px 4px;
+    }
+    .day-cell{
+      min-height:88px;
+      border:1px solid #e5e7eb;
+      border-radius:14px;
+      background:white;
+      padding:8px;
+      cursor:pointer;
+      box-shadow:0 4px 10px rgba(15,23,42,.04);
+    }
+    .day-cell:hover{
+      border-color:#2563eb;
+      box-shadow:0 8px 18px rgba(37,99,235,.16);
+    }
+    .day-muted{
+      background:#f3f4f6;
+      color:#9ca3af;
+    }
+    .day-number{
+      font-weight:900;
+      font-size:16px;
+    }
+    .day-badges{
+      display:flex;
+      flex-wrap:wrap;
+      gap:4px;
+      margin-top:8px;
+    }
+    .day-badge{
+      display:inline-block;
+      border-radius:999px;
+      padding:3px 7px;
+      font-size:11px;
+      font-weight:900;
+    }
+    .badge-plan{background:#dbeafe;color:#1d4ed8;}
+    .badge-real{background:#dcfce7;color:#166534;}
+    .selected-day-panel{
+      margin-top:18px;
+      padding:16px;
+      border-radius:18px;
+      background:#f8fafc;
+      border:1px solid #e5e7eb;
+    }
+
   </style>
 </head>
 <body>
@@ -879,7 +950,7 @@ function renderQrHistoryFromCache(){
     return `<div class="work-reception-card" style="border-left-color:#111827;">
       <div class="work-reception-summary">
         <strong>${escapeHtml(fecha || '-')} ${escapeHtml(hora || '')}</strong><br>
-        <span class="qr-line">${escapeHtml(qr || '-')}</span><br>
+        <span class="qr-line">${escapeHtml(getQrDisplayName(qr) || '-')}</span><br>
         <strong>${escapeHtml(accion || '-')}</strong>
         <div style="margin-top:8px;color:#374151;">${escapeHtml(detalle || '')}</div>
         <div style="margin-top:8px;color:#6b7280;font-weight:800;">${escapeHtml(usuario || '-')} · ${escapeHtml(rol || '-')} ${taldea ? '· '+escapeHtml(taldea) : ''} ${tipoQr ? '· '+escapeHtml(tipoQr) : ''}</div>
@@ -1001,7 +1072,7 @@ function renderCalendar(rows, mode, base){
               <strong style="font-size:20px;">${escapeHtml(hora)} · ${escapeHtml((marca+' '+modelo).trim() || 'Vehículo')}</strong>
               ${matricula ? `<span style="color:#6b7280;"> · ${escapeHtml(matricula)}</span>` : ''}
               <br>
-              <span class="qr-line">${escapeHtml(qr || '-')}</span>
+              <span class="qr-line">${escapeHtml(getQrDisplayName(qr) || '-')}</span>
               <br>
               <span style="color:#6b7280;font-weight:800;">${escapeHtml(taller)} · ${escapeHtml(cliente || '')} · ${escapeHtml(estado)}</span>
               <div style="margin-top:10px;line-height:1.5;">${tareas}</div>
@@ -1801,6 +1872,222 @@ function skipTutorial(){finishTutorial()}
 
 
 document.getElementById('password').addEventListener('keydown',e=>{if(e.key==='Enter')login()});
+
+// ===== MENDIcar v3.5 Calendario mensual =====
+let CALENDAR_MONTH_DATE = new Date();
+
+function showCalendarPanel(){
+  if(!currentUser || currentUser.role !== 'profesor') return;
+
+  clearMessage();
+  registrarUsoApp('CALENDARIO','Consulta de calendario mensual','','','');
+
+  document.getElementById('viewModeText').textContent='Calendario mensual / Hileko egutegia';
+  document.getElementById('tableContainer').classList.add('hidden');
+  document.getElementById('showAllBtn').classList.remove('hidden');
+
+  document.getElementById('vehicleDetail').innerHTML = `
+    <div class="vehicle-card">
+      <h2 class="vehicle-title">Calendario mensual / Hileko egutegia</h2>
+      <p class="muted">Pulsa sobre un día para ver las tareas programadas o registradas ese día.</p>
+
+      <div class="calendar-nav">
+        <button type="button" onclick="changeCalendarMonth(-1)">← Mes anterior</button>
+        <div id="calendarMonthTitle" class="calendar-month-title"></div>
+        <button type="button" onclick="changeCalendarMonth(1)">Mes siguiente →</button>
+      </div>
+
+      <div id="calendarMonthGrid"></div>
+      <div id="calendarDayDetail" class="selected-day-panel">Selecciona un día del calendario.</div>
+    </div>
+  `;
+
+  loadCalendarMonth();
+}
+
+function changeCalendarMonth(delta){
+  CALENDAR_MONTH_DATE = new Date(CALENDAR_MONTH_DATE.getFullYear(), CALENDAR_MONTH_DATE.getMonth() + delta, 1);
+  loadCalendarMonth();
+}
+
+function loadCalendarMonth(){
+  callSaveAPI({accion:'listarHarrera'}, hResp=>{
+    const hRows = hResp && hResp.ok ? (hResp.rows || []) : [];
+
+    callSaveAPI({accion:'listarRegistro'}, regResp=>{
+      const rRows = regResp && regResp.ok ? (regResp.rows || []) : [];
+      window.CALENDAR_HARRERA_CACHE = hRows;
+      window.CALENDAR_REGISTRO_CACHE = rRows;
+      renderMonthCalendar(hRows, rRows);
+    });
+  });
+}
+
+function ymd(date){
+  const y=date.getFullYear();
+  const m=String(date.getMonth()+1).padStart(2,'0');
+  const d=String(date.getDate()).padStart(2,'0');
+  return `${y}-${m}-${d}`;
+}
+
+function parseDateLike(v){
+  const s=String(v||'').trim();
+  if(!s) return '';
+  if(/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0,10);
+  if(/^\d{2}\/\d{2}\/\d{4}/.test(s)){
+    const [d,m,y]=s.split(/[\/ ]/);
+    return `${y}-${m}-${d}`;
+  }
+  return s.slice(0,10);
+}
+
+function getReceptionDate(row){
+  return parseDateLike(getAnyField(row, ['NOIZKO','FECHA_PROGRAMADA','FECHA','DATA']));
+}
+
+function getRegistroDate(row){
+  return parseDateLike(getAnyField(row, ['FECHA','DATA','data']));
+}
+
+function renderMonthCalendar(hRows, rRows){
+  const year = CALENDAR_MONTH_DATE.getFullYear();
+  const month = CALENDAR_MONTH_DATE.getMonth();
+
+  const first = new Date(year, month, 1);
+  const start = new Date(first);
+  const day = (first.getDay() + 6) % 7; // lunes=0
+  start.setDate(first.getDate() - day);
+
+  const monthName = first.toLocaleDateString('es-ES', {month:'long', year:'numeric'});
+  document.getElementById('calendarMonthTitle').textContent = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+
+  const heads = ['L','M','X','J','V','S','D'];
+  let html = `<div class="month-grid">${heads.map(h=>`<div class="day-head">${h}</div>`).join('')}`;
+
+  for(let i=0;i<42;i++){
+    const d = new Date(start);
+    d.setDate(start.getDate()+i);
+    const dateStr = ymd(d);
+    const inMonth = d.getMonth() === month;
+
+    const planned = (hRows||[]).filter(r => getReceptionDate(r) === dateStr);
+    const real = (rRows||[]).filter(r => getRegistroDate(r) === dateStr);
+
+    html += `
+      <div class="day-cell ${inMonth?'':'day-muted'}" onclick="showCalendarDay('${dateStr}')">
+        <div class="day-number">${d.getDate()}</div>
+        <div class="day-badges">
+          ${planned.length ? `<span class="day-badge badge-plan">${planned.length} plan.</span>` : ''}
+          ${real.length ? `<span class="day-badge badge-real">${real.length} reg.</span>` : ''}
+        </div>
+      </div>
+    `;
+  }
+
+  html += '</div>';
+  document.getElementById('calendarMonthGrid').innerHTML = html;
+}
+
+function showCalendarDay(dateStr){
+  const hRows = window.CALENDAR_HARRERA_CACHE || [];
+  const rRows = window.CALENDAR_REGISTRO_CACHE || [];
+
+  const planned = hRows.filter(r => getReceptionDate(r) === dateStr);
+  const real = rRows.filter(r => getRegistroDate(r) === dateStr);
+
+  document.getElementById('calendarDayDetail').innerHTML = `
+    <h3>${escapeHtml(dateStr)}</h3>
+
+    <h4>Programadas / Planifikatuak</h4>
+    ${planned.length ? planned.map(renderCalendarReceptionItem).join('') : "<div class='ficha-box'>No hay tareas programadas.</div>"}
+
+    <h4 style="margin-top:18px;">Registros del día / Eguneko erregistroak</h4>
+    ${real.length ? real.slice().reverse().map(renderCalendarRegistroItem).join('') : "<div class='ficha-box'>No hay registros ese día.</div>"}
+  `;
+}
+
+function renderCalendarReceptionItem(r){
+  const qr = getAnyField(r,['QR_RECEPCION','QR RECEPCION']);
+  const marca = getAnyField(r,['MARCA']);
+  const modelo = getAnyField(r,['MODELO']);
+  const matricula = getAnyField(r,['MATRICULA','MATRIKULA']);
+  const cliente = getAnyField(r,['CLIENTE','BEZEROA']);
+  const trabajos = parseTrabajosJsonFront(r);
+  const tareas = trabajos.map(t => `${String(t.estado||'pendiente')==='terminado'?'☑':'☐'} ${escapeHtml(t.texto||'')}`).join('<br>');
+
+  return `
+    <div class="work-reception-card">
+      <div class="work-reception-summary">
+        <strong>${escapeHtml((marca+' '+modelo).trim() || 'Vehículo')}</strong>
+        ${matricula ? ` · <span style="color:#6b7280;">${escapeHtml(matricula)}</span>` : ''}
+        <br>
+        <span class="qr-line">${escapeHtml(getQrDisplayName(qr) || '-')}</span>
+        <br>
+        <span style="color:#6b7280;font-weight:800;">${escapeHtml(cliente || '')}</span>
+        <div style="margin-top:10px;line-height:1.5;">${tareas}</div>
+      </div>
+    </div>
+  `;
+}
+
+function renderCalendarRegistroItem(r){
+  const hora = getAnyField(r,['HORA','ORDUA','hora']);
+  const usuario = getAnyField(r,['USUARIO','ERABILTZAILEA','usuario']);
+  const qr = getAnyField(r,['QR','ID','QR_RECEPCION']);
+  const accion = getAnyField(r,['ACCION','CAMBIO','LANA']);
+  const detalle = getAnyField(r,['DETALLE','OHARRAK','DESCRIPCION','test']);
+
+  return `
+    <div class="work-reception-card" style="border-left-color:#16a34a;">
+      <div class="work-reception-summary">
+        <strong>${escapeHtml(hora || '')} · ${escapeHtml(accion || '-')}</strong>
+        <br>
+        <span class="qr-line">${escapeHtml(getQrDisplayName(qr) || '-')}</span>
+        <div style="margin-top:8px;">${escapeHtml(detalle || '')}</div>
+        <div style="margin-top:8px;color:#6b7280;font-weight:800;">${escapeHtml(usuario || '-')}</div>
+      </div>
+    </div>
+  `;
+}
+
+
+// ===== MENDIcar v3.5 Historial QR con nombre de coche =====
+function buildAutoakNameMap(rows){
+  const map = {};
+  (rows||[]).forEach(v=>{
+    const id = getAnyField(v,['ID','Id','id']);
+    const autoa = getAnyField(v,['Autoa','AUTOA','autoa','Vehículo','VEHICULO']);
+    const color = getAnyField(v,['Kolorea','KOLOREA','Color']);
+    if(id && autoa){
+      map['ID-'+id] = autoa + (color ? ' · ' + color : '');
+      map[String(id)] = autoa + (color ? ' · ' + color : '');
+    }
+  });
+  return map;
+}
+
+function getQrDisplayName(qr){
+  const raw = String(qr || '').trim();
+  const map = window.AUTOAK_NAME_MAP || {};
+  return map[raw] || map[raw.replace(/^ID-/,'')] || raw;
+}
+
+// Override loadQrHistory to also load AUTOAK.
+function loadQrHistory(){
+  callSaveAPI({accion:'listarRegistro'}, resp=>{
+    if(!resp || !resp.ok){
+      document.getElementById('qrHistoryList').innerHTML = "<div class='msg error'>Error cargando REGISTRO</div>";
+      return;
+    }
+
+    callSaveAPI({accion:'listarAutoak'}, aResp=>{
+      window.AUTOAK_NAME_MAP = buildAutoakNameMap(aResp && aResp.ok ? (aResp.rows || []) : []);
+      window.REGISTRO_CACHE = resp.rows || [];
+      renderQrHistoryFromCache();
+    });
+  });
+}
+
 </script>
 </body>
 </html>
