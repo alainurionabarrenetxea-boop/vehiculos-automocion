@@ -480,7 +480,91 @@ function rowsFromResponse(resp){
   return [];
 }
 
-function login(){clearLoginError();const username=document.getElementById('username').value.trim().toLowerCase(),password=document.getElementById('password').value.trim();try{const r=await fetch('https://opensheet.elk.sh/'+SHEET_ID+'/ERABILTZAILEAK');USERS=rowsFromResponse(await r.json());const user=USERS.find(u=>String(u.usuario||'').trim().toLowerCase()===username&&String(u.password||'').trim()===password&&isActive(u.activo));if(!user){showLoginError('Usuario o contraseña incorrectos, o usuario inactivo.');return}const role=normalizeRole(user.rol),entry=getEntryParams();if(role==='alumno'&&!entry.id&&!entry.trabajo&&!entry.qrHarrera){showLoginError('Acceso solo permitido mediante QR del coche, ficha de trabajo o QR de recepción.');return}currentUser={username:String(user.usuario||'').trim(),role,name:String(user.nombre||user.usuario||'').trim(),taldea:String(user.taldea||'').trim()};document.getElementById('loginView').classList.add('hidden');document.getElementById('appView').classList.remove('hidden');document.getElementById('helpBtn').classList.remove('hidden');document.getElementById('welcomeText').textContent='Bienvenido, '+currentUser.name+' · Rol: '+currentUser.role;if(currentUser.role==='profesor'){document.getElementById('showWorksBtn').classList.remove('hidden');document.getElementById('showCalendarBtn').classList.remove('hidden');document.getElementById('showQrHistoryBtn').classList.remove('hidden');}loadVehiclesJSONP();registrarUsoApp('LOGIN','Entrada en la aplicación','','','');maybeStartTutorial()}catch(err){showLoginError('Error cargando usuarios:\n'+err.message)}}
+async function login(){
+  clearLoginError();
+
+  const usernameEl = document.getElementById('username');
+  const passwordEl = document.getElementById('password');
+
+  const username = usernameEl ? usernameEl.value.trim().toLowerCase() : '';
+  const password = passwordEl ? passwordEl.value.trim() : '';
+
+  if(!username || !password){
+    showLoginError('Introduce usuario y contraseña.');
+    return;
+  }
+
+  try{
+    showLoading('Cargando usuarios...');
+
+    const r = await fetch('https://opensheet.elk.sh/' + SHEET_ID + '/ERABILTZAILEAK');
+    const raw = await r.json();
+
+    USERS = rowsFromResponse(raw);
+
+    const user = USERS.find(u =>
+      String(u.usuario || u.USUARIO || '').trim().toLowerCase() === username &&
+      String(u.password || u.PASSWORD || '').trim() === password &&
+      isActive(u.activo || u.ACTIVO)
+    );
+
+    if(!user){
+      forceHideLoading();
+      showLoginError('Usuario o contraseña incorrectos, o usuario inactivo.');
+      return;
+    }
+
+    const role = normalizeRole(user.rol || user.ROL);
+    const entry = getEntryParams();
+
+    if(role === 'alumno' && !entry.id && !entry.trabajo && !entry.qrHarrera){
+      forceHideLoading();
+      showLoginError('Acceso solo permitido mediante QR del coche, ficha de trabajo o QR de recepción.');
+      return;
+    }
+
+    currentUser = {
+      username: String(user.usuario || user.USUARIO || '').trim(),
+      role: role,
+      name: String(user.nombre || user.NOMBRE || user.usuario || user.USUARIO || '').trim(),
+      taldea: String(user.taldea || user.TALDEA || '').trim()
+    };
+
+    document.getElementById('loginView').classList.add('hidden');
+    document.getElementById('appView').classList.remove('hidden');
+    document.getElementById('helpBtn').classList.remove('hidden');
+    document.getElementById('welcomeText').textContent =
+      'Bienvenido, ' + currentUser.name + ' · Rol: ' + currentUser.role;
+
+    if(currentUser.role === 'profesor'){
+      document.getElementById('showAllBtn').classList.remove('hidden');
+      document.getElementById('showWorksBtn').classList.remove('hidden');
+      document.getElementById('showCalendarBtn').classList.remove('hidden');
+      document.getElementById('showQrHistoryBtn').classList.remove('hidden');
+    }
+
+    registrarUsoApp('LOGIN','Entrada en la aplicación','','','');
+
+    // Entrada directa por QR: abre el QR.
+    // Entrada normal: muestra SOLO el dashboard limpio.
+    if(entry.qrHarrera){
+      forceHideLoading();
+      loadReceptionQR(entry.qrHarrera);
+    }else if(entry.id || entry.trabajo || entry.panel){
+      loadVehiclesJSONP();
+    }else{
+      forceHideLoading();
+      showHomeDashboard();
+    }
+
+    maybeStartTutorial();
+
+  }catch(err){
+    forceHideLoading();
+    showLoginError('Error cargando usuarios:\n' + err.message);
+  }
+}
+
 function logout(){currentUser=null;vehicles=[];document.getElementById('appView').classList.add('hidden');document.getElementById('loginView').classList.remove('hidden');['username','password'].forEach(id=>document.getElementById(id).value='');document.getElementById('vehicleDetail').innerHTML='';document.getElementById('tableBody').innerHTML='';document.getElementById('tableContainer').classList.add('hidden');document.getElementById('showAllBtn').classList.add('hidden');document.getElementById('showWorksBtn').classList.add('hidden');clearMessage();clearLoginError()}
 
 // ===== MENDIcar v3.9 Dashboard principal limpio =====
