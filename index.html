@@ -519,6 +519,58 @@ box-shadow:0 8px 18px rgba(220,38,38,.15);
       content:" tocar para desplegar";
     }
 
+  
+    /* ===== MENDIcar v4.7 secciones de trabajos plegadas ===== */
+    .work-section{
+      border:1px solid #e5e7eb;
+      border-radius:22px;
+      background:#ffffff;
+      box-shadow:0 10px 26px rgba(15,23,42,.08);
+      overflow:hidden;
+      margin-bottom:18px;
+    }
+    .work-section-summary{
+      list-style:none;
+      cursor:pointer;
+      padding:20px;
+      background:linear-gradient(135deg,#f8fafc,#eff6ff);
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+    }
+    .work-section-summary::-webkit-details-marker{
+      display:none;
+    }
+    .work-section-title{
+      font-size:26px;
+      font-weight:950;
+      color:#111827;
+      line-height:1.15;
+    }
+    .work-section-sub{
+      margin-top:6px;
+      color:#6b7280;
+      font-weight:800;
+      font-size:15px;
+    }
+    .work-section-count{
+      background:#111827;
+      color:#fff;
+      border-radius:999px;
+      padding:10px 14px;
+      font-size:15px;
+      font-weight:950;
+      white-space:nowrap;
+    }
+    .work-section-body{
+      padding:16px;
+      background:#f8fafc;
+    }
+    .work-section[open] .work-section-summary{
+      border-bottom:1px solid #e5e7eb;
+    }
+
   </style>
 </head>
 <body>
@@ -1841,25 +1893,40 @@ function renderWorks(rows){
   const karrozeria = activeRows.filter(r=>getReceptionWorkshop(r)==='KARROZERIA');
   const sinTaller = activeRows.filter(r=>getReceptionWorkshop(r)==='SIN_TALLER');
 
-  document.getElementById('worksList').innerHTML=`
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px;">
-      <div>
-        <h3 style="font-size:24px;margin-bottom:12px;">MEKANIKA</h3>
-        ${renderReceptionWorkList(mekanika)}
-      </div>
+  document.getElementById('worksList').innerHTML = `
+    ${renderWorkSection('MEKANIKA', mekanika)}
+    ${renderWorkSection('KARROZERIA', karrozeria)}
+    ${sinTaller.length ? renderWorkSection('SIN TALLER', sinTaller) : ''}
+  `;
+}
 
-      <div>
-        <h3 style="font-size:24px;margin-bottom:12px;">KARROZERIA</h3>
-        ${renderReceptionWorkList(karrozeria)}
-      </div>
+function renderWorkSection(title, rows){
+  const total = rows.length;
+  const pendientes = rows.reduce((acc,r)=>{
+    const trabajos = parseTrabajosJsonFront(r);
+    const p = trabajos.filter(t=>{
+      const e = String(t.estado || '').toLowerCase();
+      return e !== 'terminado' && e !== 'cancelado';
+    }).length;
+    return acc + p;
+  },0);
 
-      ${sinTaller.length ? `
+  return `
+    <details class="work-section">
+      <summary class="work-section-summary">
         <div>
-          <h3 style="font-size:24px;margin-bottom:12px;">SIN TALLER</h3>
-          ${renderReceptionWorkList(sinTaller)}
+          <div class="work-section-title">${escapeHtml(title)}</div>
+          <div class="work-section-sub">Pulsa para ver los coches asignados</div>
         </div>
-      ` : ''}
-    </div>
+        <div class="work-section-count">
+          ${total} ${total === 1 ? 'trabajo' : 'trabajos'}
+        </div>
+      </summary>
+
+      <div class="work-section-body">
+        ${rows.length ? renderReceptionWorkList(rows) : "<div class='ficha-box'>Sin trabajos</div>"}
+      </div>
+    </details>
   `;
 }
 
