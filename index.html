@@ -310,6 +310,51 @@ box-shadow:0 8px 18px rgba(220,38,38,.15);
       border:1px solid #e5e7eb;
     }
 
+  
+    /* ===== MENDIcar v3.6 loading overlay ===== */
+    .loading-overlay{
+      position:fixed;
+      inset:0;
+      width:100%;
+      height:100%;
+      background:rgba(255,255,255,.78);
+      backdrop-filter:blur(3px);
+      z-index:99999;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+    }
+    .loading-overlay.hidden{
+      display:none!important;
+    }
+    .loading-box{
+      background:white;
+      padding:26px;
+      border-radius:22px;
+      box-shadow:0 14px 40px rgba(15,23,42,.18);
+      text-align:center;
+      min-width:230px;
+      border:1px solid #e5e7eb;
+    }
+    .spinner{
+      width:58px;
+      height:58px;
+      border:6px solid #dbeafe;
+      border-top:6px solid #2563eb;
+      border-radius:50%;
+      animation:mendiSpin .8s linear infinite;
+      margin:0 auto 16px;
+    }
+    .loading-text{
+      font-weight:900;
+      font-size:17px;
+      color:#111827;
+    }
+    @keyframes mendiSpin{
+      0%{transform:rotate(0deg);}
+      100%{transform:rotate(360deg);}
+    }
+
   </style>
 </head>
 <body>
@@ -326,7 +371,8 @@ function loadVehiclesJSONP(){clearMessage();const old=document.getElementById('s
 function routeAfterLoad(){const entry=getEntryParams();if(!currentUser)return;if(entry.qrHarrera){loadReceptionQR(entry.qrHarrera);return}if(currentUser.role==='profesor'){if(entry.panel==='irakaslea'){showWorksPanel();return}if(entry.id){const v=vehicles.find(x=>String(x.id)===String(entry.id));if(!v){showMessage('No se ha encontrado ningún vehículo con ese ID.','error');return}renderVehicleDetail(v);return}document.getElementById('viewModeText').textContent='Panel general de profesor';document.getElementById('tableContainer').classList.remove('hidden');document.getElementById('showAllBtn').classList.add('hidden');renderVehiclesTable();return}if(currentUser.role==='alumno'){if(entry.id){const v=vehicles.find(x=>String(x.id)===String(entry.id));if(!v){showMessage('No se ha encontrado ningún vehículo con ese ID.','error');return}renderVehicleDetail(v);return}showMessage('Acceso denegado. El alumnado solo puede entrar desde QR o ficha de trabajo.','error')}}
 function showAllVehicles(){if(!currentUser||currentUser.role!=='profesor')return;document.getElementById('viewModeText').textContent='Listado completo de vehículos';document.getElementById('vehicleDetail').innerHTML='';document.getElementById('tableContainer').classList.remove('hidden');document.getElementById('showAllBtn').classList.add('hidden');renderVehiclesTable()}function renderVehiclesTable(){document.getElementById('tableBody').innerHTML=vehicles.map(v=>`<tr class="clickable-row" onclick="openVehicleAsProfessor('${escapeJs(v.id)}')"><td>${escapeHtml(v.id)}</td><td>${escapeHtml(v.autoa)}</td><td>${escapeHtml(v.color)}</td><td>${escapeHtml(v.vin)}</td><td>${escapeHtml(v.estado)}</td><td>${escapeHtml(v.observaciones)}</td></tr>`).join('')}function openVehicleAsProfessor(id){const v=vehicles.find(x=>String(x.id)===String(id));if(v)renderVehicleDetail(v)}
 function renderVehicleDetail(vehicle){const isProfesor=currentUser&&currentUser.role==='profesor',isBlockedForStudent=!isProfesor&&vehicle.blokatuta==='Bai';document.getElementById('viewModeText').textContent=isProfesor?'Ficha de vehículo':'Ficha asignada por QR';document.getElementById('tableContainer').classList.add('hidden');document.getElementById('showAllBtn').classList.toggle('hidden',!isProfesor);document.getElementById('vehicleDetail').innerHTML=`${vehicle.blokatuta==='Bai'?`<div class="danger-banner">🚫 VEHÍCULO BLOQUEADO\n${vehicle.idBlokeoa?'Bloqueado por: '+escapeHtml(vehicle.idBlokeoa):''}${vehicle.blokeoData?'\nFecha: '+escapeHtml(vehicle.blokeoData):''}${vehicle.blokeoZergatia?'\nMotivo: '+escapeHtml(vehicle.blokeoZergatia):''}</div>`:''}<div class="vehicle-card"><h2 class="vehicle-title">${escapeHtml(vehicle.autoa||'Vehículo')}</h2><div class="vehicle-grid"><div class="field"><div class="field-label">ID</div><div class="field-value">${escapeHtml(vehicle.id)}</div></div><div class="field"><div class="field-label">Taller</div><div class="field-value">${escapeHtml(vehicle.tailerra)}</div></div><div class="field"><div class="field-label">Color</div><div class="field-value">${escapeHtml(vehicle.color)}</div></div><div class="field"><div class="field-label">VIN</div><div class="field-value">${escapeHtml(vehicle.vin)}</div></div><div class="field"><div class="field-label">Egokitua</div><div class="field-value">${escapeHtml(vehicle.egokitua)}</div></div><div class="field"><div class="field-label">Erabilpena</div><div class="field-value">${escapeHtml(vehicle.erabilpena)}</div></div></div><div class="edit-box"><div id="saveStatus" class="save-status">Lista para guardar.</div><div class="form-grid"><div><label><strong>Estado / Egoera</strong></label><textarea id="estadoInput" ${isBlockedForStudent?'disabled':''}>${escapeHtml(vehicle.estado)}</textarea></div><div><label><strong>Observaciones / Oharrak</strong></label><textarea id="observacionesInput" ${isBlockedForStudent?'disabled':''}>${escapeHtml(vehicle.observaciones||'')}</textarea></div><div><label><strong>Pizten du</strong></label><select id="piztenDuInput" ${isBlockedForStudent?'disabled':''}><option value="Bai" ${vehicle.piztenDu==='Bai'?'selected':''}>Bai</option><option value="Ez" ${vehicle.piztenDu==='Ez'?'selected':''}>Ez</option></select></div><div><label><strong>Piztu behar du</strong></label><select id="piztuBeharDuInput" ${isBlockedForStudent?'disabled':''}><option value="Bai" ${vehicle.piztuBeharDu==='Bai'?'selected':''}>Bai</option><option value="Ez" ${vehicle.piztuBeharDu==='Ez'?'selected':''}>Ez</option></select></div>${isProfesor?`<div><label><strong>BLOKATUTA</strong></label><select id="blokatutaInput"><option value="Bai" ${vehicle.blokatuta==='Bai'?'selected':''}>Bai</option><option value="Ez" ${vehicle.blokatuta==='Ez'?'selected':''}>Ez</option></select></div><div><label><strong>BLOKEO ZERGATIA</strong></label><textarea id="blokeoZergatiaInput">${escapeHtml(vehicle.blokeoZergatia||'')}</textarea></div>`:''}</div>${!isBlockedForStudent?`<button type="button" onclick="saveVehicleChanges('${escapeJs(vehicle.id)}')">Guardar cambios</button>`:''}</div>${renderFichaTecnica(vehicle.fitxaTeknika)}${renderRTA(vehicle.rta)}</div>`}
-function setSaveStatus(t,err=false){const e=document.getElementById('saveStatus');if(!e)return;e.textContent=t;e.style.background=err?'#fef2f2':'#eff6ff';e.style.color=err?'#b91c1c':'#1d4ed8'}function saveVehicleChanges(id){const v=vehicles.find(x=>String(x.id)===String(id));if(!v||!currentUser)return;const payload={accion:'guardarVehiculo',usuario:currentUser.username,rol:currentUser.role,idVehiculo:v.id,autoa:v.autoa,estado:document.getElementById('estadoInput').value.trim(),observaciones:document.getElementById('observacionesInput').value.trim(),piztenDu:document.getElementById('piztenDuInput').value,piztuBeharDu:document.getElementById('piztuBeharDuInput').value,blokeado:currentUser.role==='profesor'&&document.getElementById('blokatutaInput')?document.getElementById('blokatutaInput').value:v.blokatuta,motivo:currentUser.role==='profesor'&&document.getElementById('blokeoZergatiaInput')?document.getElementById('blokeoZergatiaInput').value.trim():v.blokeoZergatia};callSaveAPI(payload,r=>{if(!r||!r.ok){showMessage('Error al guardar:\n'+(r&&r.msg?r.msg:'Error desconocido'),'error');setSaveStatus('Error al guardar.',true);return}showMessage('Cambios guardados correctamente.','success');loadVehiclesJSONP()})}
+function setSaveStatus(t,err=false){const e=document.getElementById('saveStatus');if(!e)return;e.textContent=t;e.style.background=err?'#fef2f2':'#eff6ff';e.style.color=err?'#b91c1c':'#1d4ed8'}function saveVehicleChanges(id){const v=vehicles.find(x=>String(x.id)===String(id));if(!v||!currentUser)return;const payload={accion:'guardarVehiculo',usuario:currentUser.username,rol:currentUser.role,idVehiculo:v.id,autoa:v.autoa,estado:document.getElementById('estadoInput').value.trim(),observaciones:document.getElementById('observacionesInput').value.trim(),piztenDu:document.getElementById('piztenDuInput').value,piztuBeharDu:document.getElementById('piztuBeharDuInput').value,blokeado:currentUser.role==='profesor'&&document.getElementById('blokatutaInput')?document.getElementById('blokatutaInput').value:v.blokatuta,motivo:currentUser.role==='profesor'&&document.getElementById('blokeoZergatiaInput')?document.getElementById('blokeoZergatiaInput').value.trim():v.blokeoZergatia};callSaveAPI(payload,r=>{hideLoading();
+    if(!r||!r.ok){showMessage('Error al guardar:\n'+(r&&r.msg?r.msg:'Error desconocido'),'error');setSaveStatus('Error al guardar.',true);return}showMessage('Cambios guardados correctamente.','success');loadVehiclesJSONP()})}
 async function normKeyValue(v){return String(v||'').trim().toLowerCase()}
 function getField(r,names){if(!r)return '';for(let i=0;i<names.length;i++){const n=names[i];if(r[n]!==undefined&&r[n]!==null&&String(r[n]).trim()!=='')return String(r[n]).trim()}return ''}
 
@@ -908,6 +954,10 @@ function showQrHistoryPanel(){
           </select>
         </div>
       </div>
+      <label style="display:flex;gap:10px;align-items:center;margin-top:14px;font-weight:900;">
+        <input type="checkbox" id="histLatestOnly" checked onchange="renderQrHistoryFromCache()">
+        Mostrar solo último registro de cada coche / QR
+      </label>
       <div id="qrHistoryList" style="margin-top:18px;"></div>
     </div>`;
   loadQrHistory();
@@ -957,6 +1007,37 @@ function renderQrHistoryFromCache(){
       </div>
     </div>`;
   }).join('');
+}
+
+
+// ===== MENDIcar v3.6 Loading helpers =====
+let LOADING_COUNTER = 0;
+
+function showLoading(text){
+  const overlay = document.getElementById('loadingOverlay');
+  const label = document.getElementById('loadingText');
+  if(!overlay || !label) return;
+
+  LOADING_COUNTER++;
+  label.textContent = text || 'Cargando...';
+  overlay.classList.remove('hidden');
+}
+
+function hideLoading(){
+  const overlay = document.getElementById('loadingOverlay');
+  if(!overlay) return;
+
+  LOADING_COUNTER = Math.max(0, LOADING_COUNTER - 1);
+
+  if(LOADING_COUNTER === 0){
+    overlay.classList.add('hidden');
+  }
+}
+
+function forceHideLoading(){
+  LOADING_COUNTER = 0;
+  const overlay = document.getElementById('loadingOverlay');
+  if(overlay) overlay.classList.add('hidden');
 }
 
 function showCalendarPanel(){
@@ -1361,6 +1442,7 @@ function guardarChecklistRecepcion(idRecepcion){
   if(tareasCerradas) registrarActividadQR('HARRERA', qrLog, 'TERMINA_TAREA', tareasCerradas);
   if(tareasCanceladas) registrarActividadQR('HARRERA', qrLog, 'CANCELA_TAREA', tareasCanceladas);
   registrarActividadQR('HARRERA', qrLog, 'GUARDA_CHECKLIST', obs || 'Checklist actualizado');
+  showLoading('Guardando checklist...');
   showMessage('Guardando checklist...', 'success');
 
   callSaveAPI({
@@ -1372,11 +1454,13 @@ function guardarChecklistRecepcion(idRecepcion){
   }, resp => {
     SAVE_LOCKS['checklist_'+idRecepcion] = false;
 
+    hideLoading();
     if(!resp || !resp.ok){
       showMessage('Error guardando checklist: ' + (resp && resp.msg ? resp.msg : 'Error desconocido'), 'error');
       return;
     }
 
+    hideLoading();
     showMessage(resp.msg || 'Checklist guardado correctamente.', 'success');
     registrarUsoApp('GUARDAR_CHECKLIST','Checklist actualizado',idRecepcion,getAnyField(r,['QR_RECEPCION','QR RECEPCION']),getAnyField(r,['MATRICULA','MATRIKULA']));
 
@@ -1392,11 +1476,13 @@ function guardarChecklistRecepcion(idRecepcion){
 }
 
 function loadWorks(){
+  showLoading('Cargando trabajos activos...');
   clearMessage();
 
   callSaveAPI({accion:'listarHarrera'}, hResp=>{
     if(!hResp || !hResp.ok){
       document.getElementById('worksList').innerHTML="<div class='msg error'>Error cargando recepciones</div>";
+      hideLoading();
       return;
     }
 
@@ -1421,6 +1507,7 @@ function loadWorks(){
     });
 
     renderWorks(window.RECEPCIONES_CACHE);
+      hideLoading();
   });
 }
 
@@ -1766,6 +1853,7 @@ function createWork(){
     const qrAsignado = r.qrAsignado || r.qr || '';
     const idRecepcion = r.idRecepcion || '';
 
+    hideLoading();
     showMessage('Trabajo creado correctamente. QR asignado automáticamente: '+qrAsignado,'success');
     registrarUsoApp('CREAR_ORDEN','Orden creada desde Trabajos',idRecepcion,qrAsignado,payload.matricula);
 
@@ -2088,6 +2176,144 @@ function loadQrHistory(){
   });
 }
 
+
+
+// ===== MENDIcar v3.6 Calendar loading override =====
+function loadCalendarMonth(){
+  showLoading('Cargando calendario...');
+
+  callSaveAPI({accion:'listarHarrera'}, hResp=>{
+    const hRows = hResp && hResp.ok ? (hResp.rows || []) : [];
+
+    callSaveAPI({accion:'listarRegistro'}, regResp=>{
+      const rRows = regResp && regResp.ok ? (regResp.rows || []) : [];
+      window.CALENDAR_HARRERA_CACHE = hRows;
+      window.CALENDAR_REGISTRO_CACHE = rRows;
+      renderMonthCalendar(hRows, rRows);
+      hideLoading();
+    });
+  });
+}
+
+
+
+// ===== MENDIcar v3.6 Historial sin duplicidades =====
+function getHistoryDateTimeValue(r){
+  const fecha = getAnyField(r,['FECHA','DATA','data']);
+  const hora = getAnyField(r,['HORA','ORDUA','hora']);
+  return String(fecha || '') + ' ' + String(hora || '');
+}
+
+function getHistoryKey(r){
+  const qr = getAnyField(r,['QR','QR_RECEPCION','ID']);
+  return String(qr || '').trim() || ('SIN_QR_' + getHistoryDateTimeValue(r));
+}
+
+function obtenerUltimoRegistroPorQR(rows){
+  const mapa = {};
+
+  (rows || []).forEach(r=>{
+    const key = getHistoryKey(r);
+    const dt = getHistoryDateTimeValue(r);
+
+    if(!mapa[key] || dt >= mapa[key]._fechaHora){
+      r._fechaHora = dt;
+      mapa[key] = r;
+    }
+  });
+
+  return Object.values(mapa);
+}
+
+// Override renderQrHistoryFromCache: by default shows only latest record per QR/car.
+function renderQrHistoryFromCache(){
+  const q = String(document.getElementById('histQrSearch')?.value || '').trim().toUpperCase();
+  const action = String(document.getElementById('histActionFilter')?.value || '').trim().toUpperCase();
+  const latestOnly = document.getElementById('histLatestOnly') ? document.getElementById('histLatestOnly').checked : true;
+
+  let rows = (window.REGISTRO_CACHE || []).filter(r=>{
+    const qr = String(getAnyField(r,['QR','ID','QR_RECEPCION']) || '').toUpperCase();
+    const qrName = String(getQrDisplayName(qr) || '').toUpperCase();
+    const acc = String(getAnyField(r,['ACCION','CAMBIO','LANA']) || '').toUpperCase();
+    const detail = String(getAnyField(r,['DETALLE','OHARRAK','DESCRIPCION','test']) || '').toUpperCase();
+
+    if(q && !(qr.includes(q) || qrName.includes(q) || detail.includes(q))) return false;
+    if(action && acc !== action) return false;
+    return qr || acc || detail;
+  });
+
+  if(latestOnly){
+    rows = obtenerUltimoRegistroPorQR(rows);
+  }
+
+  rows = rows.slice().sort((a,b)=>getHistoryDateTimeValue(b).localeCompare(getHistoryDateTimeValue(a))).slice(0,150);
+
+  if(!rows.length){
+    document.getElementById('qrHistoryList').innerHTML = "<div class='ficha-box'>No hay registros con ese filtro.</div>";
+    return;
+  }
+
+  document.getElementById('qrHistoryList').innerHTML = rows.map(r=>{
+    const fecha = getAnyField(r,['FECHA','DATA','data']);
+    const hora = getAnyField(r,['HORA','ORDUA','hora']);
+    const usuario = getAnyField(r,['USUARIO','ERABILTZAILEA','usuario']);
+    const rol = getAnyField(r,['ROL','rol']);
+    const taldea = getAnyField(r,['TALDEA','taldea']);
+    const tipoQr = getAnyField(r,['TIPO_QR','TIPO QR']);
+    const qr = getAnyField(r,['QR','ID','QR_RECEPCION']);
+    const accion = getAnyField(r,['ACCION','CAMBIO','LANA']);
+    const detalle = getAnyField(r,['DETALLE','OHARRAK','DESCRIPCION','test']);
+    const displayName = getQrDisplayName(qr);
+
+    return `
+      <div class="work-reception-card" style="border-left-color:#111827;">
+        <div class="work-reception-summary">
+          <strong>${escapeHtml(fecha || '-')} ${escapeHtml(hora || '')}</strong>
+          <br>
+          <span class="qr-line">${escapeHtml(displayName || qr || '-')}</span>
+          ${displayName && displayName !== qr ? `<br><span style="font-weight:800;color:#6b7280;">${escapeHtml(qr || '')}</span>` : ''}
+          <br>
+          <strong>${escapeHtml(accion || '-')}</strong>
+          <div style="margin-top:8px;color:#374151;">${escapeHtml(detalle || '')}</div>
+          <div style="margin-top:8px;color:#6b7280;font-weight:800;">
+            ${escapeHtml(usuario || '-')} · ${escapeHtml(rol || '-')} ${taldea ? '· '+escapeHtml(taldea) : ''} ${tipoQr ? '· '+escapeHtml(tipoQr) : ''}
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+
+
+// ===== MENDIcar v3.6 Historial loading override =====
+function loadQrHistory(){
+  showLoading('Cargando historial...');
+
+  callSaveAPI({accion:'listarRegistro'}, resp=>{
+    if(!resp || !resp.ok){
+      hideLoading();
+      document.getElementById('qrHistoryList').innerHTML = "<div class='msg error'>Error cargando REGISTRO</div>";
+      return;
+    }
+
+    callSaveAPI({accion:'listarAutoak'}, aResp=>{
+      window.AUTOAK_NAME_MAP = buildAutoakNameMap(aResp && aResp.ok ? (aResp.rows || []) : []);
+      window.REGISTRO_CACHE = resp.rows || [];
+      renderQrHistoryFromCache();
+      hideLoading();
+    });
+  });
+}
+
 </script>
+
+<div id="loadingOverlay" class="loading-overlay hidden">
+  <div class="loading-box">
+    <div class="spinner"></div>
+    <div id="loadingText" class="loading-text">Cargando...</div>
+  </div>
+</div>
+
 </body>
 </html>
