@@ -359,7 +359,7 @@ box-shadow:0 8px 18px rgba(220,38,38,.15);
 </head>
 <body>
 <div id="loginView" class="box"><div class="header"><div class="header-logo"><img src="icono-512.png" alt="MENDIcar"><div><h2>MENDIcar</h2><p>Gestión digital de automoción</p></div></div></div><div class="content"><input id="username" type="text" placeholder="Usuario / correo"><input id="password" type="password" placeholder="Contraseña"><button type="button" onclick="login()">Entrar</button><div id="loginError" class="msg error hidden"></div></div><div class="footer-credit">Aplicación realizada por <strong>Alain Urionabarrenetxea</strong></div></div>
-<div id="appView" class="box hidden"><div class="header"><div class="header-logo"><img src="icono-512.png" alt="MENDIcar"><div><h2>MENDIcar</h2><p id="welcomeText"></p></div></div></div><div class="content"><div class="topbar"><div id="viewModeText">Consulta de vehículo</div><div class="topbar-actions"><button id="showAllBtn" class="small-btn hidden" type="button" onclick="showAllVehicles()">Ver todos</button><button id="showWorksBtn" class="small-btn hidden" type="button" onclick="showWorksPanel()">Trabajos</button><button id="showCalendarBtn" class="small-btn hidden" type="button" onclick="showCalendarPanel()">Calendario</button><button id="showQrHistoryBtn" class="small-btn hidden" type="button" onclick="showQrHistoryPanel()">Historial QR</button><button class="small-btn secondary-btn" type="button" onclick="logout()">Cerrar sesión</button></div></div><div id="appMessage" class="msg info hidden"></div><div id="vehicleDetail"></div><div id="tableContainer" class="table-wrap hidden"><table><thead><tr><th>ID</th><th>Vehículo</th><th>Color</th><th>VIN</th><th>Estado</th><th>Observaciones</th></tr></thead><tbody id="tableBody"></tbody></table></div></div><div class="footer-credit">Aplicación realizada por <strong>Alain Urionabarrenetxea</strong></div></div>
+<div id="appView" class="box hidden"><div class="header"><div class="header-logo"><img src="icono-512.png" alt="MENDIcar"><div><h2>MENDIcar</h2><p id="welcomeText"></p></div></div></div><div class="content"><div class="topbar"><div id="viewModeText">Consulta de vehículo</div><div class="topbar-actions"><button id="showAllBtn" class="small-btn hidden" type="button" onclick="showAllVehicles()">Ver todos</button><button id="showWorksBtn" class="small-btn hidden" type="button" onclick="showWorksPanel()">Trabajos</button><button id="showCalendarBtn" class="small-btn hidden" type="button" onclick="showCalendarPanel()">Calendario</button><button id="showQrHistoryBtn" class="small-btn hidden" type="button" onclick="showHistoryPanel()">Historial</button><button class="small-btn secondary-btn" type="button" onclick="logout()">Cerrar sesión</button></div></div><div id="appMessage" class="msg info hidden"></div><div id="vehicleDetail"></div><div id="tableContainer" class="table-wrap hidden"><table><thead><tr><th>ID</th><th>Vehículo</th><th>Color</th><th>VIN</th><th>Estado</th><th>Observaciones</th></tr></thead><tbody id="tableBody"></tbody></table></div></div><div class="footer-credit">Aplicación realizada por <strong>Alain Urionabarrenetxea</strong></div></div>
 <button id="helpBtn" class="help-floating hidden" type="button" onclick="startTutorial(true)">❓ Ayuda</button>
 
 <script>
@@ -2304,6 +2304,212 @@ function loadQrHistory(){
       hideLoading();
     });
   });
+}
+
+
+
+// ===== MENDIcar v3.7 Historial bajo demanda =====
+function showHistoryPanel(){
+  if(!currentUser || currentUser.role !== 'profesor'){
+    showMessage('Solo el profesorado puede consultar el historial.', 'error');
+    return;
+  }
+
+  clearMessage();
+  document.getElementById('viewModeText').textContent='Historial';
+  document.getElementById('tableContainer').classList.add('hidden');
+  document.getElementById('showAllBtn').classList.remove('hidden');
+
+  document.getElementById('vehicleDetail').innerHTML = `
+    <div class="vehicle-card">
+      <h2 class="vehicle-title">Historial de vehículos</h2>
+      <p class="muted">
+        Busca por matrícula, QR, número/ID de coche del centro o cualquier característica.
+        Ejemplos: <strong>C4</strong>, <strong>Opel Meriva</strong>, <strong>QR-HARRERA-01</strong>, <strong>SS0567BH</strong>, <strong>3</strong>.
+      </p>
+
+      <div class="form-grid">
+        <div>
+          <label><strong>Buscar</strong></label>
+          <input id="histGeneralSearch" placeholder="Matrícula, coche, QR, ID, modelo..." onkeydown="if(event.key==='Enter') buscarHistorialGeneral()">
+        </div>
+        <div style="display:flex;align-items:end;">
+          <button type="button" onclick="buscarHistorialGeneral()">Buscar historial</button>
+        </div>
+      </div>
+
+      <label style="display:flex;gap:10px;align-items:center;margin-top:14px;font-weight:900;">
+        <input type="checkbox" id="histGeneralLatestOnly" checked onchange="renderGeneralHistoryResults()">
+        Mostrar solo el último registro de cada coche / QR
+      </label>
+
+      <div id="histGeneralResults" style="margin-top:18px;">
+        <div class="ficha-box">Introduce una búsqueda para cargar el historial. No se carga todo automáticamente.</div>
+      </div>
+    </div>
+  `;
+}
+
+function normalizeSearchText(v){
+  return String(v || '').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+}
+
+function rowTextForSearch(row){
+  return normalizeSearchText(Object.values(row || {}).join(' '));
+}
+
+function buildAutoakSearchMap(autoakRows){
+  const items = [];
+  (autoakRows || []).forEach(v=>{
+    const id = getAnyField(v,['ID','Id','id']);
+    const autoa = getAnyField(v,['Autoa','AUTOA','autoa','Vehículo','VEHICULO']);
+    const color = getAnyField(v,['Kolorea','KOLOREA','Color']);
+    const vin = getAnyField(v,['VIN','vin']);
+    const qr = id ? 'ID-' + id : '';
+    const label = [id ? 'ID-'+id : '', autoa, color].filter(Boolean).join(' · ');
+    const text = normalizeSearchText([id, qr, autoa, color, vin, rowTextForSearch(v)].join(' '));
+    if(label) items.push({tipo:'AUTOAK', id:id, qr:qr, label:label, text:text, row:v});
+  });
+  return items;
+}
+
+function buildHarreraSearchMap(harreraRows){
+  const items = [];
+  (harreraRows || []).forEach(r=>{
+    const qr = getAnyField(r,['QR_RECEPCION','QR RECEPCION']);
+    const marca = getAnyField(r,['MARCA']);
+    const modelo = getAnyField(r,['MODELO']);
+    const matricula = getAnyField(r,['MATRICULA','MATRIKULA']);
+    const cliente = getAnyField(r,['CLIENTE','BEZEROA']);
+    const idRecepcion = getAnyField(r,['ID_RECEPCION','ID RECEPCION']);
+    const label = [marca, modelo, matricula ? '· '+matricula : '', qr ? '· '+qr : ''].filter(Boolean).join(' ');
+    const text = normalizeSearchText([qr, marca, modelo, matricula, cliente, idRecepcion, rowTextForSearch(r)].join(' '));
+    if(qr || matricula || marca || modelo) items.push({tipo:'HARRERA', id:idRecepcion, qr:qr, label:label || qr || matricula, text:text, row:r});
+  });
+  return items;
+}
+
+function buscarHistorialGeneral(){
+  const query = normalizeSearchText(document.getElementById('histGeneralSearch')?.value || '');
+  if(!query){
+    showMessage('Introduce matrícula, QR, ID o modelo para buscar.', 'error');
+    return;
+  }
+
+  showLoading('Buscando historial...');
+
+  callSaveAPI({accion:'listarAutoak'}, aResp=>{
+    const autoakRows = aResp && aResp.ok ? (aResp.rows || []) : [];
+    callSaveAPI({accion:'listarHarrera'}, hResp=>{
+      const harreraRows = hResp && hResp.ok ? (hResp.rows || []) : [];
+      callSaveAPI({accion:'listarRegistro'}, rResp=>{
+        const registroRows = rResp && rResp.ok ? (rResp.rows || []) : [];
+        callSaveAPI({accion:'listarLanak'}, lResp=>{
+          const lanakRows = lResp && lResp.ok ? (lResp.rows || []) : [];
+          const autoItems = buildAutoakSearchMap(autoakRows).filter(x=>x.text.includes(query));
+          const harreraItems = buildHarreraSearchMap(harreraRows).filter(x=>x.text.includes(query));
+
+          window.HIST_GENERAL_CONTEXT = {query, autoItems, harreraItems, registroRows, lanakRows};
+          renderGeneralHistoryResults();
+          hideLoading();
+        });
+      });
+    });
+  });
+}
+
+function getHistoryKeysFromMatches(ctx){
+  const keys = [];
+  (ctx.autoItems || []).forEach(x=>{
+    if(x.qr) keys.push(x.qr);
+    if(x.id) keys.push(String(x.id));
+    if(x.id) keys.push('ID-' + String(x.id));
+    if(x.label) keys.push(x.label);
+  });
+  (ctx.harreraItems || []).forEach(x=>{
+    if(x.qr) keys.push(x.qr);
+    if(x.id) keys.push(x.id);
+    const mat = getAnyField(x.row,['MATRICULA','MATRIKULA']);
+    if(mat) keys.push(mat);
+  });
+  return [...new Set(keys.filter(Boolean))];
+}
+
+function historyRowMatchesKeys(row, keys, query){
+  const text = normalizeSearchText(rowTextForSearch(row));
+  if(query && text.includes(query)) return true;
+  return (keys || []).some(k=>{
+    const nk = normalizeSearchText(k);
+    return nk && text.includes(nk);
+  });
+}
+
+function renderGeneralHistoryResults(){
+  const ctx = window.HIST_GENERAL_CONTEXT;
+  if(!ctx) return;
+
+  const latestOnly = document.getElementById('histGeneralLatestOnly') ? document.getElementById('histGeneralLatestOnly').checked : true;
+  const keys = getHistoryKeysFromMatches(ctx);
+
+  let registros = (ctx.registroRows || []).filter(r=>historyRowMatchesKeys(r, keys, ctx.query));
+  let lanak = (ctx.lanakRows || []).filter(r=>historyRowMatchesKeys(r, keys, ctx.query));
+
+  if(latestOnly){
+    registros = obtenerUltimoRegistroPorQR(registros);
+    lanak = obtenerUltimoRegistroPorQR(lanak);
+  }
+
+  registros = registros.slice().sort((a,b)=>getHistoryDateTimeValue(b).localeCompare(getHistoryDateTimeValue(a))).slice(0,80);
+  lanak = lanak.slice().sort((a,b)=>getHistoryDateTimeValue(b).localeCompare(getHistoryDateTimeValue(a))).slice(0,80);
+
+  const selectedHtml = `
+    <div class="ficha-box">
+      <strong>Coincidencias encontradas:</strong><br>
+      ${ctx.autoItems.length ? `<br><strong>Vehículos del centro:</strong><br>${ctx.autoItems.map(x=>'🚗 '+escapeHtml(x.label)).join('<br>')}` : ''}
+      ${ctx.harreraItems.length ? `<br><strong>Recepciones externas:</strong><br>${ctx.harreraItems.map(x=>'🔧 '+escapeHtml(x.label)).join('<br>')}` : ''}
+      ${!ctx.autoItems.length && !ctx.harreraItems.length ? 'No se ha encontrado ficha exacta, pero se muestran registros que coinciden con la búsqueda.' : ''}
+    </div>
+  `;
+
+  const regHtml = registros.length ? registros.map(renderGenericHistoryRow).join('') : "<div class='ficha-box'>No hay registros en REGISTRO.</div>";
+  const lanakHtml = lanak.length ? lanak.map(renderGenericHistoryRow).join('') : "<div class='ficha-box'>No hay registros en LANAK.</div>";
+
+  document.getElementById('histGeneralResults').innerHTML = `
+    ${selectedHtml}
+    <h3 style="margin-top:18px;">Últimos registros / REGISTRO</h3>
+    ${regHtml}
+    <h3 style="margin-top:18px;">Histórico de trabajos / LANAK</h3>
+    ${lanakHtml}
+  `;
+}
+
+function renderGenericHistoryRow(r){
+  const fecha = getAnyField(r,['FECHA','DATA','data']);
+  const hora = getAnyField(r,['HORA','ORDUA','hora']);
+  const usuario = getAnyField(r,['USUARIO','ERABILTZAILEA','usuario']);
+  const rol = getAnyField(r,['ROL','rol']);
+  const taldea = getAnyField(r,['TALDEA','taldea']);
+  const qr = getAnyField(r,['QR','ID','QR_RECEPCION','QR_HARRERA']);
+  const accion = getAnyField(r,['ACCION','CAMBIO','LANA','EGOERA']);
+  const detalle = getAnyField(r,['DETALLE','OHARRAK','DESCRIPCION','test','LANA']);
+  const displayName = getQrDisplayName(qr);
+
+  return `
+    <div class="work-reception-card" style="border-left-color:#111827;">
+      <div class="work-reception-summary">
+        <strong>${escapeHtml(fecha || '-')} ${escapeHtml(hora || '')}</strong>
+        <br>
+        <span class="qr-line">${escapeHtml(displayName || qr || '-')}</span>
+        ${displayName && displayName !== qr ? `<br><span style="font-weight:800;color:#6b7280;">${escapeHtml(qr || '')}</span>` : ''}
+        <br>
+        <strong>${escapeHtml(accion || '-')}</strong>
+        <div style="margin-top:8px;color:#374151;">${escapeHtml(detalle || '')}</div>
+        <div style="margin-top:8px;color:#6b7280;font-weight:800;">
+          ${escapeHtml(usuario || '-')} ${rol ? '· '+escapeHtml(rol) : ''} ${taldea ? '· '+escapeHtml(taldea) : ''}
+        </div>
+      </div>
+    </div>
+  `;
 }
 
 </script>
