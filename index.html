@@ -447,6 +447,7 @@ function renderHistoryByMatricula(matricula){
   return rows.map(r => {
     const estado = String(r.EGOERA || '').trim();
     const prioridad = String(r.LEHENTASUNA || 'normal').trim();
+    const qrAsignado = String(r.QR_RECEPCION || r.QR_HARRERA || r.QR || '').trim();
     const badgeClass = estado === 'en curso' ? 'badge-curso' :
                        estado === 'terminado' ? 'badge-terminado' :
                        estado === 'cancelado' ? 'badge-cancelado' :
@@ -621,14 +622,37 @@ function showWorksPanel(){
 }
 
 function loadWorks(){
+  clearMessage();
+
   callSaveAPI({accion:'listarLanak'}, r => {
     if(!r || !r.ok){
       document.getElementById('worksList').innerHTML = "<div class='msg error'>Error cargando trabajos</div>";
       return;
     }
 
-    WORK_ROWS_CACHE = r.rows || [];
-    renderWorks(WORK_ROWS_CACHE);
+    const lanakRows = r.rows || [];
+
+    callSaveAPI({accion:'listarHarrera'}, hResp => {
+      const harreraRows = hResp && hResp.ok ? (hResp.rows || []) : [];
+      const qrByRecepcion = {};
+
+      harreraRows.forEach(h => {
+        const id = String(h.ID_RECEPCION || '').trim();
+        const qr = String(h.QR_RECEPCION || h.QR_HARRERA || h.QR || '').trim();
+        if(id && qr) qrByRecepcion[id] = qr;
+      });
+
+      WORK_ROWS_CACHE = lanakRows.map(row => {
+        const idRecepcion = String(row.ID_RECEPCION || '').trim();
+        if(idRecepcion && qrByRecepcion[idRecepcion]){
+          row.QR_RECEPCION = qrByRecepcion[idRecepcion];
+          row.QR_HARRERA = qrByRecepcion[idRecepcion];
+        }
+        return row;
+      });
+
+      renderWorks(WORK_ROWS_CACHE);
+    });
   });
 }
 
@@ -654,12 +678,10 @@ function getProgressValue(r){return String(r.AURRERAPENA||r.PROGRESO||r.OHARRAK|
 function renderWorks(rows){
   const allRows = rows.filter(r => String(r.ID_TRABAJO || '').trim() !== '');
 
-  allRows.sort((a,b) => {
-    const dateCompare = getWorkSortValue(a).localeCompare(getWorkSortValue(b));
-    if(dateCompare !== 0) return dateCompare;
-    return getPriorityValue(a) - getPriorityValue(b);
-  });
-
+  // IMPORTANTE:
+  // Para saber el estado actual, NO se ordena antes.
+  // Google Sheets devuelve las filas en orden físico y la última fila añadida es la válida.
+  // Si se ordena antes, un trabajo terminado puede seguir apareciendo como pendiente.
   const latestMap = {};
   allRows.forEach(r => {
     latestMap[String(r.ID_TRABAJO || '').trim()] = r;
@@ -705,6 +727,7 @@ function renderReceptionTaskMenu(rows){
     const id = String(r.ID_TRABAJO || '').trim();
     const estado = String(r.EGOERA || 'pendiente').trim();
     const prioridad = String(r.LEHENTASUNA || 'normal').trim();
+    const qrAsignado = String(r.QR_RECEPCION || r.QR_HARRERA || r.QR || '').trim();
     const badgeClass = estado === 'en curso' ? 'badge-curso' :
                        estado === 'terminado' ? 'badge-terminado' :
                        estado === 'cancelado' ? 'badge-cancelado' :
@@ -765,6 +788,7 @@ function renderWorkList(rows){
     const id = String(r.ID_TRABAJO || '').trim();
     const estado = String(r.EGOERA || 'pendiente').trim();
     const prioridad = String(r.LEHENTASUNA || 'normal').trim();
+    const qrAsignado = String(r.QR_RECEPCION || r.QR_HARRERA || r.QR || '').trim();
     const badgeClass = estado === 'en curso' ? 'badge-curso' :
                        estado === 'terminado' ? 'badge-terminado' :
                        estado === 'cancelado' ? 'badge-cancelado' :
@@ -781,6 +805,8 @@ function renderWorkList(rows){
               <span style="color:#6b7280;">${escapeHtml(r.BEZEROA || '')}</span>
               <br>
               <span style="color:#6b7280;">Prioridad: ${escapeHtml(prioridad)}</span>
+              <br>
+              <span style="color:#111827;font-weight:900;">QR asignado: ${escapeHtml(qrAsignado || '-')}</span>
               <br>
               <span style="color:#2563eb;font-weight:700;">Tocar para abrir/modificar</span>
             </div>
@@ -801,6 +827,7 @@ function renderWorkList(rows){
             <div class="field"><div class="field-label">Fecha</div><div class="field-value">${escapeHtml(r.NOIZKO || r.DATA || '')} ${escapeHtml(r['N.ORDUA'] || r.ORDUA || '')}</div></div>
             <div class="field"><div class="field-label">Usuario último registro</div><div class="field-value">${escapeHtml(r.ERABILTZAILEA || '')}</div></div>
             <div class="field"><div class="field-label">ID trabajo</div><div class="field-value">${escapeHtml(id)}</div></div>
+            <div class="field"><div class="field-label">QR asignado</div><div class="field-value">${escapeHtml(qrAsignado || '-')}</div></div>
           </div>
 
           <br>
@@ -856,6 +883,7 @@ function showWorkHistory(){
   result.innerHTML = rows.map(r => {
     const estado = String(r.EGOERA || '').trim();
     const prioridad = String(r.LEHENTASUNA || 'normal').trim();
+    const qrAsignado = String(r.QR_RECEPCION || r.QR_HARRERA || r.QR || '').trim();
     const badgeClass = estado === 'en curso' ? 'badge-curso' :
                        estado === 'terminado' ? 'badge-terminado' :
                        estado === 'cancelado' ? 'badge-cancelado' :
