@@ -147,6 +147,13 @@ box-shadow:0 8px 18px rgba(220,38,38,.15);
       line-height:1.4;
     }
 
+  
+    .checklist-card{background:white;border:1px solid #e5e7eb;border-radius:18px;padding:16px;margin:14px 0;box-shadow:0 8px 22px rgba(15,23,42,.08)}
+    .check-item{display:flex;align-items:center;gap:12px;padding:12px;margin:8px 0;border:1px solid #e5e7eb;border-radius:14px;background:#f8fafc;font-size:17px;font-weight:750}
+    .check-item input{width:24px;height:24px}
+    .check-item-done{background:#dcfce7;border-color:#86efac;color:#166534}
+    .task-state-select{width:150px;margin-left:auto;padding:8px;border-radius:10px}
+
   </style>
 </head>
 <body>
@@ -342,7 +349,82 @@ function getReceptionDisplayField(row, names){
   return '';
 }
 
+
+function parseTrabajosJsonFront(row){
+  const raw = getReceptionDisplayField(row, ['TRABAJOS_JSON','trabajos_json']);
+  const trabajoSolicitado = getReceptionDisplayField(row, ['TRABAJO_SOLICITADO','Trabajo solicitado','LANA']);
+  try{
+    const parsed = JSON.parse(raw || '[]');
+    if(Array.isArray(parsed) && parsed.length) return parsed;
+  }catch(e){}
+  return String(trabajoSolicitado || '').split(',').map(x=>x.trim()).filter(Boolean).map((texto,i)=>({id:'T'+(i+1),texto:texto,estado:'pendiente',obs:'',evidencias:[]}));
+}
+
+function renderChecklist(idRecepcion, trabajos){
+  if(!trabajos || !trabajos.length) return "<div class='ficha-box'>Sin trabajos definidos</div>";
+  return `
+    <div class="checklist-card">
+      <h3>Trabajos / Lanak</h3>
+      ${trabajos.map(t=>{
+        const estado=String(t.estado||'pendiente').toLowerCase();
+        const done=estado==='terminado';
+        return `
+          <div class="check-item ${done?'check-item-done':''}">
+            <input type="checkbox" data-idrecepcion="${escapeAttr(idRecepcion)}" data-idtarea="${escapeAttr(t.id)}" ${done?'checked':''} onchange="toggleChecklistItem('${escapeJs(idRecepcion)}','${escapeJs(t.id)}',this.checked)">
+            <span>${escapeHtml(t.texto||'')}</span>
+            <select class="task-state-select" id="estado_${escapeAttr(idRecepcion)}_${escapeAttr(t.id)}" onchange="selectChecklistState('${escapeJs(idRecepcion)}','${escapeJs(t.id)}',this.value)">
+              <option value="pendiente" ${estado==='pendiente'?'selected':''}>pendiente</option>
+              <option value="en curso" ${estado==='en curso'?'selected':''}>en curso</option>
+              <option value="terminado" ${estado==='terminado'?'selected':''}>terminado</option>
+              <option value="cancelado" ${estado==='cancelado'?'selected':''}>cancelado</option>
+            </select>
+          </div>`;
+      }).join('')}
+      <label><strong>Observaciones / Oharrak</strong></label>
+      <textarea id="obsChecklist_${escapeAttr(idRecepcion)}" placeholder="Ejemplo: radiador desmontado, falta material..."></textarea>
+      <button type="button" onclick="guardarChecklistRecepcion('${escapeJs(idRecepcion)}')">Guardar checklist</button>
+    </div>`;
+}
+
+function getRecepcionById(idRecepcion){
+  return (window.RECEPCIONES_CACHE||[]).find(r=>String(r.ID_RECEPCION||'').trim()===String(idRecepcion).trim());
+}
+
+function toggleChecklistItem(idRecepcion,idTarea,checked){
+  const r=getRecepcionById(idRecepcion); if(!r)return;
+  const trabajos=parseTrabajosJsonFront(r);
+  const t=trabajos.find(x=>String(x.id)===String(idTarea)); if(!t)return;
+  t.estado=checked?'terminado':'pendiente';
+  r.TRABAJOS_JSON=JSON.stringify(trabajos);
+  const sel=document.getElementById('estado_'+idRecepcion+'_'+idTarea); if(sel)sel.value=t.estado;
+}
+
+function selectChecklistState(idRecepcion,idTarea,estado){
+  const r=getRecepcionById(idRecepcion); if(!r)return;
+  const trabajos=parseTrabajosJsonFront(r);
+  const t=trabajos.find(x=>String(x.id)===String(idTarea)); if(!t)return;
+  t.estado=estado;
+  r.TRABAJOS_JSON=JSON.stringify(trabajos);
+  document.querySelectorAll('input[data-idrecepcion="'+idRecepcion+'"][data-idtarea="'+idTarea+'"]').forEach(ch=>{ch.checked=estado==='terminado'});
+}
+
+function guardarChecklistRecepcion(idRecepcion){
+  if(SAVE_LOCKS['checklist_'+idRecepcion]){showMessage('Ya se está guardando este checklist.','error');return;}
+  const r=getRecepcionById(idRecepcion); if(!r){showMessage('No se ha encontrado la recepción.','error');return;}
+  const trabajos=parseTrabajosJsonFront(r);
+  const obs=document.getElementById('obsChecklist_'+idRecepcion)?.value||'';
+  SAVE_LOCKS['checklist_'+idRecepcion]=true;
+  showMessage('Guardando checklist...','success');
+  callSaveAPI({accion:'actualizarTrabajosRecepcion',idRecepcion:idRecepcion,trabajosJson:JSON.stringify(trabajos),usuario:currentUser?currentUser.username:'',oharrak:obs},resp=>{
+    SAVE_LOCKS['checklist_'+idRecepcion]=false;
+    if(!resp||!resp.ok){showMessage('Error guardando checklist: '+(resp&&resp.msg?resp.msg:'Error desconocido'),'error');return;}
+    showMessage(resp.msg||'Checklist guardado correctamente.','success');
+    setTimeout(()=>{const entry=getEntryParams(); if(entry.qrHarrera){loadReceptionQR(entry.qrHarrera)}else{showWorksPanel()}},700);
+  });
+}
+
 function renderReceptionDetail(qr, harrera, lanakRows){
+  window.RECEPCIONES_CACHE = harrera ? [harrera] : (window.RECEPCIONES_CACHE || []);
   document.getElementById('viewModeText').textContent = 'Orden de trabajo por QR';
   document.getElementById('tableContainer').classList.add('hidden');
   document.getElementById('showAllBtn').classList.add('hidden');
@@ -399,7 +481,7 @@ function renderReceptionDetail(qr, harrera, lanakRows){
     <div class="vehicle-card">
       <h2 class="vehicle-title">Recepción y trabajos</h2>
       <p style="margin-top:-8px;color:#6b7280;">Despliega cada tarea para cambiar estado, prioridad o añadir progreso.</p>
-      ${renderReceptionTaskMenu(activeWorks)}
+      ${renderChecklist(idRecepcion, parseTrabajosJsonFront(harrera || {}))}
     </div>
 
     <div class="vehicle-card">
@@ -623,36 +705,16 @@ function showWorksPanel(){
 
 function loadWorks(){
   clearMessage();
-
-  callSaveAPI({accion:'listarLanak'}, r => {
-    if(!r || !r.ok){
-      document.getElementById('worksList').innerHTML = "<div class='msg error'>Error cargando trabajos</div>";
+  callSaveAPI({accion:'listarHarrera'}, hResp=>{
+    if(!hResp||!hResp.ok){
+      document.getElementById('worksList').innerHTML="<div class='msg error'>Error cargando recepciones</div>";
       return;
     }
-
-    const lanakRows = r.rows || [];
-
-    callSaveAPI({accion:'listarHarrera'}, hResp => {
-      const harreraRows = hResp && hResp.ok ? (hResp.rows || []) : [];
-      const qrByRecepcion = {};
-
-      harreraRows.forEach(h => {
-        const id = String(h.ID_RECEPCION || '').trim();
-        const qr = String(h.QR_RECEPCION || h.QR_HARRERA || h.QR || '').trim();
-        if(id && qr) qrByRecepcion[id] = qr;
-      });
-
-      WORK_ROWS_CACHE = lanakRows.map(row => {
-        const idRecepcion = String(row.ID_RECEPCION || '').trim();
-        if(idRecepcion && qrByRecepcion[idRecepcion]){
-          row.QR_RECEPCION = qrByRecepcion[idRecepcion];
-          row.QR_HARRERA = qrByRecepcion[idRecepcion];
-        }
-        return row;
-      });
-
-      renderWorks(WORK_ROWS_CACHE);
+    window.RECEPCIONES_CACHE=(hResp.rows||[]).filter(r=>{
+      const estado=String(r.ESTADO_RECEPCION||'abierta').trim().toLowerCase();
+      return estado!=='cerrada' && estado!=='cerrado';
     });
+    renderWorks(window.RECEPCIONES_CACHE);
   });
 }
 
@@ -676,47 +738,53 @@ function getPriorityValue(r){
 
 function getProgressValue(r){return String(r.AURRERAPENA||r.PROGRESO||r.OHARRAK||r.OBSERVACIONES||'').trim()}
 function renderWorks(rows){
-  const allRows = rows.filter(r => String(r.ID_TRABAJO || '').trim() !== '');
-
-  // IMPORTANTE:
-  // Para saber el estado actual, NO se ordena antes.
-  // Google Sheets devuelve las filas en orden físico y la última fila añadida es la válida.
-  // Si se ordena antes, un trabajo terminado puede seguir apareciendo como pendiente.
-  const latestMap = {};
-  allRows.forEach(r => {
-    latestMap[String(r.ID_TRABAJO || '').trim()] = r;
+  const activeRows=(rows||[]).filter(r=>{
+    const trabajos=parseTrabajosJsonFront(r);
+    if(!trabajos.length)return true;
+    return !trabajos.every(t=>{
+      const e=String(t.estado||'').toLowerCase();
+      return e==='terminado'||e==='cancelado';
+    });
   });
 
-  const latestRows = Object.values(latestMap);
+  const mekanika=activeRows.filter(r=>String(r.TIPO_TRABAJO||r.TAILERRA||'').trim()==='MEKANIKA');
+  const karrozeria=activeRows.filter(r=>String(r.TIPO_TRABAJO||r.TAILERRA||'').trim()==='KARROZERIA');
 
-  latestRows.sort((a,b) => {
-    const dateCompare = getWorkSortValue(a).localeCompare(getWorkSortValue(b));
-    if(dateCompare !== 0) return dateCompare;
-    return getPriorityValue(a) - getPriorityValue(b);
-  });
-
-  const activeRows = latestRows.filter(r => {
-    const estado = String(r.EGOERA || '').trim().toLowerCase();
-    return estado !== 'terminado' && estado !== 'cancelado';
-  });
-
-  const mekanika = activeRows.filter(r => String(r.TAILERRA || '').trim() === 'MEKANIKA');
-  const karrozeria = activeRows.filter(r => String(r.TAILERRA || '').trim() === 'KARROZERIA');
-
-  document.getElementById('worksList').innerHTML = `
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;">
-      <div>
-        <h3 style="font-size:24px;margin-bottom:12px;">MEKANIKA</h3>
-        ${renderWorkList(mekanika)}
-      </div>
-      <div>
-        <h3 style="font-size:24px;margin-bottom:12px;">KARROZERIA</h3>
-        ${renderWorkList(karrozeria)}
-      </div>
-    </div>
-  `;
+  document.getElementById('worksList').innerHTML=`
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px;">
+      <div><h3 style="font-size:24px;margin-bottom:12px;">MEKANIKA</h3>${renderReceptionWorkList(mekanika)}</div>
+      <div><h3 style="font-size:24px;margin-bottom:12px;">KARROZERIA</h3>${renderReceptionWorkList(karrozeria)}</div>
+    </div>`;
 }
 
+function renderReceptionWorkList(rows){
+  if(!rows.length)return "<div class='ficha-box'>Sin trabajos</div>";
+  return rows.map(r=>{
+    const idRecepcion=String(r.ID_RECEPCION||'').trim();
+    const qr=String(r.QR_RECEPCION||'').trim();
+    const autoa=((r.MARCA||'')+' '+(r.MODELO||'')).trim()||'Vehículo';
+    const matricula=String(r.MATRICULA||'').trim();
+    const cliente=String(r.CLIENTE||r.BEZEROA||'').trim();
+    const trabajos=parseTrabajosJsonFront(r);
+    const pendientes=trabajos.filter(t=>{const e=String(t.estado||'').toLowerCase();return e!=='terminado'&&e!=='cancelado'}).length;
+    return `
+      <details class="work-card priority-normal" style="padding:0;overflow:hidden;">
+        <summary style="list-style:none;cursor:pointer;padding:18px;">
+          <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;">
+            <div>
+              <strong style="font-size:20px;">${escapeHtml(autoa)}</strong>
+              ${matricula?`<span style="color:#6b7280;"> · ${escapeHtml(matricula)}</span>`:''}
+              <br><span style="color:#6b7280;">${escapeHtml(cliente)}</span>
+              <br><span style="color:#111827;font-weight:900;">QR asignado: ${escapeHtml(qr||'-')}</span>
+              <br><span style="color:#2563eb;font-weight:700;">Pendientes: ${pendientes} · Tocar para abrir</span>
+            </div>
+            <span class="badge ${pendientes?'badge-pendiente':'badge-terminado'}">${pendientes?'activo':'cerrado'}</span>
+          </div>
+        </summary>
+        <div style="padding:0 18px 18px;">${renderChecklist(idRecepcion,trabajos)}</div>
+      </details>`;
+  }).join('');
+}
 
 function renderReceptionTaskMenu(rows){
   if(!rows.length){
