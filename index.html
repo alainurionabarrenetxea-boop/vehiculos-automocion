@@ -666,6 +666,21 @@ box-shadow:0 8px 18px rgba(220,38,38,.15);
       font-weight:950;
     }
 
+  
+    /* ===== MENDIcar v5.3 trabajos coches del centro ===== */
+    .mini-option-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
+    .compact-note{font-size:13px;color:#6b7280;font-weight:800;margin-top:-6px;margin-bottom:12px}
+    .center-work-card{
+      background:white;border:1px solid #e5e7eb;border-radius:18px;margin:12px 0;
+      box-shadow:0 8px 22px rgba(15,23,42,.07);overflow:hidden;border-left:10px solid #16a34a;
+    }
+    .center-work-summary{list-style:none;cursor:pointer;padding:16px;background:linear-gradient(180deg,#ffffff,#f8fafc)}
+    .center-work-summary::-webkit-details-marker{display:none}
+    .center-work-title{font-size:20px;font-weight:950;color:#111827}
+    .center-work-meta{margin-top:6px;color:#6b7280;font-weight:800;line-height:1.35}
+    .center-work-body{padding:16px;border-top:1px solid #e5e7eb}
+    .type-chip{display:inline-block;padding:6px 10px;border-radius:999px;background:#dcfce7;color:#166534;font-size:12px;font-weight:950;margin-bottom:8px}
+
   </style>
 </head>
 <body>
@@ -1644,14 +1659,39 @@ function showWorksPanel(){
 
         <div class="form-grid">
           <div>
+            <label><strong>Tipo de vehículo</strong></label>
+            <select id="workVehicleType" onchange="toggleWorkVehicleType()">
+              <option value="EXTERNO">Vehículo externo</option>
+              <option value="CENTRO">Vehículo del centro</option>
+            </select>
+          </div>
+
+          <div>
             <label><strong>Taller</strong></label>
             <select id="workTailerra">
               <option value="MEKANIKA">MEKANIKA</option>
               <option value="KARROZERIA">KARROZERIA</option>
+              <option value="BIAK">BIAK - ambos talleres</option>
             </select>
           </div>
 
-          <div><label><strong>Cliente</strong></label><input id="workCliente"></div>
+          <div id="centerVehicleBlock" class="hidden" style="grid-column:1/-1;">
+            <label><strong>Vehículo del centro</strong></label>
+            <select id="workCentroVehicle"></select>
+            <div class="compact-note">No ocupa QR_HARRERA. Usa el QR fijo del coche del centro.</div>
+            <label><strong>Grupo asignado</strong></label>
+            <select id="workGrupoAsignado">
+              <option value="LIBRE">LIBRE - quien lo asuma</option>
+              <option value="1AU3D">1AU3D</option>
+              <option value="1AU3E">1AU3E</option>
+              <option value="2AU3D">2AU3D</option>
+              <option value="2AU3E">2AU3E</option>
+              <option value="CARROCERIA">CARROCERIA</option>
+              <option value="MEKANIKA">MEKANIKA</option>
+            </select>
+          </div>
+
+          <div><label><strong>Cliente / referencia</strong></label><input id="workCliente" placeholder="Externo: cliente · Centro: profesor/grupo"></div>
           <div><label><strong>Vehículo</strong></label><input id="workAutoa"></div>
           <div><label><strong>Matrícula</strong></label><input id="workMatricula"></div>
           <div><label><strong>Fecha programada</strong></label><input type="date" id="workFecha"></div>
@@ -1684,6 +1724,8 @@ function showWorksPanel(){
     </div>
   `;
 
+  populateCenterVehicleOptions();
+  toggleWorkVehicleType();
   loadWorks();
 }
 
@@ -3367,6 +3409,372 @@ function openDashboardSection(section){
     setTimeout(()=>addBackToHome(),250);
     return;
   }
+}
+
+
+
+// ===== MENDIcar v5.3 Centro / Externo =====
+function toggleWorkVehicleType(){
+  const t = document.getElementById('workVehicleType')?.value || 'EXTERNO';
+  const block = document.getElementById('centerVehicleBlock');
+  if(block) block.classList.toggle('hidden', t !== 'CENTRO');
+
+  const cliente = document.getElementById('workCliente');
+  const autoa = document.getElementById('workAutoa');
+  const matricula = document.getElementById('workMatricula');
+
+  if(t === 'CENTRO'){
+    if(cliente && !cliente.value) cliente.value = currentUser ? currentUser.name : 'Centro';
+    syncSelectedCenterVehicle();
+  }else{
+    if(autoa) autoa.disabled = false;
+    if(matricula) matricula.disabled = false;
+  }
+}
+
+function populateCenterVehicleOptions(){
+  const sel = document.getElementById('workCentroVehicle');
+  if(!sel) return;
+
+  const rows = Array.isArray(vehicles) ? vehicles : [];
+  sel.innerHTML = rows.map(v=>`
+    <option value="${escapeAttr(v.id)}">
+      ID ${escapeHtml(v.id)} · ${escapeHtml(v.autoa || 'Vehículo')} ${v.color ? '· '+escapeHtml(v.color) : ''}
+    </option>
+  `).join('');
+
+  sel.onchange = syncSelectedCenterVehicle;
+  syncSelectedCenterVehicle();
+}
+
+function getSelectedCenterVehicle(){
+  const id = document.getElementById('workCentroVehicle')?.value || '';
+  return (vehicles || []).find(v=>String(v.id)===String(id)) || null;
+}
+
+function syncSelectedCenterVehicle(){
+  const v = getSelectedCenterVehicle();
+  const autoa = document.getElementById('workAutoa');
+  const matricula = document.getElementById('workMatricula');
+  if(!v) return;
+
+  if(autoa){
+    autoa.value = v.autoa || '';
+    autoa.disabled = true;
+  }
+  if(matricula){
+    matricula.value = v.id ? 'ID-'+v.id : '';
+    matricula.disabled = true;
+  }
+}
+
+// Override createWork: supports EXTERNO and CENTRO.
+function createWork(){
+  if(SAVE_LOCKS['crearTrabajo']){
+    showMessage('Ya se está creando el trabajo. Espera unos segundos.', 'error');
+    return;
+  }
+
+  const tipoVehiculo = document.getElementById('workVehicleType')?.value || 'EXTERNO';
+  const isCentro = tipoVehiculo === 'CENTRO';
+  const centro = isCentro ? getSelectedCenterVehicle() : null;
+
+  const payload={
+    accion: isCentro ? 'crearTrabajoCentro' : 'crearTrabajo',
+    tipoVehiculo: tipoVehiculo,
+    idAutoak: centro ? centro.id : '',
+    qrAutoak: centro ? centro.qr : '',
+    grupoAsignado: document.getElementById('workGrupoAsignado')?.value || '',
+    tailerra:document.getElementById('workTailerra').value,
+    cliente:document.getElementById('workCliente').value.trim(),
+    autoa: isCentro && centro ? centro.autoa : document.getElementById('workAutoa').value.trim(),
+    matricula: isCentro && centro ? ('ID-'+centro.id) : document.getElementById('workMatricula').value.trim(),
+    fecha:document.getElementById('workFecha').value,
+    hora:document.getElementById('workHora').value,
+    prioridad:document.getElementById('workPrioridad').value,
+    lana:document.getElementById('workLana').value.trim(),
+    usuario:currentUser.username,
+    rol:currentUser.role,
+    taldea:currentUser.taldea || ''
+  };
+
+  if(isCentro && !payload.idAutoak){
+    showMessage('Selecciona un vehículo del centro.','error');
+    return;
+  }
+
+  if(!payload.cliente && !isCentro){
+    showMessage('Falta cliente.','error');
+    return;
+  }
+
+  if(!payload.lana){
+    showMessage('Falta trabajo a realizar.','error');
+    return;
+  }
+
+  SAVE_LOCKS['crearTrabajo']=true;
+  const btn=document.getElementById('btnCrearTrabajo');
+  if(btn){
+    btn.disabled=true;
+    btn.dataset.oldText=btn.textContent;
+    btn.textContent='Guardando...';
+    btn.classList.add('save-busy');
+  }
+
+  const resultBox=document.getElementById('workCreateResult');
+  if(resultBox) resultBox.innerHTML='<div class="success-box">Guardando trabajo...</div>';
+
+  callSaveAPI(payload,r=>{
+    SAVE_LOCKS['crearTrabajo']=false;
+
+    if(btn){
+      btn.disabled=false;
+      btn.textContent=btn.dataset.oldText || 'Crear trabajo';
+      btn.classList.remove('save-busy');
+    }
+
+    if(!r||!r.ok){
+      showMessage('Error creando trabajo:\n'+(r&&r.msg?r.msg:'Error desconocido'),'error');
+      if(resultBox) resultBox.innerHTML='';
+      return;
+    }
+
+    if(isCentro){
+      showMessage('Trabajo creado en vehículo del centro correctamente.','success');
+      if(resultBox){
+        resultBox.innerHTML = `
+          <div class="qr-assigned-big">
+            <div class="qr-assigned-title">✅ PRÁCTICA CREADA</div>
+            <div class="qr-assigned-note">Vehículo del centro:</div>
+            <div class="qr-assigned-code">${escapeHtml(payload.autoa)}</div>
+            <div class="qr-assigned-note">Grupo: ${escapeHtml(payload.grupoAsignado || 'LIBRE')} · Taller: ${escapeHtml(payload.tailerra)}</div>
+          </div>`;
+      }
+      registrarUsoApp('CREAR_TRABAJO_CENTRO','Trabajo creado en vehículo del centro',payload.idAutoak,payload.qrAutoak,payload.matricula);
+    }else{
+      const qrAsignado = r.qrAsignado || r.qr || '';
+      const idRecepcion = r.idRecepcion || '';
+
+      showMessage('Trabajo creado correctamente. QR asignado automáticamente: '+qrAsignado,'success');
+      registrarUsoApp('CREAR_ORDEN','Orden creada desde Trabajos',idRecepcion,qrAsignado,payload.matricula);
+
+      if(resultBox){
+        resultBox.innerHTML = `
+          <div class="qr-assigned-big">
+            <div class="qr-assigned-title">✅ ORDEN CREADA</div>
+            <div class="qr-assigned-note">QR asignado automáticamente:</div>
+            <div class="qr-assigned-code">${escapeHtml(qrAsignado)}</div>
+            <div class="qr-assigned-note">
+              Coge físicamente el cartel ${escapeHtml(qrAsignado)} y colócalo en el coche.<br>
+              ID recepción: ${escapeHtml(idRecepcion)}
+            </div>
+          </div>`;
+      }
+    }
+
+    setTimeout(()=>showWorksPanel(),900);
+  });
+}
+
+// Override loadWorks: loads external HARRERA + center works from LANAK.
+function loadWorks(){
+  showLoading('Cargando trabajos activos...');
+  clearMessage();
+
+  callSaveAPI({accion:'listarHarrera'}, hResp=>{
+    const hRows = hResp && hResp.ok ? (hResp.rows || []) : [];
+
+    callSaveAPI({accion:'listarLanak'}, lResp=>{
+      const lRows = lResp && lResp.ok ? (lResp.rows || []) : [];
+
+      const externas = hRows.filter(r=>{
+        const estadoRecepcion = String(getAnyField(r, ['ESTADO_RECEPCION','ESTADO RECEPCION']) || 'abierta').trim().toLowerCase();
+        const idRecepcion = getAnyField(r, ['ID_RECEPCION','ID RECEPCION']);
+        const qr = getAnyField(r, ['QR_RECEPCION','QR RECEPCION']);
+        const trabajos = parseTrabajosJsonFront(r);
+
+        if(!idRecepcion && !qr) return false;
+        if(estadoRecepcion === 'cerrada' || estadoRecepcion === 'cerrado') return false;
+        if(!trabajos.length) return true;
+
+        return !trabajos.every(t=>{
+          const e = String(t.estado || '').toLowerCase();
+          return e === 'terminado' || e === 'cancelado';
+        });
+      }).map(r=>Object.assign({}, r, {TIPO_VEHICULO:'EXTERNO'}));
+
+      const centro = getLatestCenterWorks(lRows);
+
+      window.RECEPCIONES_CACHE = externas;
+      window.CENTER_WORKS_CACHE = centro;
+
+      renderWorksMixed(externas, centro);
+      hideLoading();
+    });
+  });
+}
+
+function getLatestCenterWorks(rows){
+  const latest = {};
+  (rows || []).forEach(r=>{
+    const tipo = String(getAnyField(r,['TIPO_VEHICULO','Tipo vehículo','tipoVehiculo']) || '').toUpperCase();
+    const idTrabajo = getAnyField(r,['ID_TRABAJO','ID TRABAJO']);
+    if(tipo !== 'CENTRO' || !idTrabajo) return;
+    latest[idTrabajo] = r;
+  });
+
+  return Object.values(latest).filter(r=>{
+    const estado = String(getAnyField(r,['EGOERA','ESTADO','Estado']) || '').toLowerCase();
+    const visible = String(getAnyField(r,['VISIBLE_ACTIVO','VISIBLE','ACTIVO']) || 'SI').toUpperCase();
+    return visible !== 'NO' && estado !== 'terminado' && estado !== 'cancelado';
+  });
+}
+
+function getWorkWorkshopAny(r){
+  return getAnyField(r,['TAILERRA','TALLER']) || getReceptionWorkshop(r);
+}
+
+function renderWorksMixed(externas, centro){
+  const allCentro = centro || [];
+  const ext = externas || [];
+
+  const mekanikaExt = ext.filter(r=>getReceptionWorkshop(r)==='MEKANIKA');
+  const karrozeriaExt = ext.filter(r=>getReceptionWorkshop(r)==='KARROZERIA');
+  const biakExt = ext.filter(r=>getReceptionWorkshop(r)==='SIN_TALLER' && String(getAnyField(r,['QUEJA_CLIENTE','TIPO_TRABAJO','TAILERRA']) || '').toUpperCase()==='BIAK');
+
+  const mekanikaCentro = allCentro.filter(r=>String(getWorkWorkshopAny(r)).toUpperCase()==='MEKANIKA');
+  const karrozeriaCentro = allCentro.filter(r=>String(getWorkWorkshopAny(r)).toUpperCase()==='KARROZERIA');
+
+  document.getElementById('worksList').innerHTML = `
+    ${renderWorkSectionMixed('MEKANIKA', mekanikaExt, mekanikaCentro)}
+    ${renderWorkSectionMixed('KARROZERIA', karrozeriaExt, karrozeriaCentro)}
+    ${biakExt.length ? renderWorkSectionMixed('BIAK / SIN CLASIFICAR', biakExt, []) : ''}
+  `;
+}
+
+function renderWorkSectionMixed(title, extRows, centroRows){
+  const total = (extRows || []).length + (centroRows || []).length;
+  return `
+    <details class="work-section">
+      <summary class="work-section-summary">
+        <div>
+          <div class="work-section-title">${escapeHtml(title)}</div>
+          <div class="work-section-sub">Pulsa para ver coches externos y coches del centro</div>
+        </div>
+        <div class="work-section-count">${total} ${total === 1 ? 'trabajo' : 'trabajos'}</div>
+      </summary>
+      <div class="work-section-body">
+        ${(centroRows || []).length ? `<h3>Vehículos del centro</h3>${renderCenterWorkList(centroRows)}` : ''}
+        ${(extRows || []).length ? `<h3>Vehículos externos</h3>${renderReceptionWorkList(extRows)}` : ''}
+        ${!total ? "<div class='ficha-box'>Sin trabajos</div>" : ''}
+      </div>
+    </details>
+  `;
+}
+
+function renderCenterWorkList(rows){
+  if(!rows || !rows.length) return "<div class='ficha-box'>Sin trabajos de centro</div>";
+
+  return rows.map(r=>{
+    const idTrabajo = getAnyField(r,['ID_TRABAJO','ID TRABAJO']);
+    const idAutoak = getAnyField(r,['ID_AUTOAK','ID AUTOAK']);
+    const qr = getAnyField(r,['QR','QR_AUTOAK','QR_RECEPCION','QR_HARRERA']);
+    const autoa = getAnyField(r,['AUTOA','Autoa','VEHICULO']) || 'Vehículo del centro';
+    const tarea = getAnyField(r,['LANA','Lana','TRABAJO','Trabajo']) || 'Trabajo';
+    const estado = getAnyField(r,['EGOERA','ESTADO']) || 'pendiente';
+    const grupo = getAnyField(r,['GRUPO_ASIGNADO','TALDEA','GRUPO']) || 'LIBRE';
+    const profesor = getAnyField(r,['PROFESOR_CREADOR','ERABILTZAILEA','USUARIO']) || '';
+    const taller = getWorkWorkshopAny(r);
+    const prioridad = getAnyField(r,['LEHENTASUNA','PRIORIDAD']) || 'normal';
+
+    return `
+      <details class="center-work-card">
+        <summary class="center-work-summary">
+          <span class="type-chip">CENTRO</span>
+          <div class="center-work-title">${escapeHtml(autoa)} ${idAutoak ? '· ID '+escapeHtml(idAutoak) : ''}</div>
+          <div class="center-work-meta">
+            QR: ${escapeHtml(qr || '-')}<br>
+            Grupo: ${escapeHtml(grupo)} · Taller: ${escapeHtml(taller)} · Profesor: ${escapeHtml(profesor || '-')}
+          </div>
+          <div class="pending-line">Pulsa para desplegar la práctica</div>
+        </summary>
+        <div class="center-work-body">
+          <label><strong>Tarea</strong></label>
+          <div class="ficha-box">${escapeHtml(tarea)}</div>
+          <div class="form-grid">
+            <div>
+              <label><strong>Estado</strong></label>
+              <select id="estadoCentro_${escapeAttr(idTrabajo)}">
+                <option value="pendiente" ${String(estado).toLowerCase()==='pendiente'?'selected':''}>pendiente</option>
+                <option value="en curso" ${String(estado).toLowerCase()==='en curso'?'selected':''}>en curso</option>
+                <option value="terminado" ${String(estado).toLowerCase()==='terminado'?'selected':''}>terminado</option>
+                <option value="cancelado" ${String(estado).toLowerCase()==='cancelado'?'selected':''}>cancelado</option>
+              </select>
+            </div>
+            <div>
+              <label><strong>Prioridad</strong></label>
+              <input value="${escapeAttr(prioridad)}" disabled>
+            </div>
+          </div>
+          <label><strong>Observaciones / trabajo realizado</strong></label>
+          <textarea id="obsCentro_${escapeAttr(idTrabajo)}" placeholder="Qué se ha hecho, incidencias, material usado..."></textarea>
+          <button type="button" onclick="guardarTrabajoCentro('${escapeJs(idTrabajo)}')">Guardar práctica</button>
+        </div>
+      </details>
+    `;
+  }).join('');
+}
+
+function guardarTrabajoCentro(idTrabajo){
+  const row = (window.CENTER_WORKS_CACHE || []).find(r=>String(getAnyField(r,['ID_TRABAJO']))===String(idTrabajo));
+  if(!row){showMessage('No se encuentra el trabajo de centro.','error');return;}
+
+  const estado = document.getElementById('estadoCentro_'+idTrabajo)?.value || 'pendiente';
+  const obs = document.getElementById('obsCentro_'+idTrabajo)?.value || '';
+
+  callSaveAPI({
+    accion:'actualizarTrabajoCentro',
+    idTrabajo:idTrabajo,
+    estado:estado,
+    oharrak:obs,
+    usuario:currentUser ? currentUser.username : '',
+    rol:currentUser ? currentUser.role : '',
+    taldea:currentUser ? currentUser.taldea : ''
+  }, resp=>{
+    if(!resp || !resp.ok){
+      showMessage('Error guardando práctica: '+(resp&&resp.msg?resp.msg:'Error desconocido'),'error');
+      return;
+    }
+    showMessage(resp.msg || 'Práctica guardada.','success');
+    setTimeout(()=>showWorksPanel(),700);
+  });
+}
+
+// Load center tasks when a fixed AUTOAK QR is opened.
+function renderCenterTasksForVehicle(vehicle){
+  if(!vehicle || !vehicle.id) return;
+  const box = document.createElement('div');
+  box.className = 'vehicle-card';
+  box.innerHTML = `<h2 class="vehicle-title">Prácticas pendientes del centro</h2><div id="centerTasksForVehicle">Cargando...</div>`;
+  document.getElementById('vehicleDetail').appendChild(box);
+
+  callSaveAPI({accion:'listarLanak'}, resp=>{
+    const rows = resp && resp.ok ? getLatestCenterWorks(resp.rows || []) : [];
+    const mine = rows.filter(r=>String(getAnyField(r,['ID_AUTOAK','ID AUTOAK']))===String(vehicle.id));
+    document.getElementById('centerTasksForVehicle').innerHTML = mine.length ? renderCenterWorkList(mine) : "<div class='ficha-box'>No hay prácticas pendientes para este coche.</div>";
+  });
+}
+
+
+
+// ===== v5.3 wrapper ficha AUTOAK para mostrar trabajos de centro =====
+if(typeof window.__renderVehicleDetailOriginal_v53 === 'undefined'){
+  window.__renderVehicleDetailOriginal_v53 = renderVehicleDetail;
+  renderVehicleDetail = function(vehicle){
+    window.__renderVehicleDetailOriginal_v53(vehicle);
+    try{ renderCenterTasksForVehicle(vehicle); }catch(e){}
+  };
 }
 
 </script>
