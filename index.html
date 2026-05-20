@@ -606,6 +606,66 @@ box-shadow:0 8px 18px rgba(220,38,38,.15);
       color:#1d4ed8;
     }
 
+  
+    /* ===== MENDIcar v5.1 navegación y trabajos realizados ===== */
+    .panel-actions-top{
+      margin-bottom:14px;
+    }
+    .new-work-details{
+      border:1px solid #e5e7eb;
+      border-radius:22px;
+      overflow:hidden;
+      background:#fff;
+      box-shadow:0 8px 22px rgba(15,23,42,.06);
+      margin-bottom:18px;
+    }
+    .new-work-summary{
+      list-style:none;
+      cursor:pointer;
+      padding:18px;
+      background:linear-gradient(135deg,#eff6ff,#f8fafc);
+      color:#111827;
+      font-weight:950;
+      font-size:22px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+    }
+    .new-work-summary::-webkit-details-marker{display:none;}
+    .new-work-summary span{
+      background:#2563eb;
+      color:#fff;
+      border-radius:999px;
+      padding:9px 13px;
+      font-size:15px;
+      white-space:nowrap;
+    }
+    .new-work-body{
+      padding:18px;
+    }
+    .history-task-line{
+      margin-top:8px;
+      padding:10px 12px;
+      border-radius:14px;
+      background:#f8fafc;
+      border:1px solid #e5e7eb;
+    }
+    .history-task-label{
+      color:#111827;
+      font-weight:950;
+    }
+    .history-task-state{
+      display:inline-block;
+      margin-left:6px;
+      padding:3px 8px;
+      border-radius:999px;
+      background:#dbeafe;
+      color:#1d4ed8;
+      font-size:13px;
+      font-weight:950;
+    }
+
   </style>
 </head>
 <body>
@@ -1566,64 +1626,61 @@ function showWorksPanel(){
   document.getElementById('showAllBtn').classList.remove('hidden');
 
   document.getElementById('vehicleDetail').innerHTML = `
-    <div class="vehicle-card">
-      <h2 class="vehicle-title">Nuevo trabajo</h2>
-      <div class="ficha-box">
-        Esta opción crea una recepción sin escanear QR. La aplicación buscará automáticamente el primer QR libre y te indicará qué QR físico debes coger y colocar en el coche.
-      </div>
-
-      <div class="form-grid">
-        <div>
-          <label><strong>Taller</strong></label>
-          <select id="workTailerra">
-            <option value="MEKANIKA">MEKANIKA</option>
-            <option value="KARROZERIA">KARROZERIA</option>
-          </select>
-        </div>
-
-        <div><label><strong>Cliente</strong></label><input id="workCliente"></div>
-        <div><label><strong>Vehículo</strong></label><input id="workAutoa"></div>
-        <div><label><strong>Matrícula</strong></label><input id="workMatricula"></div>
-        <div><label><strong>Fecha programada</strong></label><input type="date" id="workFecha"></div>
-        <div><label><strong>Hora programada</strong></label><input type="time" id="workHora"></div>
-
-        <div>
-          <label><strong>Prioridad</strong></label>
-          <select id="workPrioridad">
-            <option value="normal">normal</option>
-            <option value="alta">alta</option>
-            <option value="urgente">urgente</option>
-          </select>
-        </div>
-      </div>
-
-      <label><strong>Trabajo a realizar</strong></label>
-      <textarea id="workLana"></textarea>
-
-      <button id="btnCrearTrabajo" type="button" onclick="createWork()">Crear trabajo y asignar QR libre</button>
-      <div id="workCreateResult"></div>
+    <div class="panel-actions-top">
+      <button type="button" class="section-back" onclick="showHomeDashboard()">← Volver al menú principal</button>
     </div>
+
+    <details class="new-work-details">
+      <summary class="new-work-summary">
+        Crear nuevo trabajo
+        <span>+ abrir formulario</span>
+      </summary>
+
+      <div class="new-work-body">
+        <h2 class="vehicle-title">Nuevo trabajo</h2>
+        <div class="ficha-box">
+          Esta opción crea una recepción sin escanear QR. La aplicación buscará automáticamente el primer QR libre y te indicará qué QR físico debes coger y colocar en el coche.
+        </div>
+
+        <div class="form-grid">
+          <div>
+            <label><strong>Taller</strong></label>
+            <select id="workTailerra">
+              <option value="MEKANIKA">MEKANIKA</option>
+              <option value="KARROZERIA">KARROZERIA</option>
+            </select>
+          </div>
+
+          <div><label><strong>Cliente</strong></label><input id="workCliente"></div>
+          <div><label><strong>Vehículo</strong></label><input id="workAutoa"></div>
+          <div><label><strong>Matrícula</strong></label><input id="workMatricula"></div>
+          <div><label><strong>Fecha programada</strong></label><input type="date" id="workFecha"></div>
+          <div><label><strong>Hora programada</strong></label><input type="time" id="workHora"></div>
+
+          <div>
+            <label><strong>Prioridad</strong></label>
+            <select id="workPrioridad">
+              <option value="normal">normal</option>
+              <option value="alta">alta</option>
+              <option value="urgente">urgente</option>
+            </select>
+          </div>
+        </div>
+
+        <label><strong>Trabajo a realizar</strong></label>
+        <textarea id="workLana"></textarea>
+
+        <button id="btnCrearTrabajo" type="button" onclick="createWork()">Crear trabajo y asignar QR libre</button>
+        <div id="workCreateResult"></div>
+      </div>
+    </details>
 
     <div class="vehicle-card">
       <h2 class="vehicle-title">Trabajos activos</h2>
       <p style="margin-top:-8px;color:#6b7280;">
-        Pulsa sobre un vehículo para desplegarlo. Al guardar como terminado o cancelado desaparece de esta lista y queda en LANAK.
+        Primero pulsa el taller. Después pulsa el vehículo/QR para desplegar sus tareas.
       </p>
       <div id="worksList">Cargando...</div>
-    </div>
-
-    <div class="vehicle-card">
-      <h2 class="vehicle-title">Histórico por matrícula</h2>
-      <div class="form-grid">
-        <div>
-          <label><strong>Matrícula</strong></label>
-          <input id="historyMatricula" placeholder="Ejemplo: BI6404BZ">
-        </div>
-        <div style="display:flex;align-items:end;">
-          <button type="button" onclick="showWorkHistory()">Consultar histórico</button>
-        </div>
-      </div>
-      <div id="historyResult"></div>
     </div>
   `;
 
@@ -3129,6 +3186,187 @@ function renderGeneralHistoryResults(){
     <h3 style="margin-top:18px;">Histórico de trabajos / LANAK</h3>
     ${lanakHtml}
   `;
+}
+
+
+
+// ===== MENDIcar v5.1 Historial mejorado: tareas realizadas visibles =====
+
+function buildHistoryKeysForTarget(target){
+  if(!target) return [];
+  const keys = (target.keys || []).filter(Boolean);
+
+  if(target.row){
+    [
+      ['QR_RECEPCION','QR_HARRERA','QR HARRERA'],
+      ['ID_RECEPCION','ID RECEPCION'],
+      ['MATRICULA','MATRIKULA'],
+      ['Autoa','AUTOA','autoa','VEHICULO','Vehículo'],
+      ['MARCA'],
+      ['MODELO'],
+      ['CLIENTE','BEZEROA']
+    ].forEach(group=>{
+      const v = getAnyField(target.row, group);
+      if(v) keys.push(v);
+    });
+
+    const marca = getAnyField(target.row,['MARCA']);
+    const modelo = getAnyField(target.row,['MODELO']);
+    if((marca || modelo)) keys.push((marca+' '+modelo).trim());
+  }
+
+  return [...new Set(keys.map(k=>String(k||'').trim()).filter(Boolean))];
+}
+
+function historyRowMatchesTargetLoose(row, target){
+  if(!target) return false;
+  const keys = buildHistoryKeysForTarget(target).map(normalizeHistoryKey).filter(Boolean);
+  if(!keys.length) return false;
+
+  const fields = [
+    'QR','QR_RECEPCION','QR_HARRERA',
+    'ID_RECEPCION','ID RECEPCION',
+    'ID','ID_VEHICULO',
+    'MATRICULA','MATRIKULA',
+    'AUTOA','Autoa','autoa',
+    'VEHICULO','Vehículo',
+    'CLIENTE','BEZEROA',
+    'LANA','Lana','TRABAJO','Trabajo'
+  ];
+
+  const values = fields.map(f=>getAnyField(row,[f])).filter(Boolean).map(normalizeHistoryKey);
+
+  if(values.some(v=>keys.includes(v))) return true;
+
+  // Para coches internos antiguos: REGISTRO puede guardar solo ID numérico.
+  if(target.tipo === 'AUTOAK'){
+    const targetId = keys.find(k=>/^\d+$/.test(k));
+    const rowId = normalizeHistoryKey(getAnyField(row,['ID']));
+    if(targetId && rowId && targetId === rowId) return true;
+  }
+
+  return false;
+}
+
+function renderGenericHistoryRow(r){
+  const fecha = getAnyField(r,['FECHA','Fecha','fecha','DATA','Data','data']);
+  const hora = getAnyField(r,['HORA','Hora','hora','ORDUA','Ordua','ordua']);
+  const usuario = getAnyField(r,['USUARIO','Usuario','usuario','ERABILTZAILEA','Erabiltzailea']);
+  const rol = getAnyField(r,['ROL','Rol','rol']);
+  const taldea = getAnyField(r,['TALDEA','Taldea','taldea']);
+  const qr = getAnyField(r,['QR','QR_RECEPCION','QR_HARRERA']);
+  const autoa = getAnyField(r,['AUTOA','Autoa','autoa','VEHICULO','Vehículo']);
+  const matricula = getAnyField(r,['MATRICULA','MATRIKULA','Matrícula']);
+  const accion = getAnyField(r,['ACCION','Acción','Accion','accion','CAMBIO','Cambio','cambio']);
+  const tarea = getAnyField(r,['LANA','Lana','lana','TRABAJO','Trabajo','trabajo','TRABAJO_REALIZADO','Trabajo realizado']);
+  const estado = getAnyField(r,['EGOERA','Egoera','egoera','ESTADO','Estado','estado']);
+  const detalle = getAnyField(r,['DETALLE','Detalle','detalle','OHARRAK','Oharrak','oharrak','DESCRIPCION','Descripción','test']);
+  const displayName = qr ? getQrDisplayName(qr) : '';
+
+  return `
+    <div class="work-reception-card" style="border-left-color:#111827;">
+      <div class="work-reception-summary">
+        <strong>${escapeHtml(fecha || '-')} ${escapeHtml(hora || '')}</strong>
+        <br>
+        ${qr ? `<span class="qr-line">${escapeHtml(displayName || qr)}</span><br>` : ''}
+        ${autoa ? `<strong>${escapeHtml(autoa)}</strong>${matricula ? ' · '+escapeHtml(matricula) : ''}<br>` : ''}
+        ${accion ? `<strong>${escapeHtml(accion)}</strong>` : ''}
+
+        ${tarea ? `
+          <div class="history-task-line">
+            <span class="history-task-label">Tarea realizada:</span>
+            ${escapeHtml(tarea)}
+            ${estado ? `<span class="history-task-state">${escapeHtml(estado)}</span>` : ''}
+          </div>
+        ` : ''}
+
+        ${detalle ? `<div style="margin-top:8px;color:#374151;">${escapeHtml(detalle)}</div>` : ''}
+
+        <div style="margin-top:8px;color:#6b7280;font-weight:800;">
+          ${escapeHtml(usuario || '-')} ${rol ? '· '+escapeHtml(rol) : ''} ${taldea ? '· '+escapeHtml(taldea) : ''}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderGeneralHistoryResults(){
+  const ctx = window.HIST_GENERAL_CONTEXT;
+  if(!ctx) return;
+
+  const latestOnly = document.getElementById('histGeneralLatestOnly') ? document.getElementById('histGeneralLatestOnly').checked : true;
+  const selected = getSelectedHistoryTarget(ctx);
+
+  const choicesHtml = renderHistoryTargetChoices(ctx);
+
+  if(!selected){
+    document.getElementById('histGeneralResults').innerHTML = choicesHtml;
+    return;
+  }
+
+  let registros = (ctx.registroRows || []).filter(r=>historyRowMatchesTargetLoose(r, selected));
+  let lanak = (ctx.lanakRows || []).filter(r=>historyRowMatchesTargetLoose(r, selected));
+
+  if(latestOnly){
+    registros = obtenerUltimoRegistroPorQR(registros);
+    lanak = obtenerUltimoRegistroPorQR(lanak);
+  }
+
+  registros = registros.slice().sort((a,b)=>getHistoryDateTimeValue(b).localeCompare(getHistoryDateTimeValue(a))).slice(0,120);
+  lanak = lanak.slice().sort((a,b)=>getHistoryDateTimeValue(b).localeCompare(getHistoryDateTimeValue(a))).slice(0,120);
+
+  const regHtml = registros.length ? registros.map(renderGenericHistoryRow).join('') : "<div class='ficha-box'>No hay registros en REGISTRO para el vehículo seleccionado.</div>";
+  const lanakHtml = lanak.length ? lanak.map(renderGenericHistoryRow).join('') : "<div class='ficha-box'>No hay tareas realizadas en LANAK para el vehículo seleccionado.</div>";
+
+  document.getElementById('histGeneralResults').innerHTML = `
+    ${choicesHtml}
+
+    <h3 style="margin-top:18px;">Registros / REGISTRO</h3>
+    ${regHtml}
+
+    <h3 style="margin-top:18px;">Tareas realizadas / LANAK</h3>
+    ${lanakHtml}
+  `;
+}
+
+// Garantía: todas las vistas abiertas desde el dashboard tienen botón volver.
+function openDashboardSection(section){
+  clearMainContent();
+
+  if(section === 'vehiculos'){
+    document.getElementById('viewModeText').textContent='Ver todos';
+    if(typeof showLoading === 'function') showLoading('Cargando vehículos...');
+    loadVehiclesJSONP();
+    setTimeout(()=>{
+      if(typeof hideLoading === 'function') hideLoading();
+      addBackToHome();
+    },700);
+    return;
+  }
+
+  if(section === 'trabajos'){
+    showWorksPanel();
+    setTimeout(()=>addBackToHome(),250);
+    return;
+  }
+
+  if(section === 'calendario'){
+    showCalendarPanel();
+    setTimeout(()=>addBackToHome(),250);
+    return;
+  }
+
+  if(section === 'historial'){
+    showHistoryPanel();
+    setTimeout(()=>addBackToHome(),250);
+    return;
+  }
+
+  if(section === 'ajustes'){
+    showSettingsPanel();
+    setTimeout(()=>addBackToHome(),250);
+    return;
+  }
 }
 
 </script>
