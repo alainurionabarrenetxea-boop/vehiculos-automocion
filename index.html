@@ -1035,7 +1035,7 @@ function guardarChecklistRecepcion(idRecepcion){
   const obs=document.getElementById('obsChecklist_'+idRecepcion)?.value||'';
   SAVE_LOCKS['checklist_'+idRecepcion]=true;
   showMessage('Guardando checklist...','success');
-  callSaveAPI({accion:'actualizarTrabajosRecepcion',idRecepcion:idRecepcion,trabajosJson:JSON.stringify(trabajos),usuario:currentUser?currentUser.username:'',oharrak:obs},resp=>{
+  callSaveAPI({accion:'actualizarTrabajosRecepcion',idRecepcion:idRecepcion,trabajosJson:JSON.stringify(trabajos),usuario:currentUser?currentUser.username:'',rol:currentUser?currentUser.role:'',taldea:currentUser?currentUser.taldea:'',oharrak:obs},resp=>{
     SAVE_LOCKS['checklist_'+idRecepcion]=false;
     if(!resp||!resp.ok){showMessage('Error guardando checklist: '+(resp&&resp.msg?resp.msg:'Error desconocido'),'error');return;}
     showMessage(resp.msg||'Checklist guardado correctamente.','success');
