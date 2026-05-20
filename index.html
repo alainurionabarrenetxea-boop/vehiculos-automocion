@@ -3438,7 +3438,7 @@ function populateCenterVehicleOptions(){
 
   const groupSel = document.getElementById('workGrupoAsignado');
   const selectedGroup = String(groupSel ? groupSel.value : '').trim().toUpperCase();
-  const userGroup = String(currentUser && currentUser.taldea ? currentUser.taldea : '').trim().toUpperCase();
+  
 
   const rows = (Array.isArray(vehicles) ? vehicles : []).filter(v=>{
     const raw = String(v.taldeaEsleitua || 'DENAK').trim().toUpperCase();
@@ -3452,9 +3452,6 @@ function populateCenterVehicleOptions(){
     if(!grupos.length) return true;
     if(grupos.includes('DENAK') || grupos.includes('TODOS') || grupos.includes('GUZTIAK')) return true;
     if(selectedGroup && selectedGroup !== 'LIBRE' && grupos.includes(selectedGroup)) return true;
-    if(userGroup && grupos.includes(userGroup)) return true;
-
-    // Si se crea como LIBRE, solo se muestran DENAK/TODOS o los del grupo del profesor.
     return false;
   });
 
