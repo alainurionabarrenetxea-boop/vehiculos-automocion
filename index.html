@@ -787,6 +787,12 @@ box-shadow:0 8px 18px rgba(220,38,38,.15);
       input,select,textarea{border:none!important;}
     }
 
+  
+    /* ===== MENDIcar v5.6 idioma visual EU/ES/CA ===== */
+    .language-bar{display:flex;gap:8px;justify-content:center;align-items:center;margin:10px 0 14px;flex-wrap:wrap}
+    .language-bar label{font-weight:900;color:#374151;margin:0}
+    .language-bar select{width:auto;min-width:150px;padding:9px 12px;border-radius:999px;font-weight:900}
+
   </style>
 </head>
 <body>
@@ -829,6 +835,7 @@ function showHomeDashboard(){
         <strong>${escapeHtml(currentUser ? currentUser.name : '')}</strong><br>
         Rol: <strong>${escapeHtml(currentUser ? currentUser.role : '')}</strong>
       </div>
+      ${languageSelectorHtml()}
 
       <div class="dashboard-grid">
         <button class="dashboard-tile" type="button" onclick="openDashboardSection('vehiculos')">
@@ -4833,6 +4840,169 @@ function exportarInformeCSV(){
   a.remove();
   URL.revokeObjectURL(url);
 }
+
+
+
+// ===== MENDIcar v5.6 Internacionalización visual =====
+// Por defecto: EU. Solo cambia textos de pantalla; NO cambia hojas ni columnas.
+let APP_LANG = localStorage.getItem('MENDICAR_LANG') || 'EU';
+
+const I18N_ES = {
+  "Panel principal":"Panel principal","Bienvenido,":"Bienvenido,","Rol:":"Rol:",
+  "Ver todos":"Ver todos","Vehículos del centro":"Vehículos del centro",
+  "Trabajos":"Trabajos","Crear y modificar tareas":"Crear y modificar tareas",
+  "Calendario":"Calendario","Planificación mensual":"Planificación mensual",
+  "Historial":"Historial","Buscar coche, QR o matrícula":"Buscar coche, QR o matrícula",
+  "Informes":"Informes","Alumno, tarea y fecha":"Alumno, tarea y fecha",
+  "Ajustes":"Ajustes","Idioma y configuración":"Idioma y configuración",
+  "Cerrar sesión":"Cerrar sesión","Volver al menú principal":"Volver al menú principal",
+  "Panel de trabajos":"Panel de trabajos","Crear nuevo trabajo":"Crear nuevo trabajo",
+  "Tipo de vehículo":"Tipo de vehículo","Vehículo externo":"Vehículo externo",
+  "Vehículo del centro":"Vehículo del centro","Taller":"Taller",
+  "Grupo asignado":"Grupo asignado","Cargar coches del grupo":"Cargar coches del grupo",
+  "Vehículo":"Vehículo","Cliente / referencia":"Cliente / referencia",
+  "Matrícula":"Matrícula","Fecha programada":"Fecha programada",
+  "Hora programada":"Hora programada","Prioridad":"Prioridad",
+  "Trabajo a realizar":"Trabajo a realizar","Crear trabajo y asignar QR libre":"Crear trabajo y asignar QR libre",
+  "Trabajos activos":"Trabajos activos","Historial de vehículos":"Historial de vehículos",
+  "Buscar":"Buscar","Buscar historial":"Buscar historial",
+  "Mostrar solo el último registro de cada coche / QR":"Mostrar solo el último registro de cada coche / QR",
+  "Informes de trabajo":"Informes de trabajo","Desde":"Desde","Hasta":"Hasta",
+  "Alumno / profesor":"Alumno / profesor","Grupo":"Grupo",
+  "Vehículo / matrícula / QR":"Vehículo / matrícula / QR","Estado":"Estado",
+  "Todos":"Todos","Generar informe":"Generar informe","Imprimir / PDF":"Imprimir / PDF",
+  "Exportar CSV":"Exportar CSV","Guardar":"Guardar","Guardar cambios":"Guardar cambios",
+  "Observaciones":"Observaciones","Observaciones / Oharrak":"Observaciones",
+  "Estado / Egoera":"Estado","Arrankatzen du":"Arranca","Arrankatu behar du":"Debe arrancar",
+  "pendiente":"pendiente","en curso":"en curso","terminado":"terminado","cancelado":"cancelado",
+  "normal":"normal","alta":"alta","urgente":"urgente","Tarea realizada":"Tarea realizada",
+  "Fecha":"Fecha","Hora":"Hora","Usuario":"Usuario","Coche":"Coche"
+};
+const I18N_EU = {
+  "Panel principal":"Menu nagusia","Bienvenido,":"Ongi etorri,","Rol:":"Rola:",
+  "Ver todos":"Ikusi guztiak","Vehículos del centro":"Ikastetxeko ibilgailuak",
+  "Trabajos":"Lanak","Crear y modificar tareas":"Lanak sortu eta aldatu",
+  "Calendario":"Egutegia","Planificación mensual":"Hileko plangintza",
+  "Historial":"Historia","Buscar coche, QR o matrícula":"Bilatu autoa, QR edo matrikula",
+  "Informes":"Txostenak","Alumno, tarea y fecha":"Ikaslea, lana eta data",
+  "Ajustes":"Ezarpenak","Idioma y configuración":"Hizkuntza eta konfigurazioa",
+  "Cerrar sesión":"Saioa itxi","Volver al menú principal":"Itzuli menu nagusira",
+  "Panel de trabajos":"Lanen panela","Crear nuevo trabajo":"Lan berria sortu",
+  "Tipo de vehículo":"Ibilgailu mota","Vehículo externo":"Kanpoko ibilgailua",
+  "Vehículo del centro":"Ikastetxeko ibilgailua","Taller":"Tailerra",
+  "Grupo asignado":"Esleitutako taldea","Cargar coches del grupo":"Taldeko autoak kargatu",
+  "Vehículo":"Ibilgailua","Cliente / referencia":"Bezeroa / erreferentzia",
+  "Matrícula":"Matrikula","Fecha programada":"Programatutako data",
+  "Hora programada":"Programatutako ordua","Prioridad":"Lehentasuna",
+  "Trabajo a realizar":"Egin beharreko lana","Crear trabajo y asignar QR libre":"Lana sortu eta QR librea esleitu",
+  "Trabajos activos":"Lan aktiboak","Historial de vehículos":"Ibilgailuen historia",
+  "Buscar":"Bilatu","Buscar historial":"Historia bilatu",
+  "Mostrar solo el último registro de cada coche / QR":"Auto / QR bakoitzaren azken erregistroa bakarrik erakutsi",
+  "Informes de trabajo":"Lan txostenak","Desde":"Noiztik","Hasta":"Noiz arte",
+  "Alumno / profesor":"Ikaslea / irakaslea","Grupo":"Taldea",
+  "Vehículo / matrícula / QR":"Ibilgailua / matrikula / QR","Estado":"Egoera",
+  "Todos":"Guztiak","Generar informe":"Txostena sortu","Imprimir / PDF":"Inprimatu / PDF",
+  "Exportar CSV":"CSV esportatu","Guardar":"Gorde","Guardar cambios":"Aldaketak gorde",
+  "Observaciones":"Oharrak","Observaciones / Oharrak":"Oharrak",
+  "Estado / Egoera":"Egoera","Arrankatzen du":"Arrankatzen du","Arrankatu behar du":"Arrankatu behar du",
+  "pendiente":"egiteke","en curso":"martxan","terminado":"amaituta","cancelado":"bertan behera",
+  "normal":"normala","alta":"handia","urgente":"premiazkoa","Tarea realizada":"Egindako lana",
+  "Fecha":"Data","Hora":"Ordua","Usuario":"Erabiltzailea","Coche":"Autoa"
+};
+const I18N_CA = {
+  "Panel principal":"Panell principal","Bienvenido,":"Benvingut/da,","Rol:":"Rol:",
+  "Ver todos":"Veure-ho tot","Vehículos del centro":"Vehicles del centre",
+  "Trabajos":"Treballs","Crear y modificar tareas":"Crear i modificar tasques",
+  "Calendario":"Calendari","Planificación mensual":"Planificació mensual",
+  "Historial":"Historial","Buscar coche, QR o matrícula":"Cercar vehicle, QR o matrícula",
+  "Informes":"Informes","Alumno, tarea y fecha":"Alumne, tasca i data",
+  "Ajustes":"Configuració","Idioma y configuración":"Idioma i configuració",
+  "Cerrar sesión":"Tancar sessió","Volver al menú principal":"Tornar al menú principal",
+  "Panel de trabajos":"Panell de treballs","Crear nuevo trabajo":"Crear nou treball",
+  "Tipo de vehículo":"Tipus de vehicle","Vehículo externo":"Vehicle extern",
+  "Vehículo del centro":"Vehicle del centre","Taller":"Taller",
+  "Grupo asignado":"Grup assignat","Cargar coches del grupo":"Carregar vehicles del grup",
+  "Vehículo":"Vehicle","Cliente / referencia":"Client / referència",
+  "Matrícula":"Matrícula","Fecha programada":"Data programada",
+  "Hora programada":"Hora programada","Prioridad":"Prioritat",
+  "Trabajo a realizar":"Treball a realitzar","Crear trabajo y asignar QR libre":"Crear treball i assignar QR lliure",
+  "Trabajos activos":"Treballs actius","Historial de vehículos":"Historial de vehicles",
+  "Buscar":"Cercar","Buscar historial":"Cercar historial",
+  "Mostrar solo el último registro de cada coche / QR":"Mostrar només l’últim registre de cada vehicle / QR",
+  "Informes de trabajo":"Informes de treball","Desde":"Des de","Hasta":"Fins a",
+  "Alumno / profesor":"Alumne / professor","Grupo":"Grup",
+  "Vehículo / matrícula / QR":"Vehicle / matrícula / QR","Estado":"Estat",
+  "Todos":"Tots","Generar informe":"Generar informe","Imprimir / PDF":"Imprimir / PDF",
+  "Exportar CSV":"Exportar CSV","Guardar":"Desar","Guardar cambios":"Desar canvis",
+  "Observaciones":"Observacions","Observaciones / Oharrak":"Observacions",
+  "Estado / Egoera":"Estat","Arrankatzen du":"Arrenca","Arrankatu behar du":"Ha d’arrencar",
+  "pendiente":"pendent","en curso":"en curs","terminado":"acabat","cancelado":"cancel·lat",
+  "normal":"normal","alta":"alta","urgente":"urgent","Tarea realizada":"Tasca realitzada",
+  "Fecha":"Data","Hora":"Hora","Usuario":"Usuari","Coche":"Vehicle"
+};
+const I18N = {EU:I18N_EU, ES:I18N_ES, CA:I18N_CA};
+
+function baseKeyFromVisible(s){
+  s = String(s||'').trim();
+  for(const key of Object.keys(I18N_ES)){
+    if(s === key || s === I18N_ES[key] || s === I18N_EU[key] || s === I18N_CA[key]) return key;
+  }
+  return null;
+}
+function tUI(s){
+  const key = baseKeyFromVisible(s);
+  return key ? (I18N[APP_LANG][key] || s) : s;
+}
+function setLanguage(lang){
+  APP_LANG = ['EU','ES','CA'].includes(lang) ? lang : 'EU';
+  localStorage.setItem('MENDICAR_LANG', APP_LANG);
+  applyTranslations();
+}
+function languageSelectorHtml(){
+  const label = APP_LANG==='EU' ? 'Hizkuntza' : 'Idioma';
+  return `<div class="language-bar no-print"><label>${label}</label><select id="appLangSelect" onchange="setLanguage(this.value)"><option value="EU" ${APP_LANG==='EU'?'selected':''}>EU · Euskera</option><option value="ES" ${APP_LANG==='ES'?'selected':''}>ES · Castellano</option><option value="CA" ${APP_LANG==='CA'?'selected':''}>CA · Català</option></select></div>`;
+}
+function translateTextNodes(root){
+  if(!root) return;
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+  const nodes=[];
+  while(walker.nextNode()){
+    const n=walker.currentNode, p=n.parentElement;
+    if(!p || ['SCRIPT','STYLE','TEXTAREA','INPUT'].includes(p.tagName)) continue;
+    const raw=n.nodeValue, s=raw.trim();
+    if(!s) continue;
+    const tr=tUI(s);
+    if(tr!==s) nodes.push([n, raw, s, tr]);
+  }
+  nodes.forEach(([n,raw,s,tr])=>{ n.nodeValue = raw.replace(s,tr); });
+}
+function translateAttrs(root){
+  if(!root) return;
+  root.querySelectorAll('input[placeholder],textarea[placeholder],option').forEach(el=>{
+    if(el.placeholder) el.placeholder=tUI(el.placeholder);
+    if(el.tagName==='OPTION') el.textContent=tUI(el.textContent);
+  });
+}
+function applyTranslations(){
+  const app=document.getElementById('appView')||document.body;
+  translateTextNodes(app); translateAttrs(app);
+  const sel=document.getElementById('appLangSelect'); if(sel) sel.value=APP_LANG;
+}
+function addLangSelector(){
+  const detail=document.getElementById('vehicleDetail');
+  if(detail && !detail.querySelector('#appLangSelect')) detail.insertAdjacentHTML('afterbegin', languageSelectorHtml());
+}
+function patchI18N(fn){
+  if(typeof window[fn] !== 'function' || window['__i18n_'+fn]) return;
+  window['__i18n_'+fn]=window[fn];
+  window[fn]=function(...args){
+    const res=window['__i18n_'+fn].apply(this,args);
+    setTimeout(()=>{ if(fn==='showHomeDashboard'||fn==='showSettingsPanel') addLangSelector(); applyTranslations(); },80);
+    return res;
+  };
+}
+['showHomeDashboard','showWorksPanel','showCalendarPanel','showHistoryPanel','showReportsPanel','showSettingsPanel','renderVehicleDetail','renderWorksMixed','renderWorks','renderInformeTrabajos'].forEach(patchI18N);
+document.addEventListener('DOMContentLoaded',()=>setTimeout(applyTranslations,150));
 
 </script>
 
