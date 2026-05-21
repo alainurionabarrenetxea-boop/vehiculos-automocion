@@ -788,10 +788,7 @@ box-shadow:0 8px 18px rgba(220,38,38,.15);
     }
 
   
-    
-
-  
-    /* ===== MENDIcar v6.0.3 idioma seguro EU/ES/CA ===== */
+    /* ===== MENDIcar v6.0.4 idioma completo EU/ES/CA ===== */
     .language-bar{display:flex;gap:8px;justify-content:center;align-items:center;margin:10px 0 14px;flex-wrap:wrap}
     .language-bar label{font-weight:900;color:#374151;margin:0}
     .language-bar select{width:auto;min-width:150px;padding:9px 12px;border-radius:999px;font-weight:900}
@@ -799,11 +796,19 @@ box-shadow:0 8px 18px rgba(220,38,38,.15);
   </style>
 </head>
 <body>
-<div id="loginView" class="box"><div class="header"><div class="header-logo"><img src="icono-512.png" alt="MENDIcar"><div><h2>MENDIcar</h2><p>Gestión digital de automoción</p></div></div></div><div class="content"><input id="username" type="text" placeholder="Usuario / correo"><input id="password" type="password" placeholder="Contraseña"><button type="button" onclick="login()">Entrar</button><div id="loginError" class="msg error hidden"></div></div><div class="footer-credit">Aplicación realizada por <strong>Alain Urionabarrenetxea</strong></div></div>
-<div id="appView" class="box hidden"><div class="header"><div class="header-logo"><img src="icono-512.png" alt="MENDIcar"><div><h2>MENDIcar</h2><p id="welcomeText"></p></div></div></div><div class="content"><div class="topbar"><div id="viewModeText">Consulta de vehículo</div><div class="topbar-actions"><button id="showAllBtn" class="small-btn hidden" type="button" onclick="showAllVehicles()">Ver todos</button><button id="showWorksBtn" class="small-btn hidden" type="button" onclick="showWorksPanel()">Trabajos</button><button id="showCalendarBtn" class="small-btn hidden" type="button" onclick="showCalendarPanel()">Calendario</button><button id="showQrHistoryBtn" class="small-btn hidden" type="button" onclick="showHistoryPanel()">Historial</button><button class="small-btn secondary-btn" type="button" onclick="logout()">Cerrar sesión</button></div></div><div id="appMessage" class="msg info hidden"></div><div id="vehicleDetail"></div><div id="tableContainer" class="table-wrap hidden"><table><thead><tr><th>ID</th><th>Vehículo</th><th>Color</th><th>VIN</th><th>Estado</th><th>Observaciones</th></tr></thead><tbody id="tableBody"></tbody></table></div></div><div class="footer-credit">Aplicación realizada por <strong>Alain Urionabarrenetxea</strong></div></div>
+<div id="loginView" class="box"><div class="header"><div class="header-logo"><img src="icono-512.png" alt="MENDIcar"><div><h2>MENDIcar</h2><p>Automozioaren kudeaketa digitala</p></div></div></div><div class="content"><input id="username" type="text" placeholder="Erabiltzailea / posta"><input id="password" type="password" placeholder="Pasahitza"><button type="button" onclick="login()">Sartu</button><div id="loginError" class="msg error hidden"></div></div><div class="footer-credit">Aplikazioa sortzailea: <strong>Alain Urionabarrenetxea</strong></div></div>
+<div id="appView" class="box hidden"><div class="header"><div class="header-logo"><img src="icono-512.png" alt="MENDIcar"><div><h2>MENDIcar</h2><p id="welcomeText"></p></div></div></div><div class="content"><div class="topbar"><div id="viewModeText">Consulta de vehículo</div><div class="topbar-actions"><button id="showAllBtn" class="small-btn hidden" type="button" onclick="showAllVehicles()">Ver todos</button><button id="showWorksBtn" class="small-btn hidden" type="button" onclick="showWorksPanel()">Trabajos</button><button id="showCalendarBtn" class="small-btn hidden" type="button" onclick="showCalendarPanel()">Calendario</button><button id="showQrHistoryBtn" class="small-btn hidden" type="button" onclick="showHistoryPanel()">Historial</button><button class="small-btn secondary-btn" type="button" onclick="logout()">Cerrar sesión</button></div></div><div id="appMessage" class="msg info hidden"></div><div id="vehicleDetail"></div><div id="tableContainer" class="table-wrap hidden"><table><thead><tr><th>ID</th><th>Vehículo</th><th>Color</th><th>VIN</th><th>Estado</th><th>Observaciones</th></tr></thead><tbody id="tableBody"></tbody></table></div></div><div class="footer-credit">Aplikazioa sortzailea: <strong>Alain Urionabarrenetxea</strong></div></div>
 <button id="helpBtn" class="help-floating hidden" type="button" onclick="startTutorial(true)">❓ Ayuda</button>
 
 <script>
+
+// ===== Reset idioma por defecto v6.0.5 =====
+// Si vienes de una versión anterior que dejó ES guardado, se fuerza EU una sola vez.
+if(localStorage.getItem('MENDICAR_I18N_VERSION') !== '6.0.5'){
+  localStorage.setItem('MENDICAR_LANG','EU');
+  localStorage.setItem('MENDICAR_I18N_VERSION','6.0.5');
+}
+
 let USERS=[],vehicles=[],currentUser=null;const SHEET_ID="1sf2TS8gCKachrkz66S6E_zQuafVpu7F_AhSLdhi-W-g",SHEET_GID="0",SAVE_API_URL="https://script.google.com/macros/s/AKfycbwBYs2oADcw-Za-nLVbR0oF5L6ZHx2gYd1JS-0vjIW9IbD53P9j7U68R09-WGieM2Er2A/exec";
 function showLoginError(t){const e=document.getElementById('loginError');e.textContent=t;e.classList.remove('hidden')}function clearLoginError(){const e=document.getElementById('loginError');e.textContent='';e.classList.add('hidden')}function showMessage(t,type='info'){const e=document.getElementById('appMessage');e.textContent=t;e.className='msg '+type;e.classList.remove('hidden')}function clearMessage(){const e=document.getElementById('appMessage');e.textContent='';e.classList.add('hidden')}function value(v){return v==null?'':String(v).trim()}function normalizeYesNo(v){const x=String(v||'').trim().toLowerCase();if(['bai','si','sí','yes'].includes(x))return'Bai';if(['ez','no'].includes(x))return'Ez';return'Ez'}function normalizeRole(v){const x=String(v||'').trim().toLowerCase();if(x==='profesor'||x==='irakaslea')return'profesor';if(x==='alumno'||x==='ikaslea')return'alumno';return x}function isActive(v){const x=String(v||'').trim().toLowerCase();return ['bai','si','sí','yes','1','true'].includes(x)}function escapeHtml(v){return String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}function escapeAttr(v){return escapeHtml(v)}function escapeJs(v){return String(v??'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'\\"')}function getEntryParams(){const p=new URLSearchParams(location.search);return{id:p.get('id'),trabajo:p.get('trabajo'),profesor:p.get('profesor'),panel:p.get('panel'),qrHarrera:p.get('qrHarrera')||p.get('harrera')||p.get('qr')}}
 async function login(){clearLoginError();const username=document.getElementById('username').value.trim().toLowerCase(),password=document.getElementById('password').value.trim();try{const r=await fetch('https://opensheet.elk.sh/'+SHEET_ID+'/ERABILTZAILEAK');USERS=await r.json();const user=USERS.find(u=>String(u.usuario||'').trim().toLowerCase()===username&&String(u.password||'').trim()===password&&isActive(u.activo));if(!user){showLoginError('Usuario o contraseña incorrectos, o usuario inactivo.');return}const role=normalizeRole(user.rol),entry=getEntryParams();if(role==='alumno'&&!entry.id&&!entry.trabajo&&!entry.qrHarrera){showLoginError('Acceso solo permitido mediante QR del coche, ficha de trabajo o QR de recepción.');return}currentUser={username:String(user.usuario||'').trim(),role,name:String(user.nombre||user.usuario||'').trim(),taldea:String(user.taldea||'').trim()};document.getElementById('loginView').classList.add('hidden');document.getElementById('appView').classList.remove('hidden');document.getElementById('helpBtn').classList.remove('hidden');document.getElementById('welcomeText').textContent='Bienvenido, '+currentUser.name+' · Rol: '+currentUser.role;if(currentUser.role==='profesor'){document.getElementById('showWorksBtn').classList.remove('hidden');document.getElementById('showCalendarBtn').classList.remove('hidden');document.getElementById('showQrHistoryBtn').classList.remove('hidden');}registrarUsoApp('LOGIN','Entrada en la aplicación','','','');
@@ -832,11 +837,10 @@ function showHomeDashboard(){
   const isProfesor = currentUser && currentUser.role === 'profesor';
 
   document.getElementById('vehicleDetail').innerHTML = `
-    <div class="main-dashboard">
-      <div class="dashboard-user">
-        ${LT('welcome')}<br>
+    <div class="main-dashboard">      <div class="dashboard-user">
+        Ongi etorri,<br>
         <strong>${escapeHtml(currentUser ? currentUser.name : '')}</strong><br>
-        ${LT('role')} <strong>${escapeHtml(currentUser ? (currentUser.role==='profesor' ? LT('teacher') : currentUser.role==='alumno' ? LT('student') : currentUser.role) : '')}</strong>
+        Rola: <strong>${escapeHtml(currentUser ? (currentUser.role==='profesor' ? 'irakaslea' : currentUser.role==='alumno' ? 'ikaslea' : currentUser.role) : '')}</strong>
       </div>
       ${languageSelectorHtml()}
 
@@ -4849,220 +4853,116 @@ function exportarInformeCSV(){
 
 
 
-// ===== MENDIcar v6.0.3 idioma seguro EU/ES/CA =====
-// Euskera por defecto. Traduce toda la interfaz visible con una lista controlada.
-// No usa MutationObserver y no toca datos ni eventos. La cabecera azul queda fija tras pintarse.
+// ===== MENDIcar v6.0.4 idioma completo EU/ES/CA =====
+// EU por defecto. Cabecera azul fija en euskera. Resto de app cambia al seleccionar idioma.
 let APP_LANG = localStorage.getItem('MENDICAR_LANG') || 'EU';
 
 const LANG = {
   EU:{
-    language:"Hizkuntza",
-    subtitle:"Automozioaren kudeaketa digitala",
-    user:"Erabiltzailea / posta",
-    pass:"Pasahitza",
-    enter:"Sartu",
-    made:"Aplikazioa sortzailea:",
-    welcome:"Ongi etorri,",
-    role:"Rola:",
-    teacher:"irakaslea",
-    student:"ikaslea",
-    main:"Menu nagusia",
-    all:"Ikusi guztiak",
-    centerCars:"Ikastetxeko ibilgailuak",
-    works:"Lanak",
-    worksSub:"Lanak sortu eta aldatu",
-    calendar:"Egutegia",
-    calendarSub:"Hileko plangintza",
-    history:"Historia",
-    historySub:"Bilatu autoa, QR edo matrikula",
-    reports:"Txostenak",
-    reportsSub:"Ikaslea, lana eta data",
-    settings:"Ezarpenak",
-    settingsSub:"Hizkuntza eta konfigurazioa",
-    logout:"Saioa itxi",
-    help:"Laguntza",
-    back:"Itzuli menu nagusira",
-    newWork:"Lan berria sortu",
-    openForm:"formularioa ireki",
-    vehicleType:"Ibilgailu mota",
-    externalVehicle:"Kanpoko ibilgailua",
-    centerVehicle:"Ikastetxeko ibilgailua",
-    workshop:"Tailerra",
-    assignedGroup:"Esleitutako taldea",
-    loadCars:"Taldeko autoak kargatu",
-    updateGroups:"Taldeak eguneratu",
-    vehicle:"Ibilgailua",
-    client:"Bezeroa / erreferentzia",
-    plate:"Matrikula",
-    dateProg:"Programatutako data",
-    timeProg:"Programatutako ordua",
-    priority:"Lehentasuna",
-    workTodo:"Egin beharreko lana",
-    createWork:"Lana sortu eta QR librea esleitu",
-    activeWorks:"Lan aktiboak",
-    noWorks:"Lanik gabe",
-    search:"Bilatu",
-    searchHistory:"Historia bilatu",
-    workReports:"Lan txostenak",
-    from:"Noiztik",
-    to:"Noiz arte",
-    studentTeacher:"Ikaslea / irakaslea",
-    status:"Egoera",
-    allOption:"Guztiak",
-    generate:"Txostena sortu",
-    print:"Inprimatu / PDF",
-    export:"CSV esportatu",
-    save:"Gorde",
-    saveChanges:"Aldaketak gorde",
-    observations:"Oharrak",
-    loading:"Kargatzen...",
+    language:"Hizkuntza", subtitle:"Automozioaren kudeaketa digitala", user:"Erabiltzailea / posta", pass:"Pasahitza", enter:"Sartu", made:"Aplikazioa sortzailea:",
+    welcome:"Ongi etorri,", role:"Rola:", teacher:"irakaslea", student:"ikaslea",
+    main:"Menu nagusia", workPanel:"Lanen panela", all:"Ikusi guztiak", centerCars:"Ikastetxeko ibilgailuak",
+    works:"Lanak", worksSub:"Lanak sortu eta aldatu", calendar:"Egutegia", calendarSub:"Hileko plangintza",
+    history:"Historia", historySub:"Bilatu autoa, QR edo matrikula", reports:"Txostenak", reportsSub:"Ikaslea, lana eta data",
+    settings:"Ezarpenak", settingsSub:"Hizkuntza eta konfigurazioa", logout:"Saioa itxi", help:"Laguntza", back:"Itzuli menu nagusira",
+    newWork:"Lan berria sortu", newWorkTitle:"Lan berria", openForm:"formularioa ireki", activeWorks:"Lan aktiboak",
+    activeWorksNote:"Lehenik tailerra sakatu. Ondoren sakatu ibilgailua/QR bere lanak zabaltzeko.",
+    externalVehicles:"Kanpoko ibilgailuak", centerVehicles:"Ikastetxeko ibilgailuak",
+    showCars:"Sakatu kanpoko eta ikastetxeko autoak ikusteko", jobs:"lan", job:"lan",
+    vehicleType:"Ibilgailu mota", externalVehicle:"Kanpoko ibilgailua", centerVehicle:"Ikastetxeko ibilgailua",
+    workshop:"Tailerra", assignedGroup:"Esleitutako taldea", loadCars:"Taldeko autoak kargatu", updateGroups:"Taldeak eguneratu",
+    vehicle:"Ibilgailua", client:"Bezeroa / erreferentzia", clientPlaceholder:"Kanpokoa: bezeroa · Ikastetxea: irakaslea/taldea",
+    plate:"Matrikula", dateProg:"Programatutako data", timeProg:"Programatutako ordua", priority:"Lehentasuna",
+    workTodo:"Egin beharreko lana", createWork:"Lana sortu eta QR librea esleitu", noWorks:"Lanik gabe",
+    search:"Bilatu", searchHistory:"Historia bilatu", workReports:"Lan txostenak", from:"Noiztik", to:"Noiz arte",
+    studentTeacher:"Ikaslea / irakaslea", studentTeacherPlaceholder:"emaila, izena edo hutsik utzi", group:"Taldea",
+    vehiclePlateQR:"Ibilgailua / matrikula / QR", status:"Egoera", allOption:"Guztiak", generate:"Txostena sortu",
+    print:"Inprimatu / PDF", export:"CSV esportatu", save:"Gorde", saveChanges:"Aldaketak gorde", observations:"Oharrak",
+    loading:"Kargatzen...", loadingCalendar:"Egutegia kargatzen...",
     receptionText:"Aukera honek harrera bat sortzen du QR eskaneatu gabe. Aplikazioak automatikoki bilatuko du lehen QR librea eta zein QR fisiko hartu eta autoan jarri behar den adieraziko dizu.",
     groupText:"Taldeak automatikoki irakurtzen dira AUTOAK / Egokitua orritik. Ondoren aukeratu taldea eta kargatu soilik talde horretako ibilgailuak. Ez du QR_HARRERA okupatzen: ikastetxeko autoaren QR finkoa erabiltzen du.",
-    firstLoad:"Lehenik aukeratu taldea eta sakatu “Taldeko autoak kargatu”",
-    pressLoad:"Sakatu “Taldeko autoak kargatu”"
+    groupLoaded:"Taldeak kargatuta:", chooseGroupLoad:"Aukeratu taldea eta sakatu “Taldeko autoak kargatu”.",
+    firstLoad:"Lehenik aukeratu taldea eta sakatu “Taldeko autoak kargatu”", pressLoad:"Sakatu “Taldeko autoak kargatu”",
+    monthlyCalendar:"Hileko egutegia", monthlyCalendarTitle:"Hileko egutegia", calendarExplain:"Sakatu egun batean egun horretako programatutako edo erregistratutako lanak ikusteko.",
+    previousMonth:"Aurreko hilabetea", nextMonth:"Hurrengo hilabetea", selectDay:"Aukeratu egutegiko egun bat.", records:"erreg.", planned:"plan.",
+    may2026:"2026ko maiatza", historyVehicles:"Ibilgailuen historia", historyExplain:"Bilatu matrikulaz, QR bidez, ikastetxeko autoaren zenbaki/ID bidez edo edozein ezaugarriren bidez.",
+    examples:"Adibideak:", searchPlaceholder:"Matrikula, autoa, QR, ID, modeloa...", onlyLast:"Auto / QR bakoitzaren azken erregistroa bakarrik erakutsi",
+    introduceSearch:"Sartu bilaketa bat historia kargatzeko. Ez da guztia automatikoki kargatzen.",
+    reportsExplain:"Kontsultatu nork egin duen lana, noiz, zein autotan eta zein egoeratan. Informazioa LANAK orritik ateratzen da, egindako lanen orritik.",
+    normal:"normala", high:"handia", urgent:"premiazkoa"
   },
   ES:{
-    language:"Idioma",
-    subtitle:"Gestión digital de automoción",
-    user:"Usuario / correo",
-    pass:"Contraseña",
-    enter:"Entrar",
-    made:"Aplicación realizada por",
-    welcome:"Bienvenido,",
-    role:"Rol:",
-    teacher:"profesor",
-    student:"alumno",
-    main:"Panel principal",
-    all:"Ver todos",
-    centerCars:"Vehículos del centro",
-    works:"Trabajos",
-    worksSub:"Crear y modificar tareas",
-    calendar:"Calendario",
-    calendarSub:"Planificación mensual",
-    history:"Historial",
-    historySub:"Buscar coche, QR o matrícula",
-    reports:"Informes",
-    reportsSub:"Alumno, tarea y fecha",
-    settings:"Ajustes",
-    settingsSub:"Idioma y configuración",
-    logout:"Cerrar sesión",
-    help:"Ayuda",
-    back:"Volver al menú principal",
-    newWork:"Crear nuevo trabajo",
-    openForm:"abrir formulario",
-    vehicleType:"Tipo de vehículo",
-    externalVehicle:"Vehículo externo",
-    centerVehicle:"Vehículo del centro",
-    workshop:"Taller",
-    assignedGroup:"Grupo asignado",
-    loadCars:"Cargar coches del grupo",
-    updateGroups:"Actualizar grupos",
-    vehicle:"Vehículo",
-    client:"Cliente / referencia",
-    plate:"Matrícula",
-    dateProg:"Fecha programada",
-    timeProg:"Hora programada",
-    priority:"Prioridad",
-    workTodo:"Trabajo a realizar",
-    createWork:"Crear trabajo y asignar QR libre",
-    activeWorks:"Trabajos activos",
-    noWorks:"Sin trabajos",
-    search:"Buscar",
-    searchHistory:"Buscar historial",
-    workReports:"Informes de trabajo",
-    from:"Desde",
-    to:"Hasta",
-    studentTeacher:"Alumno / profesor",
-    status:"Estado",
-    allOption:"Todos",
-    generate:"Generar informe",
-    print:"Imprimir / PDF",
-    export:"Exportar CSV",
-    save:"Guardar",
-    saveChanges:"Guardar cambios",
-    observations:"Observaciones",
-    loading:"Cargando...",
+    language:"Idioma", subtitle:"Automozioaren kudeaketa digitala", user:"Erabiltzailea / posta", pass:"Pasahitza", enter:"Entrar", made:"Aplikazioa sortzailea:",
+    welcome:"Bienvenido,", role:"Rol:", teacher:"profesor", student:"alumno",
+    main:"Panel principal", workPanel:"Panel de trabajos", all:"Ver todos", centerCars:"Vehículos del centro",
+    works:"Trabajos", worksSub:"Crear y modificar tareas", calendar:"Calendario", calendarSub:"Planificación mensual",
+    history:"Historial", historySub:"Buscar coche, QR o matrícula", reports:"Informes", reportsSub:"Alumno, tarea y fecha",
+    settings:"Ajustes", settingsSub:"Idioma y configuración", logout:"Cerrar sesión", help:"Ayuda", back:"Volver al menú principal",
+    newWork:"Crear nuevo trabajo", newWorkTitle:"Nuevo trabajo", openForm:"abrir formulario", activeWorks:"Trabajos activos",
+    activeWorksNote:"Primero pulsa el taller. Después pulsa el vehículo/QR para desplegar sus tareas.",
+    externalVehicles:"Vehículos externos", centerVehicles:"Vehículos del centro", showCars:"Pulsa para ver coches externos y coches del centro",
+    jobs:"trabajos", job:"trabajo", vehicleType:"Tipo de vehículo", externalVehicle:"Vehículo externo", centerVehicle:"Vehículo del centro",
+    workshop:"Taller", assignedGroup:"Grupo asignado", loadCars:"Cargar coches del grupo", updateGroups:"Actualizar grupos",
+    vehicle:"Vehículo", client:"Cliente / referencia", clientPlaceholder:"Externo: cliente · Centro: profesor/grupo",
+    plate:"Matrícula", dateProg:"Fecha programada", timeProg:"Hora programada", priority:"Prioridad",
+    workTodo:"Trabajo a realizar", createWork:"Crear trabajo y asignar QR libre", noWorks:"Sin trabajos",
+    search:"Buscar", searchHistory:"Buscar historial", workReports:"Informes de trabajo", from:"Desde", to:"Hasta",
+    studentTeacher:"Alumno / profesor", studentTeacherPlaceholder:"email, nombre o dejar vacío", group:"Grupo",
+    vehiclePlateQR:"Vehículo / matrícula / QR", status:"Estado", allOption:"Todos", generate:"Generar informe",
+    print:"Imprimir / PDF", export:"Exportar CSV", save:"Guardar", saveChanges:"Guardar cambios", observations:"Observaciones",
+    loading:"Cargando...", loadingCalendar:"Cargando calendario...",
     receptionText:"Esta opción crea una recepción sin escanear QR. La aplicación buscará automáticamente el primer QR libre y te indicará qué QR físico debes coger y colocar en el coche.",
     groupText:"Los grupos se leen automáticamente de AUTOAK / Egokitua. Después elige grupo y carga exclusivamente sus vehículos. No ocupa QR_HARRERA: usa el QR fijo del coche del centro.",
-    firstLoad:"Primero elige grupo y pulsa “Cargar coches del grupo”",
-    pressLoad:"Pulsa “Cargar coches del grupo”"
+    groupLoaded:"Grupos cargados:", chooseGroupLoad:"Elige grupo y pulsa “Cargar coches del grupo”.",
+    firstLoad:"Primero elige grupo y pulsa “Cargar coches del grupo”", pressLoad:"Pulsa “Cargar coches del grupo”",
+    monthlyCalendar:"Calendario mensual", monthlyCalendarTitle:"Calendario mensual", calendarExplain:"Pulsa sobre un día para ver las tareas programadas o registradas ese día.",
+    previousMonth:"Mes anterior", nextMonth:"Mes siguiente", selectDay:"Selecciona un día del calendario.", records:"reg.", planned:"plan.",
+    may2026:"Mayo de 2026", historyVehicles:"Historial de vehículos", historyExplain:"Busca por matrícula, QR, número/ID de coche del centro o cualquier característica.",
+    examples:"Ejemplos:", searchPlaceholder:"Matrícula, coche, QR, ID, modelo...", onlyLast:"Mostrar solo el último registro de cada coche / QR",
+    introduceSearch:"Introduce una búsqueda para cargar el historial. No se carga todo automáticamente.",
+    reportsExplain:"Consulta quién ha realizado cada labor, cuándo, en qué coche y con qué estado. La información sale de LANAK, que es la hoja de trabajos realizados.",
+    normal:"normal", high:"alta", urgent:"urgente"
   },
   CA:{
-    language:"Idioma",
-    subtitle:"Gestió digital d'automoció",
-    user:"Usuari / correu",
-    pass:"Contrasenya",
-    enter:"Entrar",
-    made:"Aplicació realitzada per",
-    welcome:"Benvingut/da,",
-    role:"Rol:",
-    teacher:"professor",
-    student:"alumne",
-    main:"Panell principal",
-    all:"Veure-ho tot",
-    centerCars:"Vehicles del centre",
-    works:"Treballs",
-    worksSub:"Crear i modificar tasques",
-    calendar:"Calendari",
-    calendarSub:"Planificació mensual",
-    history:"Historial",
-    historySub:"Cercar vehicle, QR o matrícula",
-    reports:"Informes",
-    reportsSub:"Alumne, tasca i data",
-    settings:"Configuració",
-    settingsSub:"Idioma i configuració",
-    logout:"Tancar sessió",
-    help:"Ajuda",
-    back:"Tornar al menú principal",
-    newWork:"Crear nou treball",
-    openForm:"obrir formulari",
-    vehicleType:"Tipus de vehicle",
-    externalVehicle:"Vehicle extern",
-    centerVehicle:"Vehicle del centre",
-    workshop:"Taller",
-    assignedGroup:"Grup assignat",
-    loadCars:"Carregar vehicles del grup",
-    updateGroups:"Actualitzar grups",
-    vehicle:"Vehicle",
-    client:"Client / referència",
-    plate:"Matrícula",
-    dateProg:"Data programada",
-    timeProg:"Hora programada",
-    priority:"Prioritat",
-    workTodo:"Treball a realitzar",
-    createWork:"Crear treball i assignar QR lliure",
-    activeWorks:"Treballs actius",
-    noWorks:"Sense treballs",
-    search:"Cercar",
-    searchHistory:"Cercar historial",
-    workReports:"Informes de treball",
-    from:"Des de",
-    to:"Fins a",
-    studentTeacher:"Alumne / professor",
-    status:"Estat",
-    allOption:"Tots",
-    generate:"Generar informe",
-    print:"Imprimir / PDF",
-    export:"Exportar CSV",
-    save:"Desar",
-    saveChanges:"Desar canvis",
-    observations:"Observacions",
-    loading:"Carregant...",
+    language:"Idioma", subtitle:"Gestió digital d'automoció", user:"Usuari / correu", pass:"Contrasenya", enter:"Entrar", made:"Aplicació realitzada per",
+    welcome:"Benvingut/da,", role:"Rol:", teacher:"professor", student:"alumne",
+    main:"Panell principal", workPanel:"Panell de treballs", all:"Veure-ho tot", centerCars:"Vehicles del centre",
+    works:"Treballs", worksSub:"Crear i modificar tasques", calendar:"Calendari", calendarSub:"Planificació mensual",
+    history:"Historial", historySub:"Cercar vehicle, QR o matrícula", reports:"Informes", reportsSub:"Alumne, tasca i data",
+    settings:"Configuració", settingsSub:"Idioma i configuració", logout:"Tancar sessió", help:"Ajuda", back:"Tornar al menú principal",
+    newWork:"Crear nou treball", newWorkTitle:"Nou treball", openForm:"obrir formulari", activeWorks:"Treballs actius",
+    activeWorksNote:"Primer prem el taller. Després prem el vehicle/QR per desplegar-ne les tasques.",
+    externalVehicles:"Vehicles externs", centerVehicles:"Vehicles del centre", showCars:"Prem per veure vehicles externs i vehicles del centre",
+    jobs:"treballs", job:"treball", vehicleType:"Tipus de vehicle", externalVehicle:"Vehicle extern", centerVehicle:"Vehicle del centre",
+    workshop:"Taller", assignedGroup:"Grup assignat", loadCars:"Carregar vehicles del grup", updateGroups:"Actualitzar grups",
+    vehicle:"Vehicle", client:"Client / referència", clientPlaceholder:"Extern: client · Centre: professor/grup",
+    plate:"Matrícula", dateProg:"Data programada", timeProg:"Hora programada", priority:"Prioritat",
+    workTodo:"Treball a realitzar", createWork:"Crear treball i assignar QR lliure", noWorks:"Sense treballs",
+    search:"Cercar", searchHistory:"Cercar historial", workReports:"Informes de treball", from:"Des de", to:"Fins a",
+    studentTeacher:"Alumne / professor", studentTeacherPlaceholder:"email, nom o deixar buit", group:"Grup",
+    vehiclePlateQR:"Vehicle / matrícula / QR", status:"Estat", allOption:"Tots", generate:"Generar informe",
+    print:"Imprimir / PDF", export:"Exportar CSV", save:"Desar", saveChanges:"Desar canvis", observations:"Observacions",
+    loading:"Carregant...", loadingCalendar:"Carregant calendari...",
     receptionText:"Aquesta opció crea una recepció sense escanejar QR. L'aplicació buscarà automàticament el primer QR lliure i indicarà quin QR físic has d'agafar i col·locar al vehicle.",
     groupText:"Els grups es llegeixen automàticament d'AUTOAK / Egokitua. Després tria el grup i carrega exclusivament els seus vehicles. No ocupa QR_HARRERA: utilitza el QR fix del vehicle del centre.",
-    firstLoad:"Primer tria el grup i prem “Carregar vehicles del grup”",
-    pressLoad:"Prem “Carregar vehicles del grup”"
+    groupLoaded:"Grups carregats:", chooseGroupLoad:"Tria grup i prem “Carregar vehicles del grup”.",
+    firstLoad:"Primer tria el grup i prem “Carregar vehicles del grup”", pressLoad:"Prem “Carregar vehicles del grup”",
+    monthlyCalendar:"Calendari mensual", monthlyCalendarTitle:"Calendari mensual", calendarExplain:"Prem un dia per veure les tasques programades o registrades aquell dia.",
+    previousMonth:"Mes anterior", nextMonth:"Mes següent", selectDay:"Selecciona un dia del calendari.", records:"reg.", planned:"plan.",
+    may2026:"Maig de 2026", historyVehicles:"Historial de vehicles", historyExplain:"Cerca per matrícula, QR, número/ID de vehicle del centre o qualsevol característica.",
+    examples:"Exemples:", searchPlaceholder:"Matrícula, vehicle, QR, ID, model...", onlyLast:"Mostrar només l’últim registre de cada vehicle / QR",
+    introduceSearch:"Introdueix una cerca per carregar l’historial. No es carrega tot automàticament.",
+    reportsExplain:"Consulta qui ha realitzat cada tasca, quan, en quin vehicle i amb quin estat. La informació surt de LANAK, el full de treballs realitzats.",
+    normal:"normal", high:"alta", urgent:"urgent"
   }
 };
 
-function LT(k){
-  return (LANG[APP_LANG] && LANG[APP_LANG][k]) || LANG.EU[k] || k;
-}
+function LT(k){ return (LANG[APP_LANG] && LANG[APP_LANG][k]) || LANG.EU[k] || k; }
 
 function setLanguage(lang){
   APP_LANG = ['EU','ES','CA'].includes(lang) ? lang : 'EU';
   localStorage.setItem('MENDICAR_LANG', APP_LANG);
-  translateSafe(false);
+  translateAllText(false);
 }
 
 function languageSelectorHtml(){
@@ -5076,82 +4976,79 @@ function languageSelectorHtml(){
   </div>`;
 }
 
-const SAFE_TRANSLATIONS = [
-  ['Gestión digital de automoción','subtitle'],['Automozioaren kudeaketa digitala','subtitle'],["Gestió digital d'automoció",'subtitle'],
-  ['Usuario / correo','user'],['Erabiltzailea / posta','user'],['Usuari / correu','user'],
-  ['Contraseña','pass'],['Pasahitza','pass'],['Contrasenya','pass'],
-  ['Entrar','enter'],['Sartu','enter'],
-  ['Aplicación realizada por','made'],['Aplikazioa sortzailea:','made'],['Aplicació realitzada per','made'],
-  ['Bienvenido,','welcome'],['Ongi etorri,','welcome'],['Benvingut/da,','welcome'],
-  ['Rol:','role'],['Rola:','role'],
-  ['profesor','teacher'],['irakaslea','teacher'],['professor','teacher'],
-  ['alumno','student'],['ikaslea','student'],['alumne','student'],
-  ['Panel principal','main'],['Menu nagusia','main'],['Panell principal','main'],
-  ['Ver todos','all'],['Ikusi guztiak','all'],['Veure-ho tot','all'],
-  ['Vehículos del centro','centerCars'],['Ikastetxeko ibilgailuak','centerCars'],['Vehicles del centre','centerCars'],
-  ['Trabajos','works'],['Lanak','works'],['Treballs','works'],
-  ['Crear y modificar tareas','worksSub'],['Lanak sortu eta aldatu','worksSub'],['Crear i modificar tasques','worksSub'],
-  ['Calendario','calendar'],['Egutegia','calendar'],['Calendari','calendar'],
-  ['Planificación mensual','calendarSub'],['Hileko plangintza','calendarSub'],['Planificació mensual','calendarSub'],
-  ['Historial','history'],['Historia','history'],
-  ['Buscar coche, QR o matrícula','historySub'],['Bilatu autoa, QR edo matrikula','historySub'],['Cercar vehicle, QR o matrícula','historySub'],
-  ['Informes','reports'],['Txostenak','reports'],
-  ['Alumno, tarea y fecha','reportsSub'],['Ikaslea, lana eta data','reportsSub'],['Alumne, tasca i data','reportsSub'],
-  ['Ajustes','settings'],['Ezarpenak','settings'],['Configuració','settings'],
-  ['Idioma y configuración','settingsSub'],['Hizkuntza eta konfigurazioa','settingsSub'],['Idioma i configuració','settingsSub'],
-  ['Cerrar sesión','logout'],['Saioa itxi','logout'],['Tancar sessió','logout'],
-  ['Ayuda','help'],['Laguntza','help'],['Ajuda','help'],
-  ['Volver al menú principal','back'],['Itzuli menu nagusira','back'],['Tornar al menú principal','back'],
-  ['Crear nuevo trabajo','newWork'],['Lan berria sortu','newWork'],['Crear nou treball','newWork'],
-  ['abrir formulario','openForm'],['formularioa ireki','openForm'],['obrir formulari','openForm'],
-  ['Tipo de vehículo','vehicleType'],['Ibilgailu mota','vehicleType'],['Tipus de vehicle','vehicleType'],
-  ['Vehículo externo','externalVehicle'],['Kanpoko ibilgailua','externalVehicle'],['Vehicle extern','externalVehicle'],
-  ['Vehículo del centro','centerVehicle'],['Ikastetxeko ibilgailua','centerVehicle'],['Vehicle del centre','centerVehicle'],
-  ['Taller','workshop'],['Tailerra','workshop'],
-  ['Grupo asignado','assignedGroup'],['Esleitutako taldea','assignedGroup'],['Grup assignat','assignedGroup'],
-  ['Cargar coches del grupo','loadCars'],['Taldeko autoak kargatu','loadCars'],['Carregar vehicles del grup','loadCars'],
-  ['Actualizar grupos','updateGroups'],['Taldeak eguneratu','updateGroups'],['Actualitzar grups','updateGroups'],
-  ['Vehículo','vehicle'],['Ibilgailua','vehicle'],['Vehicle','vehicle'],
-  ['Cliente / referencia','client'],['Bezeroa / erreferentzia','client'],['Client / referència','client'],
-  ['Matrícula','plate'],['Matrikula','plate'],
-  ['Fecha programada','dateProg'],['Programatutako data','dateProg'],['Data programada','dateProg'],
-  ['Hora programada','timeProg'],['Programatutako ordua','timeProg'],['Hora programada','timeProg'],
-  ['Prioridad','priority'],['Lehentasuna','priority'],['Prioritat','priority'],
-  ['Trabajo a realizar','workTodo'],['Egin beharreko lana','workTodo'],['Treball a realitzar','workTodo'],
-  ['Crear trabajo y asignar QR libre','createWork'],['Lana sortu eta QR librea esleitu','createWork'],['Crear treball i assignar QR lliure','createWork'],
-  ['Trabajos activos','activeWorks'],['Lan aktiboak','activeWorks'],['Treballs actius','activeWorks'],
-  ['Sin trabajos','noWorks'],['Lanik gabe','noWorks'],['Sense treballs','noWorks'],
-  ['Buscar','search'],['Bilatu','search'],['Cercar','search'],
-  ['Buscar historial','searchHistory'],['Historia bilatu','searchHistory'],['Cercar historial','searchHistory'],
-  ['Informes de trabajo','workReports'],['Lan txostenak','workReports'],['Informes de treball','workReports'],
-  ['Desde','from'],['Noiztik','from'],['Des de','from'],
-  ['Hasta','to'],['Noiz arte','to'],['Fins a','to'],
-  ['Alumno / profesor','studentTeacher'],['Ikaslea / irakaslea','studentTeacher'],['Alumne / professor','studentTeacher'],
-  ['Estado','status'],['Egoera','status'],['Estat','status'],
-  ['Todos','allOption'],['Guztiak','allOption'],['Tots','allOption'],
-  ['Generar informe','generate'],['Txostena sortu','generate'],
-  ['Imprimir / PDF','print'],['Inprimatu / PDF','print'],
-  ['Exportar CSV','export'],['CSV esportatu','export'],
-  ['Guardar','save'],['Gorde','save'],['Desar','save'],
-  ['Guardar cambios','saveChanges'],['Aldaketak gorde','saveChanges'],['Desar canvis','saveChanges'],
-  ['Observaciones','observations'],['Oharrak','observations'],['Observacions','observations'],
-  ['Cargando...','loading'],['Kargatzen...','loading'],['Carregant...','loading'],
-  ['Esta opción crea una recepción sin escanear QR. La aplicación buscará automáticamente el primer QR libre y te indicará qué QR físico debes coger y colocar en el coche.','receptionText'],
-  ['Aukera honek harrera bat sortzen du QR eskaneatu gabe. Aplikazioak automatikoki bilatuko du lehen QR librea eta zein QR fisiko hartu eta autoan jarri behar den adieraziko dizu.','receptionText'],
-  ['Los grupos se leen automáticamente de AUTOAK / Egokitua. Después elige grupo y carga exclusivamente sus vehículos. No ocupa QR_HARRERA: usa el QR fijo del coche del centro.','groupText'],
-  ['Taldeak automatikoki irakurtzen dira AUTOAK / Egokitua orritik. Ondoren aukeratu taldea eta kargatu soilik talde horretako ibilgailuak. Ez du QR_HARRERA okupatzen: ikastetxeko autoaren QR finkoa erabiltzen du.','groupText'],
-  ['Primero elige grupo y pulsa “Cargar coches del grupo”','firstLoad'],
-  ['Lehenik aukeratu taldea eta sakatu “Taldeko autoak kargatu”','firstLoad'],
-  ['Pulsa “Cargar coches del grupo”','pressLoad'],
-  ['Sakatu “Taldeko autoak kargatu”','pressLoad']
-];
+const TR_MAP = {};
+function addMap(key, ...values){
+  values.forEach(v => {
+    if(v !== undefined && v !== null && String(v).trim()){
+      TR_MAP[String(v).trim()] = key;
+    }
+  });
+}
+function buildMap(){
+  Object.keys(LANG.EU).forEach(key => addMap(key, LANG.EU[key], LANG.ES[key], LANG.CA[key]));
+
+  addMap('logout','🚪 Cerrar sesión','🚪 Saioa itxi','🚪 Tancar sessió');
+  addMap('help','? Ayuda','? Laguntza','? Ajuda');
+  addMap('back','← Volver al menú principal','← Itzuli menu nagusira','← Tornar al menú principal');
+  addMap('openForm','+ abrir formulario','+ formularioa ireki','+ obrir formulari');
+
+  addMap('monthlyCalendarTitle','Calendario mensual / Hileko egutegia');
+  addMap('jobs','trabajos','treballs','lanak');
+  addMap('records','reg.','erreg.');
+  addMap('planned','plan.');
+
+  addMap('receptionText','Esta opción crea una recepción sin escanear QR. La aplicación buscará automáticamente el primer QR libre y te indicará qué QR físico debes coger y colocar en el coche.');
+  addMap('groupText','Los grupos se leen automáticamente de AUTOAK / Egokitua. Después elige grupo y carga exclusivamente sus vehículos. No ocupa QR_HARRERA: usa el QR fijo del coche del centro.');
+}
+buildMap();
+
+function keyForText(s){
+  s = String(s || '').replace(/\s+/g,' ').trim();
+  if(!s) return '';
+  if(TR_MAP[s]) return TR_MAP[s];
+
+  // Sin iconos
+  const clean = s.replace(/^[🚪?+←\s]+/u,'').trim();
+  return TR_MAP[clean] || '';
+}
+
+function applyPrefix(original, translated, key){
+  const s = String(original || '').trim();
+  let out = translated;
+  if(s.startsWith('🚪')) out = '🚪 ' + out.replace(/^🚪\s*/,'');
+  if(s.startsWith('?')) out = '? ' + out.replace(/^\?\s*/,'');
+  if(s.startsWith('+')) out = '+ ' + out.replace(/^\+\s*/,'');
+  if(s.startsWith('←')) out = '← ' + out.replace(/^←\s*/,'');
+  return out;
+}
+
+function translateOneText(raw){
+  const original = String(raw || '');
+  const compact = original.replace(/\s+/g,' ').trim();
+  if(!compact) return raw;
+
+  const key = keyForText(compact);
+  if(key){
+    return original.replace(compact, applyPrefix(compact, LT(key), key));
+  }
+
+  // Reemplazos dentro de frases largas o mezcladas.
+  let out = original;
+  Object.keys(TR_MAP)
+    .filter(k => k.length > 8)
+    .sort((a,b)=>b.length-a.length)
+    .forEach(k=>{
+      if(out.includes(k)) out = out.split(k).join(LT(TR_MAP[k]));
+    });
+  return out;
+}
 
 function isInsideFixedHeader(node){
   const el = node.nodeType === 3 ? node.parentElement : node;
   return !!(el && el.closest && el.closest('.app-header'));
 }
 
-function translateSafe(includeHeader=false){
+function translateAllText(includeHeader=false){
   const root = document.getElementById('appView') || document.body;
   if(!root) return;
 
@@ -5159,88 +5056,56 @@ function translateSafe(includeHeader=false){
   const nodes = [];
   while(walker.nextNode()) nodes.push(walker.currentNode);
 
-  nodes.forEach(n=>{
+  nodes.forEach(n => {
     if(!includeHeader && isInsideFixedHeader(n)) return;
-    const raw = n.nodeValue;
-    const s = raw.trim();
-    if(!s) return;
-
-    SAFE_TRANSLATIONS.forEach(([from,key])=>{
-      if(s === from || s === '🚪 '+from || s === '? '+from || s === '+ '+from || s === '← '+from){
-        let v = LT(key);
-        if(s.startsWith('🚪')) v = '🚪 '+v;
-        if(s.startsWith('?')) v = '? '+v;
-        if(s.startsWith('+')) v = '+ '+v;
-        if(s.startsWith('←')) v = '← '+v;
-        n.nodeValue = raw.replace(s,v);
-      }
-    });
+    const translated = translateOneText(n.nodeValue);
+    if(translated !== n.nodeValue) n.nodeValue = translated;
   });
 
   root.querySelectorAll('input[placeholder],textarea[placeholder],button,option,[title],[aria-label]').forEach(el=>{
     if(!includeHeader && isInsideFixedHeader(el)) return;
 
-    const attrs = ['placeholder','title','aria-label'];
-    attrs.forEach(attr=>{
+    ['placeholder','title','aria-label'].forEach(attr=>{
       if(el.hasAttribute && el.hasAttribute(attr)){
-        let s = el.getAttribute(attr).trim();
-        SAFE_TRANSLATIONS.forEach(([from,key])=>{
-          if(s === from) el.setAttribute(attr,LT(key));
-        });
+        const old = el.getAttribute(attr);
+        const translated = translateOneText(old);
+        if(old !== translated) el.setAttribute(attr, translated);
       }
     });
 
     if(el.tagName === 'BUTTON' || el.tagName === 'OPTION'){
-      const raw = el.textContent;
-      const s = raw.trim();
-      SAFE_TRANSLATIONS.forEach(([from,key])=>{
-        if(s === from || s === '🚪 '+from || s === '? '+from || s === '+ '+from || s === '← '+from){
-          let v = LT(key);
-          if(s.startsWith('🚪')) v = '🚪 '+v;
-          if(s.startsWith('?')) v = '? '+v;
-          if(s.startsWith('+')) v = '+ '+v;
-          if(s.startsWith('←')) v = '← '+v;
-          el.textContent = v;
-        }
-      });
+      const old = el.textContent;
+      const translated = translateOneText(old);
+      if(old !== translated) el.textContent = translated;
     }
   });
 
-  // El botón flotante de ayuda debe cambiar siempre.
-  document.querySelectorAll('.help-floating, .help-floating *').forEach(el=>{
-    if(el.childNodes && el.childNodes.length){
-      el.childNodes.forEach(n=>{
-        if(n.nodeType === 3){
-          const s = n.nodeValue.trim();
-          if(['Ayuda','Laguntza','Ajuda','? Ayuda','? Laguntza','? Ajuda'].includes(s)){
-            n.nodeValue = n.nodeValue.replace(s, s.startsWith('?') ? '? '+LT('help') : LT('help'));
-          }
-        }
-      });
-    }
+  // Forzar botón flotante de ayuda siempre.
+  document.querySelectorAll('.help-floating').forEach(btn=>{
+    btn.innerHTML = btn.innerHTML.replace(/Ayuda|Laguntza|Ajuda/g, LT('help'));
   });
 
   const sel = document.getElementById('appLangSelect');
   if(sel) sel.value = APP_LANG;
 }
 
-function patchSafeLang(fnName){
-  if(typeof window[fnName] !== 'function' || window['__safeLang603_'+fnName]) return;
-  window['__safeLang603_'+fnName] = window[fnName];
+function patchLangRender(fnName){
+  if(typeof window[fnName] !== 'function' || window['__lang604_'+fnName]) return;
+  window['__lang604_'+fnName] = window[fnName];
   window[fnName] = function(...args){
-    const res = window['__safeLang603_'+fnName].apply(this,args);
-    // Al pintar pantalla nueva, traducimos todo incluido encabezado una vez.
-    setTimeout(()=>translateSafe(true),80);
+    const res = window['__lang604_'+fnName].apply(this,args);
+    setTimeout(()=>translateAllText(true),80);
     return res;
   };
 }
 
 [
   'showLogin','showHomeDashboard','showWorksPanel','showCalendarPanel','showHistoryPanel',
-  'showReportsPanel','showSettingsPanel','renderVehicleDetail','renderWorksMixed','renderInformeTrabajos'
-].forEach(patchSafeLang);
+  'showReportsPanel','showSettingsPanel','renderVehicleDetail','renderWorksMixed',
+  'renderInformeTrabajos','renderCalendar','renderCalendarMonth','showLoading'
+].forEach(patchLangRender);
 
-document.addEventListener('DOMContentLoaded',()=>setTimeout(()=>translateSafe(true),150));
+document.addEventListener('DOMContentLoaded',()=>setTimeout(()=>translateAllText(true),150));
 
 </script>
 
