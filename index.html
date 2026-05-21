@@ -2175,7 +2175,7 @@ function guardarChecklistRecepcion(idRecepcion){
 }
 
 function loadWorks(){
-  showLoading('Cargando trabajos activos...');
+  showLoading('Lan aktiboak kargatzen...');
   clearMessage();
 
   callSaveAPI({accion:'listarHarrera'}, hResp=>{
@@ -2902,7 +2902,7 @@ function loadQrHistory(){
 
 // ===== MENDIcar v3.6 Calendar loading override =====
 function loadCalendarMonth(){
-  showLoading('Cargando calendario...');
+  showLoading('Egutegia kargatzen...');
 
   callSaveAPI({accion:'listarHarrera'}, hResp=>{
     const hRows = hResp && hResp.ok ? (hResp.rows || []) : [];
@@ -3010,7 +3010,7 @@ function renderQrHistoryFromCache(){
 
 // ===== MENDIcar v3.6 Historial loading override =====
 function loadQrHistory(){
-  showLoading('Cargando historial...');
+  showLoading('Historia kargatzen...');
 
   callSaveAPI({accion:'listarRegistro'}, resp=>{
     if(!resp || !resp.ok){
@@ -3838,7 +3838,7 @@ function createWork(){
 
 // Override loadWorks: loads external HARRERA + center works from LANAK.
 function loadWorks(){
-  showLoading('Cargando trabajos activos...');
+  showLoading('Lan aktiboak kargatzen...');
   clearMessage();
 
   callSaveAPI({accion:'listarHarrera'}, hResp=>{
@@ -4878,7 +4878,7 @@ const LANG = {
     studentTeacher:"Ikaslea / irakaslea", studentTeacherPlaceholder:"emaila, izena edo hutsik utzi", group:"Taldea",
     vehiclePlateQR:"Ibilgailua / matrikula / QR", status:"Egoera", allOption:"Guztiak", generate:"Txostena sortu",
     print:"Inprimatu / PDF", export:"CSV esportatu", save:"Gorde", saveChanges:"Aldaketak gorde", observations:"Oharrak",
-    loading:"Kargatzen...", loadingCalendar:"Egutegia kargatzen...",
+    loading:"Kargatzen...", loadingCalendar:"Egutegia kargatzen...", loadingData:"Datuak kargatzen...", loadingWorks:"Lan aktiboak kargatzen...", loadingHistory:"Historia kargatzen...", loadingReports:"Txostenak kargatzen...",
     receptionText:"Aukera honek harrera bat sortzen du QR eskaneatu gabe. Aplikazioak automatikoki bilatuko du lehen QR librea eta zein QR fisiko hartu eta autoan jarri behar den adieraziko dizu.",
     groupText:"Taldeak automatikoki irakurtzen dira AUTOAK / Egokitua orritik. Ondoren aukeratu taldea eta kargatu soilik talde horretako ibilgailuak. Ez du QR_HARRERA okupatzen: ikastetxeko autoaren QR finkoa erabiltzen du.",
     groupLoaded:"Taldeak kargatuta:", chooseGroupLoad:"Aukeratu taldea eta sakatu “Taldeko autoak kargatu”.",
@@ -4889,7 +4889,7 @@ const LANG = {
     examples:"Adibideak:", searchPlaceholder:"Matrikula, autoa, QR, ID, modeloa...", onlyLast:"Auto / QR bakoitzaren azken erregistroa bakarrik erakutsi",
     introduceSearch:"Sartu bilaketa bat historia kargatzeko. Ez da guztia automatikoki kargatzen.",
     reportsExplain:"Kontsultatu nork egin duen lana, noiz, zein autotan eta zein egoeratan. Informazioa LANAK orritik ateratzen da, egindako lanen orritik.",
-    normal:"normala", high:"handia", urgent:"premiazkoa"
+    normal:"normala", high:"handia", urgent:"premiazkoa", active:"AKTIBO", responsibleTeacher:"Irakasle arduraduna", pendingLabel:"Egiteke", clickToExpand:"Sakatu zabaltzeko", workshopLabel:"Tailerra", touchToExpand:"Sakatu zabaltzeko", pendingPlural:"Egitekoak", externalCars:"Kanpoko ibilgailuak", bodyCars:"Karrozeriako lanak", mechanicCars:"Mekanikako lanak"
   },
   ES:{
     language:"Idioma", subtitle:"Automozioaren kudeaketa digitala", user:"Erabiltzailea / posta", pass:"Pasahitza", enter:"Entrar", made:"Aplikazioa sortzailea:",
@@ -4910,7 +4910,7 @@ const LANG = {
     studentTeacher:"Alumno / profesor", studentTeacherPlaceholder:"email, nombre o dejar vacío", group:"Grupo",
     vehiclePlateQR:"Vehículo / matrícula / QR", status:"Estado", allOption:"Todos", generate:"Generar informe",
     print:"Imprimir / PDF", export:"Exportar CSV", save:"Guardar", saveChanges:"Guardar cambios", observations:"Observaciones",
-    loading:"Cargando...", loadingCalendar:"Cargando calendario...",
+    loading:"Cargando...", loadingCalendar:"Egutegia kargatzen...", loadingData:"Datuak kargatzen...", loadingWorks:"Lan aktiboak kargatzen...", loadingHistory:"Historia kargatzen...", loadingReports:"Txostenak kargatzen...",
     receptionText:"Esta opción crea una recepción sin escanear QR. La aplicación buscará automáticamente el primer QR libre y te indicará qué QR físico debes coger y colocar en el coche.",
     groupText:"Los grupos se leen automáticamente de AUTOAK / Egokitua. Después elige grupo y carga exclusivamente sus vehículos. No ocupa QR_HARRERA: usa el QR fijo del coche del centro.",
     groupLoaded:"Grupos cargados:", chooseGroupLoad:"Elige grupo y pulsa “Cargar coches del grupo”.",
@@ -4921,7 +4921,7 @@ const LANG = {
     examples:"Ejemplos:", searchPlaceholder:"Matrícula, coche, QR, ID, modelo...", onlyLast:"Mostrar solo el último registro de cada coche / QR",
     introduceSearch:"Introduce una búsqueda para cargar el historial. No se carga todo automáticamente.",
     reportsExplain:"Consulta quién ha realizado cada labor, cuándo, en qué coche y con qué estado. La información sale de LANAK, que es la hoja de trabajos realizados.",
-    normal:"normal", high:"alta", urgent:"urgente"
+    normal:"normal", high:"alta", urgent:"urgente", active:"ACTIVO", responsibleTeacher:"Profesor responsable", pendingLabel:"Pendientes", clickToExpand:"Pulsa para tocar para desplegar", workshopLabel:"Taller", touchToExpand:"Pulsa para tocar para desplegar", pendingPlural:"Pendientes", externalCars:"Vehículos externos", bodyCars:"Trabajos de carrocería", mechanicCars:"Trabajos de mecánica"
   },
   CA:{
     language:"Idioma", subtitle:"Gestió digital d'automoció", user:"Usuari / correu", pass:"Contrasenya", enter:"Entrar", made:"Aplicació realitzada per",
@@ -4942,7 +4942,7 @@ const LANG = {
     studentTeacher:"Alumne / professor", studentTeacherPlaceholder:"email, nom o deixar buit", group:"Grup",
     vehiclePlateQR:"Vehicle / matrícula / QR", status:"Estat", allOption:"Tots", generate:"Generar informe",
     print:"Imprimir / PDF", export:"Exportar CSV", save:"Desar", saveChanges:"Desar canvis", observations:"Observacions",
-    loading:"Carregant...", loadingCalendar:"Carregant calendari...",
+    loading:"Carregant...", loadingCalendar:"Carregant calendari...", loadingData:"Carregant dades...", loadingWorks:"Carregant treballs actius...", loadingHistory:"Carregant historial...", loadingReports:"Carregant informes...",
     receptionText:"Aquesta opció crea una recepció sense escanejar QR. L'aplicació buscarà automàticament el primer QR lliure i indicarà quin QR físic has d'agafar i col·locar al vehicle.",
     groupText:"Els grups es llegeixen automàticament d'AUTOAK / Egokitua. Després tria el grup i carrega exclusivament els seus vehicles. No ocupa QR_HARRERA: utilitza el QR fix del vehicle del centre.",
     groupLoaded:"Grups carregats:", chooseGroupLoad:"Tria grup i prem “Carregar vehicles del grup”.",
@@ -4953,7 +4953,7 @@ const LANG = {
     examples:"Exemples:", searchPlaceholder:"Matrícula, vehicle, QR, ID, model...", onlyLast:"Mostrar només l’últim registre de cada vehicle / QR",
     introduceSearch:"Introdueix una cerca per carregar l’historial. No es carrega tot automàticament.",
     reportsExplain:"Consulta qui ha realitzat cada tasca, quan, en quin vehicle i amb quin estat. La informació surt de LANAK, el full de treballs realitzats.",
-    normal:"normal", high:"alta", urgent:"urgent"
+    normal:"normal", high:"alta", urgent:"urgent", active:"ACTIU", responsibleTeacher:"Professor responsable", pendingLabel:"Pendents", clickToExpand:"Prem per desplegar", workshopLabel:"Taller", touchToExpand:"Prem per desplegar", pendingPlural:"Pendents", externalCars:"Vehicles externs", bodyCars:"Treballs de carrosseria", mechanicCars:"Treballs de mecànica"
   }
 };
 
@@ -4996,6 +4996,25 @@ function buildMap(){
   addMap('jobs','trabajos','treballs','lanak');
   addMap('records','reg.','erreg.');
   addMap('planned','plan.');
+
+  addMap('active','ACTIVO','AKTIBO','ACTIU');
+  addMap('responsibleTeacher','Profesor responsable','Irakasle arduraduna','Professor responsable');
+  addMap('pendingLabel','Pendientes','Egiteke','Pendents');
+  addMap('pendingPlural','Pendientes:','Egitekoak:','Pendents:');
+  addMap('workshopLabel','Taller','Tailerra');
+  addMap('clickToExpand','Pulsa para tocar para desplegar','Sakatu zabaltzeko','Prem per desplegar');
+  addMap('touchToExpand','Tocar para abrir/cerrar','Sakatu ireki/itxi','Toca per obrir/tancar');
+  addMap('externalCars','Vehículos externos','Kanpoko ibilgailuak','Vehicles externs');
+  addMap('activeWorksNote','Primero pulsa el taller. Después pulsa el vehículo/QR para desplegar sus tareas.','Lehenik tailerra sakatu. Ondoren sakatu ibilgailua/QR bere lanak zabaltzeko.','Primer prem el taller. Després prem el vehicle/QR per desplegar-ne les tasques.');
+  addMap('showCars','Pulsa para ver coches externos y coches del centro','Sakatu kanpoko eta ikastetxeko autoak ikusteko','Prem per veure vehicles externs i vehicles del centre');
+
+
+  addMap('loadingData','Datuak kargatzen...','Datuak kargatzen...','Carregant dades...');
+  addMap('loadingWorks','Lan aktiboak kargatzen...','Lan aktiboak kargatzen...','Carregant treballs actius...');
+  addMap('loadingCalendar','Egutegia kargatzen...','Egutegia kargatzen...','Carregant calendari...');
+  addMap('loadingHistory','Historia kargatzen...','Historia kargatzen...','Carregant historial...');
+  addMap('loadingReports','Txostenak kargatzen...','Txostenak kargatzen...','Carregant informes...');
+
 
   addMap('receptionText','Esta opción crea una recepción sin escanear QR. La aplicación buscará automáticamente el primer QR libre y te indicará qué QR físico debes coger y colocar en el coche.');
   addMap('groupText','Los grupos se leen automáticamente de AUTOAK / Egokitua. Después elige grupo y carga exclusivamente sus vehículos. No ocupa QR_HARRERA: usa el QR fijo del coche del centro.');
@@ -5106,6 +5125,138 @@ function patchLangRender(fnName){
 ].forEach(patchLangRender);
 
 document.addEventListener('DOMContentLoaded',()=>setTimeout(()=>translateAllText(true),150));
+
+
+
+// ===== Parche v6.0.6 transiciones/cargas traducidas =====
+function translateLoadingMessage(msg){
+  const txt = String(msg || '');
+  const compact = txt.replace(/\s+/g,' ').trim();
+  const direct = {
+    'Datuak kargatzen...':'loadingData',
+    'Datuak kargatzen...':'loadingData',
+    'Carregant dades...':'loadingData',
+    'Lan aktiboak kargatzen...':'loadingWorks',
+    'Lan aktiboak kargatzen...':'loadingWorks',
+    'Carregant treballs actius...':'loadingWorks',
+    'Egutegia kargatzen...':'loadingCalendar',
+    'Egutegia kargatzen...':'loadingCalendar',
+    'Carregant calendari...':'loadingCalendar',
+    'Historia kargatzen...':'loadingHistory',
+    'Historia kargatzen...':'loadingHistory',
+    'Carregant historial...':'loadingHistory',
+    'Txostenak kargatzen...':'loadingReports',
+    'Txostenak kargatzen...':'loadingReports',
+    'Carregant informes...':'loadingReports'
+  };
+  if(direct[compact]) return LT(direct[compact]);
+  const translated = translateOneText ? translateOneText(txt) : txt;
+  return translated || txt;
+}
+
+if(typeof window.__showLoadingOriginal_v606 === 'undefined' && typeof showLoading === 'function'){
+  window.__showLoadingOriginal_v606 = showLoading;
+  showLoading = function(message){
+    const translated = translateLoadingMessage(message);
+    const res = window.__showLoadingOriginal_v606.call(this, translated);
+    setTimeout(()=>translateAllText(true), 30);
+    return res;
+  };
+}
+
+
+
+// ===== Parche v6.0.7 trabajos: tarjetas mecánica/carrocería completamente traducidas =====
+function translateWorkCardsExtra(root){
+  root = root || document.getElementById('appView') || document.body;
+  if(!root) return;
+
+  function replNode(n){
+    let txt = n.nodeValue;
+    let compact = String(txt || '').replace(/\s+/g,' ').trim();
+    if(!compact) return;
+
+    const replacements = [
+      [/ACTIVO/g, LT('active')],
+      [/Profesor responsable:/g, LT('responsibleTeacher') + ':'],
+      [/Profesor responsable/g, LT('responsibleTeacher')],
+      [/Taller:/g, LT('workshopLabel') + ':'],
+      [/Pendientes:/g, LT('pendingPlural') + ':'],
+      [/Pendientes/g, LT('pendingLabel')],
+      [/Pulsa para tocar\s*para desplegar/g, LT('clickToExpand')],
+      [/Tocar para abrir\/cerrar/g, LT('touchToExpand')],
+      [/Vehículos externos/g, LT('externalCars')],
+      [/Primero pulsa el taller\. Después pulsa el vehículo\/QR para desplegar sus tareas\./g, LT('activeWorksNote')],
+      [/Pulsa para ver coches externos y coches del centro/g, LT('showCars')],
+      [/(\d+)\s+trabajos/g, '$1 ' + LT('jobs')],
+      [/(\d+)\s+trabajo/g, '$1 ' + LT('job')]
+    ];
+
+    replacements.forEach(([re, val]) => {
+      txt = txt.replace(re, val);
+    });
+
+    if(txt !== n.nodeValue) n.nodeValue = txt;
+  }
+
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+  const nodes = [];
+  while(walker.nextNode()) nodes.push(walker.currentNode);
+  nodes.forEach(replNode);
+
+  root.querySelectorAll('button,option,[title],[aria-label]').forEach(el=>{
+    ['title','aria-label'].forEach(attr=>{
+      if(el.hasAttribute && el.hasAttribute(attr)){
+        let v = el.getAttribute(attr);
+        let old = v;
+        v = v.replace(/ACTIVO/g, LT('active'))
+             .replace(/Profesor responsable/g, LT('responsibleTeacher'))
+             .replace(/Taller/g, LT('workshopLabel'))
+             .replace(/Pendientes/g, LT('pendingLabel'))
+             .replace(/Pulsa para tocar\s*para desplegar/g, LT('clickToExpand'));
+        if(v !== old) el.setAttribute(attr, v);
+      }
+    });
+
+    if(el.tagName === 'BUTTON' || el.tagName === 'OPTION'){
+      let old = el.textContent;
+      let v = old.replace(/ACTIVO/g, LT('active'))
+                 .replace(/Profesor responsable/g, LT('responsibleTeacher'))
+                 .replace(/Taller/g, LT('workshopLabel'))
+                 .replace(/Pendientes/g, LT('pendingLabel'))
+                 .replace(/Pulsa para tocar\s*para desplegar/g, LT('clickToExpand'))
+                 .replace(/(\d+)\s+trabajos/g, '$1 ' + LT('jobs'))
+                 .replace(/(\d+)\s+trabajo/g, '$1 ' + LT('job'));
+      if(v !== old) el.textContent = v;
+    }
+  });
+
+  document.querySelectorAll('.help-floating').forEach(btn=>{
+    btn.innerHTML = btn.innerHTML.replace(/Ayuda|Laguntza|Ajuda/g, LT('help'));
+  });
+}
+
+// Envolvemos translateAllText para aplicar también traducciones parciales dentro de tarjetas.
+if(typeof window.__translateAllTextOriginal_v607 === 'undefined' && typeof translateAllText === 'function'){
+  window.__translateAllTextOriginal_v607 = translateAllText;
+  translateAllText = function(includeHeader=false){
+    const res = window.__translateAllTextOriginal_v607.call(this, includeHeader);
+    translateWorkCardsExtra(document.getElementById('appView') || document.body);
+    return res;
+  };
+}
+
+// Parche específico de renderizados de trabajos por si se pintan después.
+['renderWorksMixed','renderWorks','showWorksPanel','renderVehicleDetail'].forEach(function(fnName){
+  if(typeof window[fnName] === 'function' && !window['__workCardsI18N_'+fnName]){
+    window['__workCardsI18N_'+fnName] = window[fnName];
+    window[fnName] = function(...args){
+      const res = window['__workCardsI18N_'+fnName].apply(this,args);
+      setTimeout(()=>translateWorkCardsExtra(document.getElementById('appView') || document.body),100);
+      return res;
+    };
+  }
+});
 
 </script>
 
