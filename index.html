@@ -4596,8 +4596,9 @@ function showReportsPanel(){
     <div class="vehicle-card">
       <h2 class="vehicle-title">Informes de trabajo</h2>
       <p class="muted">
-        Consulta quién ha realizado cada labor, cuándo, en qué coche y con qué estado.
-        La información sale de <strong>LANAK</strong>, que es la hoja de trabajos realizados.
+        Muestra solo modificaciones reales: entradas de coches externos, creación de trabajos,
+        checklist guardados, cambios de estado, observaciones, evidencias, cierres y cancelaciones.
+        No incluye login ni consultas simples.
       </p>
 
       <div class="form-grid">
@@ -4656,6 +4657,97 @@ function parseReportDateValue(fecha,hora){
   return (f.length >= 10 ? f.substring(0,10) : f) + ' ' + h;
 }
 
+
+// ===== v6.1.0 filtro real de TXOSTENAK =====
+// TXOSTENAK debe mostrar SOLO acciones reales sobre vehículo/trabajo.
+// NO muestra login, consultas, abrir calendario, abrir historial, ver trabajos, ver informes, etc.
+function getReportActionText(row){
+  return [
+    getAnyField(row,['OHARRAK','Oharrak','oharrak','DESCRIPCION','Detalle','DETALLE','test','CAMBIO','ACCION','EKINTZA']),
+    getAnyField(row,['LANA','Lana','lana','TRABAJO','Trabajo','trabajo','TRABAJO_REALIZADO']),
+    getAnyField(row,['EGOERA','ESTADO','Estado','estado']),
+    getAnyField(row,['AUTOA','Autoa','autoa','VEHICULO','Vehículo']),
+    getAnyField(row,['ID_RECEPCION','ID_TRABAJO','QR_RECEPCION','QR_HARRERA'])
+  ].join(' ').toLowerCase();
+}
+
+function isReportableAction(row){
+  const txt = getReportActionText(row);
+  if(!txt.trim()) return false;
+
+  // Excluir consultas y navegación. Esto NO debe salir en informes.
+  const excludedOnly = [
+    'login',
+    'entrada en la aplicación',
+    'entrada en aplicacion',
+    'consulta',
+    'consultar',
+    'consultado',
+    'calendario',
+    'historial',
+    'informe',
+    'informes',
+    'trabajos activos',
+    'ver trabajos',
+    'ver todos',
+    'panel',
+    'menú',
+    'menu'
+  ];
+
+  // Acciones que SÍ demuestran modificación o trabajo real.
+  const reportable = [
+    'recepcion',
+    'recepción',
+    'crear trabajo',
+    'trabajo creado',
+    'creado',
+    'creación',
+    'actualización checklist',
+    'actualizacion checklist',
+    'checklist',
+    'guardado',
+    'guardar',
+    'cambio de estado',
+    'estado cambiado',
+    'terminado',
+    'amaituta',
+    'cancelado',
+    'bertan behera',
+    'en curso',
+    'martxan',
+    'bloqueado',
+    'liberado',
+    'evidencia',
+    'foto',
+    'observacion',
+    'observación',
+    'observaciones',
+    'oharrak',
+    'tarea realizada',
+    'trabajo realizado',
+    'lana',
+    'lanak'
+  ];
+
+  const hasReportable = reportable.some(x => txt.includes(x));
+  if(!hasReportable) return false;
+
+  // Si incluye palabras de consulta pero también incluye una acción real, se conserva.
+  // Ejemplo: "Actualización checklist" se conserva.
+  const isOnlyQuery = excludedOnly.some(x => txt.includes(x)) && !hasReportable;
+  if(isOnlyQuery) return false;
+
+  // Evitar filas genéricas vacías de estado/consulta.
+  const task = String(getReportTask(row) || '').trim().toLowerCase();
+  const obs = String(getAnyField(row,['OHARRAK','Oharrak','oharrak','DESCRIPCION','Detalle','DETALLE','test']) || '').trim().toLowerCase();
+  const estado = String(getReportEstado(row) || '').trim().toLowerCase();
+
+  if(!task && !obs && !estado) return false;
+
+  return true;
+}
+
 function filterReportRows(rows){
   const desde = document.getElementById('repDesde')?.value || '';
   const hasta = document.getElementById('repHasta')?.value || '';
@@ -4665,6 +4757,7 @@ function filterReportRows(rows){
   const estadoFiltro = normalizeReportText(document.getElementById('repEstado')?.value || '');
 
   return (rows||[]).filter(r=>{
+    if(!isReportableAction(r)) return false;
     const dt = getReportDateTime(r);
     const fecha = dt.fecha.substring(0,10);
 
@@ -4708,7 +4801,7 @@ function generarInformeTrabajos(){
     const rows = filterReportRows(resp.rows || []);
     window.LAST_REPORT_ROWS = rows;
 
-    if(status) status.textContent = `Informe generado: ${rows.length} registros.`;
+    if(status) status.textContent = `Txostena sortuta: ${rows.length} aldaketa / lan erreal.`;
 
     renderInformeTrabajos(rows);
   });
@@ -5345,46 +5438,380 @@ setInterval(()=>translateWorkDetailExtra(document.body),1200);
   });
 })();
 
-// ===== v6.0.9 criterio de informes =====
-// NO incluir LOGIN ni consultas simples. SÍ incluir cambios/actividad real sobre vehículo o trabajo.
-function isReportableAction(row){
-  const txt = JSON.stringify(row || {}).toLowerCase();
-  if(!txt) return false;
 
-  const excluded = [
-    'login',
-    'entrada en la aplicación',
-    'consulta',
-    'calendario',
-    'historial',
-    'informe',
-    'informes',
-    'trabajos activos'
-  ];
 
-  const reportable = [
-    'guardado',
-    'creado',
-    'creación',
-    'cerrado',
-    'terminado',
-    'cancelado',
-    'bloqueado',
-    'liberado',
-    'evidencia',
-    'observación',
-    'observaciones',
-    'checklist',
-    'recepción',
-    'cambio de estado',
-    'tarea realizada',
-    'lana'
-  ];
+// ===== v6.1.0 traducción de nota TXOSTENAK =====
+(function(){
+  const noteES = 'Muestra solo modificaciones reales: entradas de coches externos, creación de trabajos, checklist guardados, cambios de estado, observaciones, evidencias, cierres y cancelaciones. No incluye login ni consultas simples.';
+  const noteEU = 'Benetako aldaketak bakarrik erakusten ditu: kanpoko autoen sarrerak, lanen sorrera, gordetako checklistak, egoera-aldaketak, oharrak, ebidentziak, itxierak eta ezeztapenak. Ez ditu loginak edo kontsulta soilak sartzen.';
+  const noteCA = 'Mostra només modificacions reals: entrades de vehicles externs, creació de treballs, checklists desats, canvis d’estat, observacions, evidències, tancaments i cancel·lacions. No inclou inicis de sessió ni consultes simples.';
 
-  const hasReportable = reportable.some(x => txt.includes(x));
-  if(!hasReportable && excluded.some(x => txt.includes(x))) return false;
-  return hasReportable;
-}
+  function fixReportsNote(){
+    const lang = (typeof APP_LANG !== 'undefined') ? APP_LANG : 'EU';
+    const wanted = lang === 'ES' ? noteES : (lang === 'CA' ? noteCA : noteEU);
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null);
+    let n;
+    while(n = walker.nextNode()){
+      const t = String(n.nodeValue || '').replace(/\s+/g,' ').trim();
+      if(t === noteES || t === noteEU || t === noteCA){
+        n.nodeValue = n.nodeValue.replace(n.nodeValue.trim(), wanted);
+      }
+    }
+  }
+
+  window.fixReportsNote = fixReportsNote;
+  setInterval(fixReportsNote, 1200);
+})();
+
+// ===== v6.1.1 traducción estable al volver/cambiar idioma =====
+// Corrige textos que se pintan después de cambiar de pantalla o idioma,
+// especialmente "Ikusi guztiak / Ver todos": panel general, botón volver y cabeceras de tabla.
+(function(){
+  const EXTRA_I18N = {
+    EU: {
+      "Panel general de profesor": "Irakaslearen panel orokorra",
+      "Panel general de alumno": "Ikaslearen panel orokorra",
+      "← Volver al menú principal": "← Itzuli menu nagusira",
+      "Volver al menú principal": "Itzuli menu nagusira",
+      "COLOR": "KOLOREA",
+      "Color": "Kolorea",
+      "IBLIGAILUA": "IBILGAILUA",
+      "IBAILGAILUA": "IBILGAILUA",
+      "VEHÍCULO": "IBILGAILUA",
+      "VEHICULO": "IBILGAILUA",
+      "Vehículo": "Ibilgailua",
+      "IBIlGAILUA": "IBILGAILUA",
+      "EGOERA": "EGOERA",
+      "OHARRAK": "OHARRAK",
+      "Panel principal": "Menu nagusia",
+      "Trabajos": "Lanak",
+      "Lanas": "Lanak",
+      "Calendario": "Egutegia",
+      "Informes": "Txostenak",
+      "Ajustes": "Ezarpenak",
+      "Cerrar sesión": "Saioa itxi",
+      "Ayuda": "Laguntza"
+    },
+    ES: {
+      "Irakaslearen panel orokorra": "Panel general de profesor",
+      "Ikaslearen panel orokorra": "Panel general de alumno",
+      "← Itzuli menu nagusira": "← Volver al menú principal",
+      "Itzuli menu nagusira": "Volver al menú principal",
+      "KOLOREA": "COLOR",
+      "Kolorea": "Color",
+      "IBILGAILUA": "VEHÍCULO",
+      "Ibilgailua": "Vehículo",
+      "Lanak": "Trabajos",
+      "Egutegia": "Calendario",
+      "Txostenak": "Informes",
+      "Ezarpenak": "Ajustes",
+      "Saioa itxi": "Cerrar sesión",
+      "Laguntza": "Ayuda"
+    },
+    CA: {
+      "Irakaslearen panel orokorra": "Panell general de professor",
+      "Ikaslearen panel orokorra": "Panell general d'alumne",
+      "Panel general de profesor": "Panell general de professor",
+      "Panel general de alumno": "Panell general d'alumne",
+      "← Volver al menú principal": "← Tornar al menú principal",
+      "← Itzuli menu nagusira": "← Tornar al menú principal",
+      "Volver al menú principal": "Tornar al menú principal",
+      "Itzuli menu nagusira": "Tornar al menú principal",
+      "COLOR": "COLOR",
+      "KOLOREA": "COLOR",
+      "IBLIGAILUA": "VEHICLE",
+      "IBAILGAILUA": "VEHICLE",
+      "IBILGAILUA": "VEHICLE",
+      "VEHÍCULO": "VEHICLE",
+      "Vehículo": "Vehicle",
+      "Lanak": "Treballs",
+      "Trabajos": "Treballs",
+      "Lanas": "Treballs",
+      "Egutegia": "Calendari",
+      "Calendario": "Calendari",
+      "Txostenak": "Informes",
+      "Ezarpenak": "Configuració",
+      "Ajustes": "Configuració",
+      "Saioa itxi": "Tancar sessió",
+      "Cerrar sesión": "Tancar sessió",
+      "Laguntza": "Ajuda",
+      "Ayuda": "Ajuda"
+    }
+  };
+
+  function currentLang611(){
+    return (typeof APP_LANG !== "undefined" && ["EU","ES","CA"].includes(APP_LANG)) ? APP_LANG : (localStorage.getItem("MENDICAR_LANG") || "EU");
+  }
+
+  function replaceExactDomText611(root){
+    root = root || document.body;
+    const lang = currentLang611();
+    const map = EXTRA_I18N[lang] || EXTRA_I18N.EU;
+
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+    const nodes = [];
+    while(walker.nextNode()) nodes.push(walker.currentNode);
+
+    nodes.forEach(n=>{
+      let raw = n.nodeValue;
+      let compact = String(raw || "").replace(/\s+/g," ").trim();
+      if(!compact) return;
+
+      if(map[compact]){
+        n.nodeValue = raw.replace(compact, map[compact]);
+        return;
+      }
+
+      let changed = raw;
+      Object.keys(map).sort((a,b)=>b.length-a.length).forEach(k=>{
+        if(changed.includes(k)) changed = changed.split(k).join(map[k]);
+      });
+      if(changed !== raw) n.nodeValue = changed;
+    });
+
+    root.querySelectorAll("button,option,th,td,label,h1,h2,h3,p,span,div,[placeholder],[title],[aria-label]").forEach(el=>{
+      ["placeholder","title","aria-label"].forEach(attr=>{
+        if(el.hasAttribute && el.hasAttribute(attr)){
+          const old = el.getAttribute(attr);
+          const compact = String(old || "").replace(/\s+/g," ").trim();
+          if(map[compact]) el.setAttribute(attr, old.replace(compact,map[compact]));
+        }
+      });
+
+      if(el.childNodes.length === 1 && el.childNodes[0].nodeType === 3){
+        const old = el.textContent;
+        const compact = String(old || "").replace(/\s+/g," ").trim();
+        if(map[compact]) el.textContent = map[compact];
+      }
+    });
+
+    // Forzar ayuda flotante
+    document.querySelectorAll(".help-floating").forEach(btn=>{
+      btn.innerHTML = btn.innerHTML.replace(/Ayuda|Laguntza|Ajuda/g, map["Ayuda"] || map["Laguntza"] || "Laguntza");
+    });
+  }
+
+  window.replaceExactDomText611 = replaceExactDomText611;
+
+  // Reaplicar al cambiar idioma y al volver de pantallas que pintan tarde.
+  if(typeof window.__setLanguageOriginal611 === "undefined" && typeof setLanguage === "function"){
+    window.__setLanguageOriginal611 = setLanguage;
+    setLanguage = function(lang){
+      const res = window.__setLanguageOriginal611.call(this, lang);
+      setTimeout(()=>replaceExactDomText611(document.body), 80);
+      setTimeout(()=>replaceExactDomText611(document.body), 400);
+      setTimeout(()=>replaceExactDomText611(document.body), 1000);
+      return res;
+    };
+  }
+
+  [
+    "showHomeDashboard","showAllVehicles","showVehiclesPanel","renderAllVehicles",
+    "showWorksPanel","showHistoryPanel","showReportsPanel","showCalendarPanel",
+    "renderVehicleDetail","renderWorksMixed"
+  ].forEach(fn=>{
+    if(typeof window[fn] === "function" && !window["__v611_"+fn]){
+      window["__v611_"+fn] = window[fn];
+      window[fn] = function(...args){
+        const res = window["__v611_"+fn].apply(this,args);
+        setTimeout(()=>replaceExactDomText611(document.body),80);
+        setTimeout(()=>replaceExactDomText611(document.body),400);
+        return res;
+      };
+    }
+  });
+
+  setInterval(()=>replaceExactDomText611(document.body), 1500);
+})();
+
+// ===== v6.1.2 remate idioma: calendario, historia, txostenak y cargas tardías =====
+(function(){
+  const MONTHS = {
+    EU: {
+      "Enero":"Urtarrila","Febrero":"Otsaila","Marzo":"Martxoa","Abril":"Apirila","Mayo":"Maiatza","Junio":"Ekaina",
+      "Julio":"Uztaila","Agosto":"Abuztua","Septiembre":"Iraila","Octubre":"Urria","Noviembre":"Azaroa","Diciembre":"Abendua",
+      "enero":"urtarrila","febrero":"otsaila","marzo":"martxoa","abril":"apirila","mayo":"maiatza","junio":"ekaina",
+      "julio":"uztaila","agosto":"abuztua","septiembre":"iraila","octubre":"urria","noviembre":"azaroa","diciembre":"abendua"
+    },
+    CA: {
+      "Enero":"Gener","Febrero":"Febrer","Marzo":"Març","Abril":"Abril","Mayo":"Maig","Junio":"Juny",
+      "Julio":"Juliol","Agosto":"Agost","Septiembre":"Setembre","Octubre":"Octubre","Noviembre":"Novembre","Diciembre":"Desembre"
+    },
+    ES: {
+      "Maiatza":"Mayo","Urtarrila":"Enero","Otsaila":"Febrero","Martxoa":"Marzo","Apirila":"Abril","Ekaina":"Junio",
+      "Uztaila":"Julio","Abuztua":"Agosto","Iraila":"Septiembre","Urria":"Octubre","Azaroa":"Noviembre","Abendua":"Diciembre"
+    }
+  };
+
+  const EXACT = {
+    EU: {
+      "← Volver al menú principal":"← Itzuli menu nagusira",
+      "Volver al menú principal":"Itzuli menu nagusira",
+      "Consulta quién ha realizado cada labor, cuándo, en qué coche y con qué estado. La información sale de LANAK, que es la hoja de trabajos realizados.":"Benetako aldaketak bakarrik erakusten ditu: kanpoko autoen sarrerak, lanen sorrera, gordetako checklistak, egoera-aldaketak, oharrak, ebidentziak, itxierak eta ezeztapenak. Ez ditu loginak edo kontsulta soilak sartzen.",
+      "Muestra solo modificaciones reales: entradas de coches externos, creación de trabajos, checklist guardados, cambios de estado, observaciones, evidencias, cierres y cancelaciones. No incluye login ni consultas simples.":"Benetako aldaketak bakarrik erakusten ditu: kanpoko autoen sarrerak, lanen sorrera, gordetako checklistak, egoera-aldaketak, oharrak, ebidentziak, itxierak eta ezeztapenak. Ez ditu loginak edo kontsulta soilak sartzen.",
+      "Mayo de 2026":"2026ko maiatza",
+      "Mes anterior":"Aurreko hilabetea",
+      "Mes siguiente":"Hurrengo hilabetea",
+      "Selecciona un día del calendario.":"Aukeratu egutegiko egun bat.",
+      "Panel general de profesor":"Irakaslearen panel orokorra",
+      "Panel general de alumno":"Ikaslearen panel orokorra",
+      "Historia":"Historia",
+      "Historial de vehículos":"Ibilgailuen historia",
+      "Buscar historial":"Historia bilatu",
+      "Mostrar solo el último registro de cada coche / QR":"Auto / QR bakoitzaren azken erregistroa bakarrik erakutsi",
+      "Introduce una búsqueda para cargar el historial. No se carga todo automáticamente.":"Sartu bilaketa bat historia kargatzeko. Ez da guztia automatikoki kargatzen.",
+      "Cargando trabajos activos...":"Lan aktiboak kargatzen...",
+      "Cargando calendario...":"Egutegia kargatzen...",
+      "Cargando historial...":"Historia kargatzen...",
+      "Cargando informes...":"Txostenak kargatzen...",
+      "Cargando datos...":"Datuak kargatzen...",
+      "COLOR":"KOLOREA",
+      "Color":"Kolorea"
+    },
+    ES: {
+      "← Itzuli menu nagusira":"← Volver al menú principal",
+      "Itzuli menu nagusira":"Volver al menú principal",
+      "Benetako aldaketak bakarrik erakusten ditu: kanpoko autoen sarrerak, lanen sorrera, gordetako checklistak, egoera-aldaketak, oharrak, ebidentziak, itxierak eta ezeztapenak. Ez ditu loginak edo kontsulta soilak sartzen.":"Muestra solo modificaciones reales: entradas de coches externos, creación de trabajos, checklist guardados, cambios de estado, observaciones, evidencias, cierres y cancelaciones. No incluye login ni consultas simples.",
+      "2026ko maiatza":"Mayo de 2026",
+      "Aurreko hilabetea":"Mes anterior",
+      "Hurrengo hilabetea":"Mes siguiente",
+      "Aukeratu egutegiko egun bat.":"Selecciona un día del calendario.",
+      "Irakaslearen panel orokorra":"Panel general de profesor",
+      "Ikaslearen panel orokorra":"Panel general de alumno",
+      "Ibilgailuen historia":"Historial de vehículos",
+      "Historia bilatu":"Buscar historial",
+      "Auto / QR bakoitzaren azken erregistroa bakarrik erakutsi":"Mostrar solo el último registro de cada coche / QR",
+      "Sartu bilaketa bat historia kargatzeko. Ez da guztia automatikoki kargatzen.":"Introduce una búsqueda para cargar el historial. No se carga todo automáticamente.",
+      "KOLOREA":"COLOR",
+      "Kolorea":"Color"
+    },
+    CA: {
+      "← Volver al menú principal":"← Tornar al menú principal",
+      "← Itzuli menu nagusira":"← Tornar al menú principal",
+      "Volver al menú principal":"Tornar al menú principal",
+      "Itzuli menu nagusira":"Tornar al menú principal",
+      "Consulta quién ha realizado cada labor, cuándo, en qué coche y con qué estado. La información sale de LANAK, que es la hoja de trabajos realizados.":"Mostra només modificacions reals: entrades de vehicles externs, creació de treballs, checklists desats, canvis d’estat, observacions, evidències, tancaments i cancel·lacions. No inclou inicis de sessió ni consultes simples.",
+      "Benetako aldaketak bakarrik erakusten ditu: kanpoko autoen sarrerak, lanen sorrera, gordetako checklistak, egoera-aldaketak, oharrak, ebidentziak, itxierak eta ezeztapenak. Ez ditu loginak edo kontsulta soilak sartzen.":"Mostra només modificacions reals: entrades de vehicles externs, creació de treballs, checklists desats, canvis d’estat, observacions, evidències, tancaments i cancel·lacions. No inclou inicis de sessió ni consultes simples.",
+      "Mayo de 2026":"Maig de 2026",
+      "2026ko maiatza":"Maig de 2026",
+      "Mes anterior":"Mes anterior",
+      "Aurreko hilabetea":"Mes anterior",
+      "Mes siguiente":"Mes següent",
+      "Hurrengo hilabetea":"Mes següent",
+      "Selecciona un día del calendario.":"Selecciona un dia del calendari.",
+      "Aukeratu egutegiko egun bat.":"Selecciona un dia del calendari.",
+      "Panel general de profesor":"Panell general de professor",
+      "Irakaslearen panel orokorra":"Panell general de professor",
+      "Historial de vehículos":"Historial de vehicles",
+      "Ibilgailuen historia":"Historial de vehicles",
+      "Buscar historial":"Cercar historial",
+      "Historia bilatu":"Cercar historial",
+      "Mostrar solo el último registro de cada coche / QR":"Mostrar només l’últim registre de cada vehicle / QR",
+      "Auto / QR bakoitzaren azken erregistroa bakarrik erakutsi":"Mostrar només l’últim registre de cada vehicle / QR",
+      "Introduce una búsqueda para cargar el historial. No se carga todo automáticamente.":"Introdueix una cerca per carregar l’historial. No es carrega tot automàticament.",
+      "Sartu bilaketa bat historia kargatzeko. Ez da guztia automatikoki kargatzen.":"Introdueix una cerca per carregar l’historial. No es carrega tot automàticament.",
+      "COLOR":"COLOR",
+      "KOLOREA":"COLOR"
+    }
+  };
+
+  function lang612(){
+    return (typeof APP_LANG !== "undefined" && ["EU","ES","CA"].includes(APP_LANG)) ? APP_LANG : (localStorage.getItem("MENDICAR_LANG") || "EU");
+  }
+
+  function translateMonthString612(text, lang){
+    let out = String(text || "");
+    const maps = MONTHS[lang] || {};
+    Object.keys(maps).forEach(m=>{
+      out = out.replace(new RegExp("\\b"+m+"\\b","g"), maps[m]);
+    });
+    if(lang === "EU"){
+      out = out.replace(/\b(Maiatza|Urtarrila|Otsaila|Martxoa|Apirila|Ekaina|Uztaila|Abuztua|Iraila|Urria|Azaroa|Abendua) de (\d{4})\b/g, "$2ko $1");
+      out = out.replace(/\bmaiatza de (\d{4})\b/g, "$1ko maiatza");
+    }
+    return out;
+  }
+
+  function fixText612(raw){
+    const lang = lang612();
+    let out = String(raw || "");
+    const compact = out.replace(/\s+/g," ").trim();
+    const map = EXACT[lang] || EXACT.EU;
+
+    if(map[compact]) {
+      out = out.replace(compact, map[compact]);
+    } else {
+      Object.keys(map).sort((a,b)=>b.length-a.length).forEach(k=>{
+        if(out.includes(k)) out = out.split(k).join(map[k]);
+      });
+    }
+
+    out = translateMonthString612(out, lang);
+    return out;
+  }
+
+  function fixDom612(root){
+    root = root || document.body;
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+    const nodes = [];
+    while(walker.nextNode()) nodes.push(walker.currentNode);
+    nodes.forEach(n=>{
+      const old = n.nodeValue;
+      const val = fixText612(old);
+      if(val !== old) n.nodeValue = val;
+    });
+
+    root.querySelectorAll("button,option,th,td,label,h1,h2,h3,h4,p,span,div,input,textarea,[placeholder],[title],[aria-label]").forEach(el=>{
+      ["placeholder","title","aria-label"].forEach(attr=>{
+        if(el.hasAttribute && el.hasAttribute(attr)){
+          const old = el.getAttribute(attr);
+          const val = fixText612(old);
+          if(val !== old) el.setAttribute(attr,val);
+        }
+      });
+      if(el.childNodes && el.childNodes.length === 1 && el.childNodes[0].nodeType === 3){
+        const old = el.textContent;
+        const val = fixText612(old);
+        if(val !== old) el.textContent = val;
+      }
+    });
+
+    document.querySelectorAll(".help-floating").forEach(btn=>{
+      btn.innerHTML = btn.innerHTML.replace(/Ayuda|Laguntza|Ajuda/g, lang612()==="CA" ? "Ajuda" : (lang612()==="ES" ? "Ayuda" : "Laguntza"));
+    });
+  }
+
+  window.fixDom612 = fixDom612;
+
+  // Parche final para evitar que al volver de una pantalla se queden textos recién pintados en castellano.
+  if(typeof window.__setLanguageOriginal612 === "undefined" && typeof setLanguage === "function"){
+    window.__setLanguageOriginal612 = setLanguage;
+    setLanguage = function(lang){
+      const res = window.__setLanguageOriginal612.call(this, lang);
+      [50,150,400,900,1600].forEach(ms=>setTimeout(()=>fixDom612(document.body),ms));
+      return res;
+    };
+  }
+
+  [
+    "showHomeDashboard","showAllVehicles","showVehiclesPanel","renderAllVehicles",
+    "showWorksPanel","showHistoryPanel","showReportsPanel","showCalendarPanel",
+    "renderCalendar","renderCalendarMonth","renderVehicleDetail","renderWorksMixed",
+    "renderInformeTrabajos","showLoading","hideLoading"
+  ].forEach(fn=>{
+    if(typeof window[fn] === "function" && !window["__v612_"+fn]){
+      window["__v612_"+fn] = window[fn];
+      window[fn] = function(...args){
+        const res = window["__v612_"+fn].apply(this,args);
+        [50,150,400,900].forEach(ms=>setTimeout(()=>fixDom612(document.body),ms));
+        return res;
+      };
+    }
+  });
+
+  // Aplicación suave, pero no toca datos ni llamadas: solo textos DOM.
+  setInterval(()=>fixDom612(document.body), 2000);
+})();
 </script>
 
 <div id="loadingOverlay" class="loading-overlay hidden">
