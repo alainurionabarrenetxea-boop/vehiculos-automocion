@@ -827,7 +827,71 @@ function showSettingsPanel(){
   `;
 }
 
-function loadVehiclesJSONP(){clearMessage();const old=document.getElementById('sheetJsonpScript');if(old)old.remove();window.handleSheetData=function(response){try{const cols=response.table.cols.map((c,i)=>(c.label||'').trim()||'Columna '+(i+1));const rows=response.table.rows.map(row=>{const o={};cols.forEach((name,i)=>o[name]=row.c[i]&&row.c[i].v!=null?row.c[i].v:'');return o});vehicles=rows.map(r=>({id:value(r.ID),qr:value(r.QR),tailerra:value(r.TAILERRA),autoa:value(r.Autoa),color:value(r.Kolorea),vin:value(r.VIN),fitxaTeknika:value(r['Fitxa teknika']),rta:value(r.RTA),egokitua:value(r.Egokitua),erabilpena:value(r.Erabilpena),estado:value(r.Egoera),piztenDu:normalizeYesNo(value(r['Arrankatzen du'])||value(r['Pizten du'])),piztuBeharDu:normalizeYesNo(value(r['Arrankatu behar du'])||value(r['Piztu behar du'])),observaciones:value(r.Oharrak),taldeaEsleitua:value(r.Egokitua)||value(r.EGOKITUA)||value(r['TALDEA_ESLEITUA'])||value(r['TALDEA ASIGNADA'])||value(r['GRUPO_ASIGNADO'])||value(r['Taldea esleitua'])||value(r.Erabilpena)||value(r.ERABILPENA)||'DENAK',blokatuta:normalizeYesNo(value(r.BLOKATUTA)),idBlokeoa:value(r['ID BLOKEOA']),blokeoData:value(r['BLOKEO DATA']),blokeoZergatia:value(r['BLOKEO ZERGATIA'])})).filter(v=>v.id!=='');routeAfterLoad()}catch(e){showMessage('Error procesando la hoja:\n'+e.message,'error')}};const s=document.createElement('script');s.id='sheetJsonpScript';s.src='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?gid='+SHEET_GID+'&tqx=responseHandler:handleSheetData';s.onerror=()=>showMessage('No se ha podido cargar la hoja desde Google Sheets.','error');document.body.appendChild(s)}
+function loadVehiclesJSONP(){
+  clearMessage();
+  const old=document.getElementById('sheetJsonpScript');
+  if(old) old.remove();
+
+  window.handleSheetData=function(response){
+    try{
+      const cols=response.table.cols.map((c,i)=>(c.label||'').trim()||'Columna '+(i+1));
+
+      const rows=response.table.rows.map(row=>{
+        const o={};
+        cols.forEach((name,i)=>{
+          o[name]=row.c[i]&&row.c[i].v!=null?row.c[i].v:'';
+        });
+
+        // Fallbacks por posición física de columna en AUTOAK:
+        // A=ID, B=QR, C=Autoa, D=TAILERRA, E=Kolorea, F=VIN, G=Fitxa, H=RTA, I=Egokitua/grupo.
+        o.__COL_A=row.c[0]&&row.c[0].v!=null?row.c[0].v:'';
+        o.__COL_B=row.c[1]&&row.c[1].v!=null?row.c[1].v:'';
+        o.__COL_C=row.c[2]&&row.c[2].v!=null?row.c[2].v:'';
+        o.__COL_D=row.c[3]&&row.c[3].v!=null?row.c[3].v:'';
+        o.__COL_E=row.c[4]&&row.c[4].v!=null?row.c[4].v:'';
+        o.__COL_F=row.c[5]&&row.c[5].v!=null?row.c[5].v:'';
+        o.__COL_G=row.c[6]&&row.c[6].v!=null?row.c[6].v:'';
+        o.__COL_H=row.c[7]&&row.c[7].v!=null?row.c[7].v:'';
+        o.__COL_I=row.c[8]&&row.c[8].v!=null?row.c[8].v:'';
+        o.__COL_J=row.c[9]&&row.c[9].v!=null?row.c[9].v:'';
+        return o;
+      });
+
+      vehicles=rows.map(r=>({
+        id:value(r.ID)||value(r.__COL_A),
+        qr:value(r.QR)||value(r.__COL_B),
+        tailerra:value(r.TAILERRA)||value(r.__COL_D),
+        autoa:value(r.Autoa)||value(r.AUTOA)||value(r.__COL_C),
+        color:value(r.Kolorea)||value(r.Color)||value(r.__COL_E),
+        vin:value(r.VIN)||value(r.__COL_F),
+        fitxaTeknika:value(r['Fitxa teknika'])||value(r.__COL_G),
+        rta:value(r.RTA)||value(r.__COL_H),
+        // Columna I física de AUTOAK. Aquí está el grupo/clase que debe filtrar el desplegable.
+        taldeaEsleitua:value(r.__COL_I)||value(r.Egokitua)||value(r.EGOKITUA)||value(r['TALDEA_ESLEITUA'])||value(r['GRUPO_ASIGNADO'])||'DENAK',
+        egokitua:value(r.Egokitua)||value(r.EGOKITUA)||value(r.__COL_I),
+        erabilpena:value(r.Erabilpena)||value(r.ERABILPENA)||value(r.__COL_J),
+        estado:value(r.Egoera),
+        piztenDu:normalizeYesNo(value(r['Arrankatzen du'])||value(r['Pizten du'])),
+        piztuBeharDu:normalizeYesNo(value(r['Arrankatu behar du'])||value(r['Piztu behar du'])),
+        observaciones:value(r.Oharrak),
+        blokatuta:normalizeYesNo(value(r.BLOKATUTA)),
+        idBlokeoa:value(r['ID BLOKEOA']),
+        blokeoData:value(r['BLOKEO DATA']),
+        blokeoZergatia:value(r['BLOKEO ZERGATIA'])
+      })).filter(v=>v.id!=='');
+
+      routeAfterLoad();
+    }catch(e){
+      showMessage('Error procesando la hoja:\n'+e.message,'error');
+    }
+  };
+
+  const s=document.createElement('script');
+  s.id='sheetJsonpScript';
+  s.src='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?gid='+SHEET_GID+'&tqx=responseHandler:handleSheetData&cacheBust='+(Date.now());
+  s.onerror=()=>showMessage('No se ha podido cargar la hoja desde Google Sheets.','error');
+  document.body.appendChild(s);
+}
 function routeAfterLoad(){const entry=getEntryParams();if(!currentUser)return;if(entry.qrHarrera){loadReceptionQR(entry.qrHarrera);return}if(currentUser.role==='profesor'){if(entry.panel==='irakaslea' && (entry.id || entry.trabajo || entry.qrHarrera)){showWorksPanel();return}if(entry.id){const v=vehicles.find(x=>String(x.id)===String(entry.id));if(!v){showMessage('No se ha encontrado ningún vehículo con ese ID.','error');return}renderVehicleDetail(v);return}document.getElementById('viewModeText').textContent='Panel general de profesor';document.getElementById('tableContainer').classList.remove('hidden');document.getElementById('showAllBtn').classList.add('hidden');renderVehiclesTable();setTimeout(()=>addBackToHome(),100);return}if(currentUser.role==='alumno'){if(entry.id){const v=vehicles.find(x=>String(x.id)===String(entry.id));if(!v){showMessage('No se ha encontrado ningún vehículo con ese ID.','error');return}renderVehicleDetail(v);return}showMessage('Acceso denegado. El alumnado solo puede entrar desde QR o ficha de trabajo.','error')}}
 function showAllVehicles(){
   if(!currentUser || currentUser.role !== 'profesor') return;
@@ -3446,9 +3510,9 @@ function populateCenterVehicleOptions(){
   const groupSel = document.getElementById('workGrupoAsignado');
   const selectedGroup = String(groupSel ? groupSel.value : '').trim().toUpperCase();
 
-  const rows = (Array.isArray(vehicles) ? vehicles : []).filter(v=>{
-    // En AUTOAK el grupo/clase viene de la columna I = Egokitua.
-    // Si en el futuro existe TALDEA_ESLEITUA, también se admite, pero Egokitua manda.
+  const allVehicles = Array.isArray(vehicles) ? vehicles : [];
+
+  const rows = allVehicles.filter(v=>{
     const raw = String(v.taldeaEsleitua || 'DENAK').trim().toUpperCase();
 
     const grupos = raw
@@ -3472,6 +3536,24 @@ function populateCenterVehicleOptions(){
   `).join('') : `<option value="">No hay vehículos disponibles para el grupo ${escapeHtml(selectedGroup || '-')}</option>`;
 
   sel.onchange = syncSelectedCenterVehicle;
+
+  // Pequeño diagnóstico visible solo si no encuentra nada.
+  let note = document.getElementById('centerVehicleDebug');
+  if(!note && sel.parentElement){
+    note = document.createElement('div');
+    note.id = 'centerVehicleDebug';
+    note.className = 'compact-note';
+    sel.parentElement.appendChild(note);
+  }
+  if(note){
+    if(rows.length){
+      note.innerHTML = `Cargados ${rows.length} vehículos para ${escapeHtml(selectedGroup)} desde columna I de AUTOAK.`;
+    }else{
+      const gruposDetectados = [...new Set(allVehicles.map(v=>String(v.taldeaEsleitua||'').trim()).filter(Boolean))].slice(0,20);
+      note.innerHTML = `No hay coincidencias para ${escapeHtml(selectedGroup)}. Grupos detectados en columna I: ${escapeHtml(gruposDetectados.join(', ') || 'ninguno')}`;
+    }
+  }
+
   syncSelectedCenterVehicle();
 }
 
