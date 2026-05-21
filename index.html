@@ -5258,6 +5258,30 @@ if(typeof window.__translateAllTextOriginal_v607 === 'undefined' && typeof trans
   }
 });
 
+
+// ===== v6.0.8 detalle trabajos =====
+function translateWorkDetailExtra(root){
+ root=root||document.body;
+ const reps=[
+ ['Trabajos / Lanak','Lanak'],
+ ['Trabajo','Lana'],
+ ['Notas','Oharrak'],
+ ['Guardar checklist','Checklist gorde'],
+ ['pendiente','egiteke'],
+ ['Pulsa para abrir','Sakatu zabaltzeko'],
+ ['Pulsa para tocar para desplegar','Sakatu zabaltzeko'],
+ ['Oharrak / Oharrak','Oharrak']
+ ];
+ const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
+ let n;
+ while(n=w.nextNode()){
+   let t=n.nodeValue;
+   let o=t;
+   reps.forEach(r=>t=t.replaceAll(r[0],r[1]));
+   if(t!=o) n.nodeValue=t;
+ }
+}
+setInterval(()=>translateWorkDetailExtra(document.body),1200);
 </script>
 
 <div id="loadingOverlay" class="loading-overlay hidden">
