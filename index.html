@@ -3891,6 +3891,124 @@ if(typeof window.__renderVehicleDetailOriginal_v53 === 'undefined'){
   };
 }
 
+
+
+// ===== MENDIcar v5.4.5 AUTOAK desde Apps Script para grupos =====
+function normalizeGroupValue(v){
+  return String(v || '').trim().toUpperCase();
+}
+
+function getAutoakGroupFromRow(r){
+  // En tu hoja real, la clase/grupo está en EGOKITUA.
+  // También se aceptan variantes por si en algún momento se crea TALDEA_ESLEITUA.
+  return value(getAnyField(r, [
+    'Egokitua','EGOKITUA','egokitua',
+    'TALDEA_ESLEITUA','TALDEA ASIGNADA','GRUPO_ASIGNADO',
+    'Taldea esleitua'
+  ])) || 'DENAK';
+}
+
+function mapAutoakRowToVehicle(r){
+  return {
+    id: value(getAnyField(r,['ID','Id','id'])),
+    qr: value(getAnyField(r,['QR','Qr','qr'])),
+    autoa: value(getAnyField(r,['Autoa','AUTOA','autoa','VEHICULO','Vehículo'])),
+    tailerra: value(getAnyField(r,['TAILERRA','Taller','TALLER'])),
+    color: value(getAnyField(r,['Kolorea','Color','COLOR'])),
+    vin: value(getAnyField(r,['VIN','vin'])),
+    taldeaEsleitua: getAutoakGroupFromRow(r)
+  };
+}
+
+function cargarVehiculosCentroParaGrupo(){
+  const sel = document.getElementById('workCentroVehicle');
+  if(!sel) return;
+
+  const groupSel = document.getElementById('workGrupoAsignado');
+  const selectedGroup = normalizeGroupValue(groupSel ? groupSel.value : '');
+
+  sel.innerHTML = `<option value="">Cargando vehículos de ${escapeHtml(selectedGroup || '-')}...</option>`;
+  syncSelectedCenterVehicle();
+
+  callSaveAPI({accion:'listarAutoak'}, resp=>{
+    if(!resp || !resp.ok){
+      sel.innerHTML = `<option value="">Error cargando AUTOAK</option>`;
+      showMessage('No se han podido cargar los coches del centro desde AUTOAK.','error');
+      return;
+    }
+
+    const rows = (resp.rows || []).map(mapAutoakRowToVehicle).filter(v=>v.id);
+
+    window.CENTER_AUTOAK_CACHE = rows;
+
+    const filtrados = rows.filter(v=>{
+      const raw = normalizeGroupValue(v.taldeaEsleitua || 'DENAK');
+      const grupos = raw.split(/[;,/|]+/).map(x=>x.trim()).filter(Boolean);
+      const esComun = grupos.includes('DENAK') || grupos.includes('TODOS') || grupos.includes('GUZTIAK');
+
+      if(selectedGroup === 'LIBRE') return esComun;
+      return esComun || grupos.includes(selectedGroup);
+    });
+
+    sel.innerHTML = filtrados.length ? filtrados.map(v=>`
+      <option value="${escapeAttr(v.id)}">
+        ID ${escapeHtml(v.id)} · ${escapeHtml(v.autoa || 'Vehículo')} ${v.color ? '· '+escapeHtml(v.color) : ''} · Grupo: ${escapeHtml(v.taldeaEsleitua || 'DENAK')}
+      </option>
+    `).join('') : `<option value="">No hay vehículos disponibles para el grupo ${escapeHtml(selectedGroup || '-')}</option>`;
+
+    let note = document.getElementById('centerVehicleDebug');
+    if(!note && sel.parentElement){
+      note = document.createElement('div');
+      note.id = 'centerVehicleDebug';
+      note.className = 'compact-note';
+      sel.parentElement.appendChild(note);
+    }
+
+    if(note){
+      if(filtrados.length){
+        note.innerHTML = `Cargados ${filtrados.length} vehículos para ${escapeHtml(selectedGroup)} desde AUTOAK/Egokitua.`;
+      }else{
+        const gruposDetectados = [...new Set(rows.map(v=>String(v.taldeaEsleitua||'').trim()).filter(Boolean))].slice(0,30);
+        note.innerHTML = `No hay coincidencias para ${escapeHtml(selectedGroup)}. Grupos detectados en AUTOAK/Egokitua: ${escapeHtml(gruposDetectados.join(', ') || 'ninguno')}`;
+      }
+    }
+
+    syncSelectedCenterVehicle();
+  });
+}
+
+// Override: ahora el desplegable de centro siempre se carga desde Apps Script, no desde gviz.
+function populateCenterVehicleOptions(){
+  cargarVehiculosCentroParaGrupo();
+}
+
+function getSelectedCenterVehicle(){
+  const id = document.getElementById('workCentroVehicle')?.value || '';
+  const cache = window.CENTER_AUTOAK_CACHE || vehicles || [];
+  return cache.find(v=>String(v.id)===String(id)) || null;
+}
+
+function syncSelectedCenterVehicle(){
+  const v = getSelectedCenterVehicle();
+  const autoa = document.getElementById('workAutoa');
+  const matricula = document.getElementById('workMatricula');
+
+  if(!v){
+    if(autoa){ autoa.value=''; autoa.disabled=true; }
+    if(matricula){ matricula.value=''; matricula.disabled=true; }
+    return;
+  }
+
+  if(autoa){
+    autoa.value = v.autoa || '';
+    autoa.disabled = true;
+  }
+  if(matricula){
+    matricula.value = v.id ? 'ID-'+v.id : '';
+    matricula.disabled = true;
+  }
+}
+
 </script>
 
 <div id="loadingOverlay" class="loading-overlay hidden">
