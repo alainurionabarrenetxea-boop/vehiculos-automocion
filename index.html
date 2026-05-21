@@ -681,6 +681,112 @@ box-shadow:0 8px 18px rgba(220,38,38,.15);
     .center-work-body{padding:16px;border-top:1px solid #e5e7eb}
     .type-chip{display:inline-block;padding:6px 10px;border-radius:999px;background:#dcfce7;color:#166534;font-size:12px;font-weight:950;margin-bottom:8px}
 
+  
+    /* ===== MENDIcar v5.4.6 botón cargar coches grupo ===== */
+    .mini-load-btn{
+      width:auto !important;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      padding:10px 14px !important;
+      border-radius:999px !important;
+      font-size:15px !important;
+      font-weight:950 !important;
+      margin:10px 0 12px 0 !important;
+    }
+    .mini-spinner{
+      display:inline-block;
+      width:18px;
+      height:18px;
+      border:3px solid rgba(37,99,235,.22);
+      border-top-color:#2563eb;
+      border-radius:50%;
+      animation:mendiSpin .8s linear infinite;
+      vertical-align:middle;
+    }
+    @keyframes mendiSpin{to{transform:rotate(360deg)}}
+    .load-status-line{
+      margin:6px 0 10px 0;
+      font-size:14px;
+      font-weight:800;
+      color:#6b7280;
+    }
+
+  
+    /* ===== MENDIcar v5.5 informes alumno/tareas ===== */
+    .report-toolbar{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin:14px 0;
+    }
+    .report-toolbar button{
+      width:auto!important;
+      padding:10px 14px!important;
+      border-radius:999px!important;
+      font-size:15px!important;
+    }
+    .report-card{
+      border:1px solid #e5e7eb;
+      border-radius:18px;
+      background:white;
+      box-shadow:0 8px 22px rgba(15,23,42,.06);
+      padding:14px;
+      margin:12px 0;
+      border-left:8px solid #2563eb;
+    }
+    .report-card-title{
+      font-size:18px;
+      font-weight:950;
+      color:#111827;
+      margin-bottom:6px;
+    }
+    .report-meta{
+      color:#6b7280;
+      font-weight:800;
+      line-height:1.35;
+      font-size:14px;
+    }
+    .report-pill{
+      display:inline-block;
+      padding:5px 9px;
+      border-radius:999px;
+      background:#dbeafe;
+      color:#1d4ed8;
+      font-size:12px;
+      font-weight:950;
+      margin:4px 4px 4px 0;
+    }
+    .report-table{
+      width:100%;
+      border-collapse:collapse;
+      font-size:13px;
+      margin-top:12px;
+    }
+    .report-table th,.report-table td{
+      border:1px solid #e5e7eb;
+      padding:7px;
+      text-align:left;
+      vertical-align:top;
+    }
+    .report-table th{
+      background:#f8fafc;
+      font-weight:950;
+    }
+    .report-print-header{
+      display:none;
+    }
+    @media print{
+      body{background:white!important;}
+      .app-header,.button-row,.section-back,.help-floating,.footer-credit,.report-toolbar,.no-print{display:none!important;}
+      .app-card{box-shadow:none!important;border:none!important;}
+      .report-print-header{display:block!important;margin-bottom:16px;border-bottom:2px solid #111827;padding-bottom:10px;}
+      .vehicle-card{box-shadow:none!important;border:1px solid #111827!important;break-inside:avoid;}
+      .report-card{box-shadow:none!important;break-inside:avoid;}
+      input,select,textarea{border:none!important;}
+    }
+
   </style>
 </head>
 <body>
@@ -749,6 +855,15 @@ function showHomeDashboard(){
           <div class="dashboard-subtitle">Buscar coche, QR o matrícula</div>
         </button>
 
+
+        ${isProfesor ? `
+        <button class="dashboard-tile tile-orange" type="button" onclick="openDashboardSection('informes')">
+          <div class="dashboard-icon">🧾</div>
+          <div class="dashboard-title">Informes</div>
+          <div class="dashboard-subtitle">Alumno, tarea y fecha</div>
+        </button>
+        ` : ''}
+
         ${isProfesor ? `
         <button class="dashboard-tile tile-gray" type="button" onclick="openDashboardSection('ajustes')">
           <div class="dashboard-icon">⚙️</div>
@@ -803,6 +918,12 @@ function openDashboardSection(section){
 
   if(section === 'historial'){
     showHistoryPanel();
+    setTimeout(()=>addBackToHome(),250);
+    return;
+  }
+
+  if(section === 'informes'){
+    showReportsPanel();
     setTimeout(()=>addBackToHome(),250);
     return;
   }
@@ -1741,23 +1862,25 @@ function showWorksPanel(){
 
           <div id="centerVehicleBlock" class="hidden" style="grid-column:1/-1;">
             <label><strong>Grupo asignado</strong></label>
-            <select id="workGrupoAsignado" onchange="populateCenterVehicleOptions()">
-              <option value="1AU3">1AU3</option>
-              <option value="1AU3D">1AU3D</option>
-              <option value="1AU3E">1AU3E</option>
-              <option value="1EM2A">1EM2A</option>
-              <option value="1EM2D">1EM2D</option>
-              <option value="2AU3D">2AU3D</option>
-              <option value="2AU3E">2AU3E</option>
-              <option value="CARROCERIA">CARROCERIA</option>
-              <option value="MEKANIKA">MEKANIKA</option>
-              <option value="LIBRE">LIBRE - solo vehículos DENAK</option>
+            <select id="workGrupoAsignado" onchange="resetCenterVehicleSelector()">
+              <option value="">Cargando grupos...</option>
             </select>
 
+            <button id="btnLoadCenterGroups" type="button" class="mini-load-btn" onclick="cargarGruposAutoak()">
+              Actualizar grupos
+            </button>
+
+            <button id="btnLoadCenterVehicles" type="button" class="mini-load-btn" onclick="cargarVehiculosCentroParaGrupo()">
+              Cargar coches del grupo
+            </button>
+            <div id="centerVehicleLoadStatus" class="load-status-line"></div>
+
             <label style="margin-top:14px;"><strong>Vehículo del centro</strong></label>
-            <select id="workCentroVehicle"></select>
+            <select id="workCentroVehicle">
+              <option value="">Primero elige grupo y pulsa “Cargar coches del grupo”</option>
+            </select>
             <div class="compact-note">
-              Primero elige grupo. Después se cargan aquí solo los vehículos asignados a ese grupo en la columna I/Egokitua de AUTOAK.
+              Los grupos se leen automáticamente de AUTOAK / Egokitua. Después elige grupo y carga exclusivamente sus vehículos.
               No ocupa QR_HARRERA: usa el QR fijo del coche del centro.
             </div>
           </div>
@@ -1795,8 +1918,9 @@ function showWorksPanel(){
     </div>
   `;
 
-  populateCenterVehicleOptions();
+  resetCenterVehicleSelector();
   toggleWorkVehicleType();
+  cargarGruposAutoak();
   loadWorks();
 }
 
@@ -3475,6 +3599,12 @@ function openDashboardSection(section){
     return;
   }
 
+  if(section === 'informes'){
+    showReportsPanel();
+    setTimeout(()=>addBackToHome(),250);
+    return;
+  }
+
   if(section === 'ajustes'){
     showSettingsPanel();
     setTimeout(()=>addBackToHome(),250);
@@ -3496,6 +3626,7 @@ function toggleWorkVehicleType(){
 
   if(t === 'CENTRO'){
     if(cliente && !cliente.value) cliente.value = currentUser ? currentUser.name : 'Centro';
+    cargarGruposAutoak();
     syncSelectedCenterVehicle();
   }else{
     if(autoa) autoa.disabled = false;
@@ -3889,6 +4020,818 @@ if(typeof window.__renderVehicleDetailOriginal_v53 === 'undefined'){
     window.__renderVehicleDetailOriginal_v53(vehicle);
     try{ renderCenterTasksForVehicle(vehicle); }catch(e){}
   };
+}
+
+
+
+// ===== MENDIcar v5.4.5 AUTOAK desde Apps Script para grupos =====
+function normalizeGroupValue(v){
+  return String(v || '').trim().toUpperCase();
+}
+
+function getAutoakGroupFromRow(r){
+  // En tu hoja real, la clase/grupo está en EGOKITUA.
+  // También se aceptan variantes por si en algún momento se crea TALDEA_ESLEITUA.
+  return value(getAnyField(r, [
+    'Egokitua','EGOKITUA','egokitua',
+    'TALDEA_ESLEITUA','TALDEA ASIGNADA','GRUPO_ASIGNADO',
+    'Taldea esleitua'
+  ])) || 'DENAK';
+}
+
+function mapAutoakRowToVehicle(r){
+  return {
+    id: value(getAnyField(r,['ID','Id','id'])),
+    qr: value(getAnyField(r,['QR','Qr','qr'])),
+    autoa: value(getAnyField(r,['Autoa','AUTOA','autoa','VEHICULO','Vehículo'])),
+    tailerra: value(getAnyField(r,['TAILERRA','Taller','TALLER'])),
+    color: value(getAnyField(r,['Kolorea','Color','COLOR'])),
+    vin: value(getAnyField(r,['VIN','vin'])),
+    taldeaEsleitua: getAutoakGroupFromRow(r)
+  };
+}
+
+function cargarVehiculosCentroParaGrupo(){
+  const sel = document.getElementById('workCentroVehicle');
+  if(!sel) return;
+
+  const groupSel = document.getElementById('workGrupoAsignado');
+  const selectedGroup = normalizeGroupValue(groupSel ? groupSel.value : '');
+
+  sel.innerHTML = `<option value="">Cargando vehículos de ${escapeHtml(selectedGroup || '-')}...</option>`;
+  syncSelectedCenterVehicle();
+
+  callSaveAPI({accion:'listarAutoak'}, resp=>{
+    if(!resp || !resp.ok){
+      sel.innerHTML = `<option value="">Error cargando AUTOAK</option>`;
+      showMessage('No se han podido cargar los coches del centro desde AUTOAK.','error');
+      return;
+    }
+
+    const rows = (resp.rows || []).map(mapAutoakRowToVehicle).filter(v=>v.id);
+
+    window.CENTER_AUTOAK_CACHE = rows;
+
+    const filtrados = rows.filter(v=>{
+      const raw = normalizeGroupValue(v.taldeaEsleitua || 'DENAK');
+      const grupos = raw.split(/[;,/|]+/).map(x=>x.trim()).filter(Boolean);
+      const esComun = grupos.includes('DENAK') || grupos.includes('TODOS') || grupos.includes('GUZTIAK');
+
+      // IMPORTANTE v5.4.7:
+      // Si se elige un grupo concreto, se muestran SOLO los coches de ese grupo.
+      // Los DENAK solo aparecen si eliges DENAK o LIBRE.
+      if(selectedGroup === 'LIBRE' || selectedGroup === 'DENAK') return esComun;
+      return grupos.includes(selectedGroup);
+    });
+
+    sel.innerHTML = filtrados.length ? filtrados.map(v=>`
+      <option value="${escapeAttr(v.id)}">
+        ID ${escapeHtml(v.id)} · ${escapeHtml(v.autoa || 'Vehículo')} ${v.color ? '· '+escapeHtml(v.color) : ''} · Grupo: ${escapeHtml(v.taldeaEsleitua || 'DENAK')}
+      </option>
+    `).join('') : `<option value="">No hay vehículos disponibles para el grupo ${escapeHtml(selectedGroup || '-')}</option>`;
+
+    let note = document.getElementById('centerVehicleDebug');
+    if(!note && sel.parentElement){
+      note = document.createElement('div');
+      note.id = 'centerVehicleDebug';
+      note.className = 'compact-note';
+      sel.parentElement.appendChild(note);
+    }
+
+    if(note){
+      if(filtrados.length){
+        note.innerHTML = `Cargados ${filtrados.length} vehículos para ${escapeHtml(selectedGroup)} desde AUTOAK/Egokitua.`;
+      }else{
+        const gruposDetectados = [...new Set(rows.map(v=>String(v.taldeaEsleitua||'').trim()).filter(Boolean))].slice(0,30);
+        note.innerHTML = `No hay coincidencias para ${escapeHtml(selectedGroup)}. Grupos detectados en AUTOAK/Egokitua: ${escapeHtml(gruposDetectados.join(', ') || 'ninguno')}`;
+      }
+    }
+
+    syncSelectedCenterVehicle();
+  });
+}
+
+// Override: ahora el desplegable de centro siempre se carga desde Apps Script, no desde gviz.
+function populateCenterVehicleOptions(){
+  cargarVehiculosCentroParaGrupo();
+}
+
+function getSelectedCenterVehicle(){
+  const id = document.getElementById('workCentroVehicle')?.value || '';
+  const cache = window.CENTER_AUTOAK_CACHE || vehicles || [];
+  return cache.find(v=>String(v.id)===String(id)) || null;
+}
+
+function syncSelectedCenterVehicle(){
+  const v = getSelectedCenterVehicle();
+  const autoa = document.getElementById('workAutoa');
+  const matricula = document.getElementById('workMatricula');
+
+  if(!v){
+    if(autoa){ autoa.value=''; autoa.disabled=true; }
+    if(matricula){ matricula.value=''; matricula.disabled=true; }
+    return;
+  }
+
+  if(autoa){
+    autoa.value = v.autoa || '';
+    autoa.disabled = true;
+  }
+  if(matricula){
+    matricula.value = v.id ? 'ID-'+v.id : '';
+    matricula.disabled = true;
+  }
+}
+
+
+
+// ===== MENDIcar v5.4.6 carga manual de coches de centro =====
+function resetCenterVehicleSelector(){
+  const sel = document.getElementById('workCentroVehicle');
+  if(sel){
+    sel.innerHTML = '<option value="">Pulsa “Cargar coches del grupo”</option>';
+  }
+  const status = document.getElementById('centerVehicleLoadStatus');
+  if(status) status.innerHTML = '';
+  const note = document.getElementById('centerVehicleDebug');
+  if(note) note.innerHTML = '';
+  window.CENTER_AUTOAK_CACHE = [];
+  syncSelectedCenterVehicle();
+}
+
+function setCenterVehicleLoading(isLoading, text){
+  const btn = document.getElementById('btnLoadCenterVehicles');
+  const status = document.getElementById('centerVehicleLoadStatus');
+  if(btn){
+    btn.disabled = !!isLoading;
+    btn.innerHTML = isLoading ? '<span class="mini-spinner"></span> Cargando...' : 'Cargar coches del grupo';
+  }
+  if(status){
+    status.innerHTML = isLoading ? '<span class="mini-spinner"></span> '+escapeHtml(text || 'Cargando vehículos...') : (text ? escapeHtml(text) : '');
+  }
+}
+
+function normalizeGroupValue(v){
+  return String(v || '').trim().toUpperCase();
+}
+
+function getAutoakGroupFromRow(r){
+  return value(getAnyField(r, [
+    'Egokitua','EGOKITUA','egokitua',
+    'TALDEA_ESLEITUA','TALDEA ASIGNADA','GRUPO_ASIGNADO',
+    'Taldea esleitua'
+  ])) || 'DENAK';
+}
+
+function mapAutoakRowToVehicle(r){
+  return {
+    id: value(getAnyField(r,['ID','Id','id'])),
+    qr: value(getAnyField(r,['QR','Qr','qr'])),
+    autoa: value(getAnyField(r,['Autoa','AUTOA','autoa','VEHICULO','Vehículo'])),
+    tailerra: value(getAnyField(r,['TAILERRA','Taller','TALLER'])),
+    color: value(getAnyField(r,['Kolorea','Color','COLOR'])),
+    vin: value(getAnyField(r,['VIN','vin'])),
+    taldeaEsleitua: getAutoakGroupFromRow(r)
+  };
+}
+
+function cargarVehiculosCentroParaGrupo(){
+  const sel = document.getElementById('workCentroVehicle');
+  if(!sel) return;
+
+  const groupSel = document.getElementById('workGrupoAsignado');
+  const selectedGroup = normalizeGroupValue(groupSel ? groupSel.value : '');
+
+  if(!selectedGroup){
+    showMessage('Primero selecciona un grupo.','error');
+    return;
+  }
+
+  sel.innerHTML = `<option value="">Cargando vehículos de ${escapeHtml(selectedGroup)}...</option>`;
+  setCenterVehicleLoading(true, 'Buscando en AUTOAK para '+selectedGroup+'...');
+  syncSelectedCenterVehicle();
+
+  let finished = false;
+  const timer = setTimeout(()=>{
+    if(finished) return;
+    finished = true;
+    setCenterVehicleLoading(false, 'La carga está tardando demasiado. Revisa conexión o Apps Script.');
+    sel.innerHTML = `<option value="">No se pudo cargar. Pulsa de nuevo.</option>`;
+  }, 15000);
+
+  callSaveAPI({accion:'listarAutoak', cacheBust: Date.now()}, resp=>{
+    if(finished) return;
+    finished = true;
+    clearTimeout(timer);
+
+    if(!resp || !resp.ok){
+      sel.innerHTML = `<option value="">Error cargando AUTOAK</option>`;
+      setCenterVehicleLoading(false, 'Error cargando AUTOAK.');
+      showMessage('No se han podido cargar los coches del centro desde AUTOAK.','error');
+      return;
+    }
+
+    const rows = (resp.rows || []).map(mapAutoakRowToVehicle).filter(v=>v.id);
+    window.CENTER_AUTOAK_CACHE = rows;
+
+    const filtrados = rows.filter(v=>{
+      const raw = normalizeGroupValue(v.taldeaEsleitua || 'DENAK');
+      const grupos = raw.split(/[;,/|]+/).map(x=>x.trim()).filter(Boolean);
+      const esComun = grupos.includes('DENAK') || grupos.includes('TODOS') || grupos.includes('GUZTIAK');
+
+      // IMPORTANTE v5.4.7:
+      // Si se elige un grupo concreto, se muestran SOLO los coches de ese grupo.
+      // Los DENAK solo aparecen si eliges DENAK o LIBRE.
+      if(selectedGroup === 'LIBRE' || selectedGroup === 'DENAK') return esComun;
+      return grupos.includes(selectedGroup);
+    });
+
+    sel.innerHTML = filtrados.length ? filtrados.map(v=>`
+      <option value="${escapeAttr(v.id)}">
+        ID ${escapeHtml(v.id)} · ${escapeHtml(v.autoa || 'Vehículo')} ${v.color ? '· '+escapeHtml(v.color) : ''} · Grupo: ${escapeHtml(v.taldeaEsleitua || 'DENAK')}
+      </option>
+    `).join('') : `<option value="">No hay vehículos disponibles para el grupo ${escapeHtml(selectedGroup)}</option>`;
+
+    let note = document.getElementById('centerVehicleDebug');
+    if(!note && sel.parentElement){
+      note = document.createElement('div');
+      note.id = 'centerVehicleDebug';
+      note.className = 'compact-note';
+      sel.parentElement.appendChild(note);
+    }
+
+    if(filtrados.length){
+      setCenterVehicleLoading(false, 'Cargados '+filtrados.length+' vehículos exclusivos de '+selectedGroup+'.');
+    }else{
+      const gruposDetectados = [...new Set(rows.map(v=>String(v.taldeaEsleitua||'').trim()).filter(Boolean))].slice(0,30);
+      setCenterVehicleLoading(false, 'No hay vehículos para '+selectedGroup+'.');
+      if(note){
+        note.innerHTML = `Grupos detectados en AUTOAK/Egokitua: ${escapeHtml(gruposDetectados.join(', ') || 'ninguno')}`;
+      }
+    }
+
+    syncSelectedCenterVehicle();
+  });
+}
+
+// Mantengo este nombre porque otras partes del código lo llaman.
+function populateCenterVehicleOptions(){
+  cargarVehiculosCentroParaGrupo();
+}
+
+function getSelectedCenterVehicle(){
+  const id = document.getElementById('workCentroVehicle')?.value || '';
+  const cache = window.CENTER_AUTOAK_CACHE || [];
+  return cache.find(v=>String(v.id)===String(id)) || null;
+}
+
+function syncSelectedCenterVehicle(){
+  const v = getSelectedCenterVehicle();
+  const autoa = document.getElementById('workAutoa');
+  const matricula = document.getElementById('workMatricula');
+
+  if(!v){
+    if(autoa){ autoa.value=''; autoa.disabled=true; }
+    if(matricula){ matricula.value=''; matricula.disabled=true; }
+    return;
+  }
+
+  if(autoa){
+    autoa.value = v.autoa || '';
+    autoa.disabled = true;
+  }
+  if(matricula){
+    matricula.value = v.id ? 'ID-'+v.id : '';
+    matricula.disabled = true;
+  }
+}
+
+
+
+// ===== MENDIcar v5.4.8 grupos reales desde AUTOAK / Egokitua =====
+function normalizeGroupValue(v){
+  return String(v || '').trim().toUpperCase();
+}
+
+function splitGroupCell(raw){
+  return String(raw || '')
+    .toUpperCase()
+    .split(/[;,/|]+/)
+    .map(x=>x.trim())
+    .filter(Boolean);
+}
+
+function getAutoakGroupFromRow(r){
+  return value(getAnyField(r, [
+    'Egokitua','EGOKITUA','egokitua',
+    'TALDEA_ESLEITUA','TALDEA ASIGNADA','GRUPO_ASIGNADO',
+    'Taldea esleitua'
+  ])) || 'DENAK';
+}
+
+function mapAutoakRowToVehicle(r){
+  return {
+    id: value(getAnyField(r,['ID','Id','id'])),
+    qr: value(getAnyField(r,['QR','Qr','qr'])),
+    autoa: value(getAnyField(r,['Autoa','AUTOA','autoa','VEHICULO','Vehículo'])),
+    tailerra: value(getAnyField(r,['TAILERRA','Taller','TALLER'])),
+    color: value(getAnyField(r,['Kolorea','Color','COLOR'])),
+    vin: value(getAnyField(r,['VIN','vin'])),
+    taldeaEsleitua: getAutoakGroupFromRow(r)
+  };
+}
+
+function setCenterVehicleLoading(isLoading, text){
+  const btn = document.getElementById('btnLoadCenterVehicles');
+  const btnGroups = document.getElementById('btnLoadCenterGroups');
+  const status = document.getElementById('centerVehicleLoadStatus');
+
+  if(btn){
+    btn.disabled = !!isLoading;
+    btn.innerHTML = isLoading ? '<span class="mini-spinner"></span> Cargando...' : 'Cargar coches del grupo';
+  }
+  if(btnGroups){
+    btnGroups.disabled = !!isLoading;
+    btnGroups.innerHTML = isLoading ? '<span class="mini-spinner"></span> Leyendo grupos...' : 'Actualizar grupos';
+  }
+  if(status){
+    status.innerHTML = isLoading ? '<span class="mini-spinner"></span> '+escapeHtml(text || 'Cargando...') : (text ? escapeHtml(text) : '');
+  }
+}
+
+function cargarAutoakCache(callback){
+  callSaveAPI({accion:'listarAutoak', cacheBust: Date.now()}, resp=>{
+    if(!resp || !resp.ok){
+      showMessage('No se han podido cargar los coches del centro desde AUTOAK.','error');
+      if(callback) callback([]);
+      return;
+    }
+    const rows = (resp.rows || []).map(mapAutoakRowToVehicle).filter(v=>v.id);
+    window.CENTER_AUTOAK_CACHE = rows;
+    if(callback) callback(rows);
+  });
+}
+
+function cargarGruposAutoak(){
+  const selGrupo = document.getElementById('workGrupoAsignado');
+  if(!selGrupo) return;
+
+  const oldValue = selGrupo.value;
+  selGrupo.innerHTML = '<option value="">Cargando grupos...</option>';
+  setCenterVehicleLoading(true, 'Leyendo grupos reales de AUTOAK/Egokitua...');
+
+  let finished = false;
+  const timer = setTimeout(()=>{
+    if(finished) return;
+    finished = true;
+    setCenterVehicleLoading(false, 'La carga de grupos está tardando demasiado. Pulsa “Actualizar grupos”.');
+    selGrupo.innerHTML = '<option value="">Error cargando grupos</option>';
+  }, 15000);
+
+  cargarAutoakCache(rows=>{
+    if(finished) return;
+    finished = true;
+    clearTimeout(timer);
+
+    const groups = [];
+    rows.forEach(v=>{
+      splitGroupCell(v.taldeaEsleitua || 'DENAK').forEach(g=>{
+        if(g && !['TODOS','GUZTIAK'].includes(g)) groups.push(g);
+      });
+    });
+
+    const unique = [...new Set(groups)]
+      .filter(Boolean)
+      .sort((a,b)=>a.localeCompare(b, 'es', {numeric:true}));
+
+    if(!unique.includes('DENAK')) unique.push('DENAK');
+
+    selGrupo.innerHTML = unique.length ? unique.map(g=>`
+      <option value="${escapeAttr(g)}">${escapeHtml(g)}</option>
+    `).join('') : '<option value="DENAK">DENAK</option>';
+
+    if(oldValue && unique.includes(normalizeGroupValue(oldValue))){
+      selGrupo.value = normalizeGroupValue(oldValue);
+    }
+
+    setCenterVehicleLoading(false, 'Grupos cargados: '+unique.length+'. Elige grupo y pulsa “Cargar coches del grupo”.');
+    resetCenterVehicleSelector(false);
+  });
+}
+
+function resetCenterVehicleSelector(clearStatus=true){
+  const sel = document.getElementById('workCentroVehicle');
+  if(sel){
+    sel.innerHTML = '<option value="">Pulsa “Cargar coches del grupo”</option>';
+  }
+  const status = document.getElementById('centerVehicleLoadStatus');
+  if(status && clearStatus) status.innerHTML = '';
+  const note = document.getElementById('centerVehicleDebug');
+  if(note) note.innerHTML = '';
+  syncSelectedCenterVehicle();
+}
+
+function cargarVehiculosCentroParaGrupo(){
+  const sel = document.getElementById('workCentroVehicle');
+  const groupSel = document.getElementById('workGrupoAsignado');
+  if(!sel || !groupSel) return;
+
+  const selectedGroup = normalizeGroupValue(groupSel.value);
+  if(!selectedGroup){
+    showMessage('Primero selecciona un grupo.','error');
+    return;
+  }
+
+  sel.innerHTML = `<option value="">Cargando vehículos de ${escapeHtml(selectedGroup)}...</option>`;
+  setCenterVehicleLoading(true, 'Buscando vehículos exclusivos de '+selectedGroup+'...');
+  syncSelectedCenterVehicle();
+
+  const doFilter = (rows)=>{
+    const filtrados = rows.filter(v=>{
+      const grupos = splitGroupCell(v.taldeaEsleitua || 'DENAK');
+      const esComun = grupos.includes('DENAK') || grupos.includes('TODOS') || grupos.includes('GUZTIAK');
+
+      // SOLO el grupo seleccionado.
+      // Los DENAK se muestran solo cuando se selecciona DENAK.
+      if(selectedGroup === 'DENAK' || selectedGroup === 'LIBRE') return esComun;
+      return grupos.includes(selectedGroup);
+    });
+
+    sel.innerHTML = filtrados.length ? filtrados.map(v=>`
+      <option value="${escapeAttr(v.id)}">
+        ID ${escapeHtml(v.id)} · ${escapeHtml(v.autoa || 'Vehículo')} ${v.color ? '· '+escapeHtml(v.color) : ''} · Grupo: ${escapeHtml(v.taldeaEsleitua || 'DENAK')}
+      </option>
+    `).join('') : `<option value="">No hay vehículos disponibles para el grupo ${escapeHtml(selectedGroup)}</option>`;
+
+    let note = document.getElementById('centerVehicleDebug');
+    if(!note && sel.parentElement){
+      note = document.createElement('div');
+      note.id = 'centerVehicleDebug';
+      note.className = 'compact-note';
+      sel.parentElement.appendChild(note);
+    }
+
+    if(filtrados.length){
+      setCenterVehicleLoading(false, 'Cargados '+filtrados.length+' vehículos exclusivos de '+selectedGroup+'.');
+      if(note) note.innerHTML = '';
+    }else{
+      const gruposDetectados = [...new Set(rows.flatMap(v=>splitGroupCell(v.taldeaEsleitua||'')))].filter(Boolean).slice(0,50);
+      setCenterVehicleLoading(false, 'No hay vehículos para '+selectedGroup+'.');
+      if(note){
+        note.innerHTML = `Grupos detectados en AUTOAK/Egokitua: ${escapeHtml(gruposDetectados.join(', ') || 'ninguno')}`;
+      }
+    }
+
+    syncSelectedCenterVehicle();
+  };
+
+  const rows = window.CENTER_AUTOAK_CACHE || [];
+  if(rows.length){
+    doFilter(rows);
+  }else{
+    cargarAutoakCache(doFilter);
+  }
+}
+
+function populateCenterVehicleOptions(){
+  cargarVehiculosCentroParaGrupo();
+}
+
+function getSelectedCenterVehicle(){
+  const id = document.getElementById('workCentroVehicle')?.value || '';
+  const cache = window.CENTER_AUTOAK_CACHE || [];
+  return cache.find(v=>String(v.id)===String(id)) || null;
+}
+
+function syncSelectedCenterVehicle(){
+  const v = getSelectedCenterVehicle();
+  const autoa = document.getElementById('workAutoa');
+  const matricula = document.getElementById('workMatricula');
+
+  if(!v){
+    if(autoa){ autoa.value=''; autoa.disabled=true; }
+    if(matricula){ matricula.value=''; matricula.disabled=true; }
+    return;
+  }
+
+  if(autoa){
+    autoa.value = v.autoa || '';
+    autoa.disabled = true;
+  }
+  if(matricula){
+    matricula.value = v.id ? 'ID-'+v.id : '';
+    matricula.disabled = true;
+  }
+}
+
+
+
+// ===== MENDIcar v5.5 informes de alumnado/profesorado =====
+function getReportDateTime(row){
+  const d = getAnyField(row,['DATA','FECHA','data','fecha','SORTZE_DATA','Fecha']);
+  const h = getAnyField(row,['ORDUA','HORA','ordua','hora','SORTZE_ORDUA','Hora']);
+  return {fecha:String(d||''), hora:String(h||'')};
+}
+
+function getReportUser(row){
+  return getAnyField(row,['ERABILTZAILEA','USUARIO','Usuario','usuario','PROFESOR_CREADOR']) || '';
+}
+
+function getReportTask(row){
+  return getAnyField(row,['LANA','Lana','lana','TRABAJO','Trabajo','trabajo','TRABAJO_REALIZADO']) || '';
+}
+
+function getReportVehicle(row){
+  return getAnyField(row,['AUTOA','Autoa','autoa','VEHICULO','Vehículo']) || '';
+}
+
+function getReportEstado(row){
+  return getAnyField(row,['EGOERA','ESTADO','Estado','estado']) || '';
+}
+
+function getReportGroup(row){
+  return getAnyField(row,['TALDEA','GRUPO_ASIGNADO','BEZEROA','CLIENTE']) || '';
+}
+
+function getReportWorkshop(row){
+  return getAnyField(row,['TAILERRA','TALLER','taller']) || '';
+}
+
+function getReportId(row){
+  return getAnyField(row,['ID_TRABAJO','ID_LOG','ID_RECEPCION','ID']) || '';
+}
+
+function showReportsPanel(){
+  if(!currentUser || currentUser.role !== 'profesor'){
+    showMessage('Solo el profesorado puede generar informes.', 'error');
+    return;
+  }
+
+  clearMessage();
+  document.getElementById('viewModeText').textContent='Informes';
+  document.getElementById('tableContainer').classList.add('hidden');
+
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth()+1).padStart(2,'0');
+  const dd = String(today.getDate()).padStart(2,'0');
+
+  document.getElementById('vehicleDetail').innerHTML = `
+    <button type="button" class="section-back" onclick="showHomeDashboard()">← Volver al menú principal</button>
+
+    <div class="vehicle-card">
+      <h2 class="vehicle-title">Informes de trabajo</h2>
+      <p class="muted">
+        Consulta quién ha realizado cada labor, cuándo, en qué coche y con qué estado.
+        La información sale de <strong>LANAK</strong>, que es la hoja de trabajos realizados.
+      </p>
+
+      <div class="form-grid">
+        <div>
+          <label><strong>Desde</strong></label>
+          <input id="repDesde" type="date" value="${yyyy}-${mm}-01">
+        </div>
+        <div>
+          <label><strong>Hasta</strong></label>
+          <input id="repHasta" type="date" value="${yyyy}-${mm}-${dd}">
+        </div>
+        <div>
+          <label><strong>Alumno / profesor</strong></label>
+          <input id="repUsuario" placeholder="email, nombre o dejar vacío">
+        </div>
+        <div>
+          <label><strong>Grupo</strong></label>
+          <input id="repGrupo" placeholder="1AU3, 2CA2, MSHVE...">
+        </div>
+        <div>
+          <label><strong>Vehículo / matrícula / QR</strong></label>
+          <input id="repVehiculo" placeholder="C4, Opel, ID-3, QR...">
+        </div>
+        <div>
+          <label><strong>Estado</strong></label>
+          <select id="repEstado">
+            <option value="">Todos</option>
+            <option value="terminado">terminado</option>
+            <option value="cancelado">cancelado</option>
+            <option value="en curso">en curso</option>
+            <option value="pendiente">pendiente</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="report-toolbar">
+        <button type="button" onclick="generarInformeTrabajos()">Generar informe</button>
+        <button type="button" class="secondary-btn" onclick="imprimirInforme()">Imprimir / PDF</button>
+        <button type="button" class="secondary-btn" onclick="exportarInformeCSV()">Exportar CSV</button>
+      </div>
+
+      <div id="reportStatus" class="load-status-line"></div>
+      <div id="reportResults"></div>
+    </div>
+  `;
+}
+
+function normalizeReportText(v){
+  return String(v||'').trim().toLowerCase();
+}
+
+function parseReportDateValue(fecha,hora){
+  if(!fecha) return '';
+  const f = String(fecha).trim();
+  const h = String(hora||'00:00:00').trim();
+  return (f.length >= 10 ? f.substring(0,10) : f) + ' ' + h;
+}
+
+function filterReportRows(rows){
+  const desde = document.getElementById('repDesde')?.value || '';
+  const hasta = document.getElementById('repHasta')?.value || '';
+  const usuario = normalizeReportText(document.getElementById('repUsuario')?.value || '');
+  const grupo = normalizeReportText(document.getElementById('repGrupo')?.value || '');
+  const vehiculo = normalizeReportText(document.getElementById('repVehiculo')?.value || '');
+  const estadoFiltro = normalizeReportText(document.getElementById('repEstado')?.value || '');
+
+  return (rows||[]).filter(r=>{
+    const dt = getReportDateTime(r);
+    const fecha = dt.fecha.substring(0,10);
+
+    if(desde && fecha && fecha < desde) return false;
+    if(hasta && fecha && fecha > hasta) return false;
+
+    const user = normalizeReportText(getReportUser(r));
+    const group = normalizeReportText(getReportGroup(r));
+    const estado = normalizeReportText(getReportEstado(r));
+
+    const big = normalizeReportText([
+      getReportVehicle(r),
+      getAnyField(r,['MATRIKULA','MATRICULA','Matrícula','matricula']),
+      getAnyField(r,['QR','QR_RECEPCION','QR_HARRERA','QR_AUTOAK']),
+      getReportTask(r),
+      getReportId(r)
+    ].join(' '));
+
+    if(usuario && !user.includes(usuario)) return false;
+    if(grupo && !group.includes(grupo)) return false;
+    if(estadoFiltro && estado !== estadoFiltro) return false;
+    if(vehiculo && !big.includes(vehiculo)) return false;
+
+    return true;
+  });
+}
+
+function generarInformeTrabajos(){
+  const status = document.getElementById('reportStatus');
+  const results = document.getElementById('reportResults');
+  if(status) status.innerHTML = '<span class="mini-spinner"></span> Cargando LANAK...';
+  if(results) results.innerHTML = '';
+
+  callSaveAPI({accion:'listarLanak', cacheBust:Date.now()}, resp=>{
+    if(!resp || !resp.ok){
+      if(status) status.textContent = 'Error cargando LANAK.';
+      showMessage('No se ha podido cargar LANAK para el informe.','error');
+      return;
+    }
+
+    const rows = filterReportRows(resp.rows || []);
+    window.LAST_REPORT_ROWS = rows;
+
+    if(status) status.textContent = `Informe generado: ${rows.length} registros.`;
+
+    renderInformeTrabajos(rows);
+  });
+}
+
+function renderInformeTrabajos(rows){
+  const results = document.getElementById('reportResults');
+  if(!results) return;
+
+  if(!rows.length){
+    results.innerHTML = `<div class="ficha-box">No hay registros con esos filtros.</div>`;
+    return;
+  }
+
+  const byUser = {};
+  rows.forEach(r=>{
+    const u = getReportUser(r) || 'Sin usuario';
+    if(!byUser[u]) byUser[u] = [];
+    byUser[u].push(r);
+  });
+
+  const resumen = Object.entries(byUser).map(([u,list])=>{
+    const terminados = list.filter(r=>normalizeReportText(getReportEstado(r))==='terminado').length;
+    return `
+      <div class="report-card">
+        <div class="report-card-title">${escapeHtml(u)}</div>
+        <span class="report-pill">${list.length} registros</span>
+        <span class="report-pill">${terminados} terminados</span>
+      </div>
+    `;
+  }).join('');
+
+  const sorted = rows.slice().sort((a,b)=>{
+    const da = getReportDateTime(a), db = getReportDateTime(b);
+    return parseReportDateValue(db.fecha,db.hora).localeCompare(parseReportDateValue(da.fecha,da.hora));
+  });
+
+  const table = `
+    <table class="report-table">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Hora</th>
+          <th>Usuario</th>
+          <th>Grupo</th>
+          <th>Coche</th>
+          <th>Taller</th>
+          <th>Tarea realizada</th>
+          <th>Estado</th>
+          <th>Observaciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${sorted.map(r=>{
+          const dt = getReportDateTime(r);
+          const obs = getAnyField(r,['OHARRAK','Oharrak','oharrak','DESCRIPCION','Detalle','DETALLE','test']) || '';
+          return `
+            <tr>
+              <td>${escapeHtml(dt.fecha)}</td>
+              <td>${escapeHtml(dt.hora)}</td>
+              <td>${escapeHtml(getReportUser(r))}</td>
+              <td>${escapeHtml(getReportGroup(r))}</td>
+              <td>${escapeHtml(getReportVehicle(r))}</td>
+              <td>${escapeHtml(getReportWorkshop(r))}</td>
+              <td><strong>${escapeHtml(getReportTask(r))}</strong></td>
+              <td>${escapeHtml(getReportEstado(r))}</td>
+              <td>${escapeHtml(obs)}</td>
+            </tr>
+          `;
+        }).join('')}
+      </tbody>
+    </table>
+  `;
+
+  results.innerHTML = `
+    <div id="printableReport">
+      <div class="report-print-header">
+        <h1>MENDIcar · Informe de trabajos</h1>
+        <p>Generado por ${escapeHtml(currentUser?.name || '')} · ${new Date().toLocaleString()}</p>
+      </div>
+
+      <h3>Resumen por alumno/profesor</h3>
+      ${resumen}
+
+      <h3>Detalle de tareas realizadas</h3>
+      ${table}
+    </div>
+  `;
+}
+
+function imprimirInforme(){
+  if(!window.LAST_REPORT_ROWS || !window.LAST_REPORT_ROWS.length){
+    showMessage('Primero genera un informe.','error');
+    return;
+  }
+  window.print();
+}
+
+function exportarInformeCSV(){
+  const rows = window.LAST_REPORT_ROWS || [];
+  if(!rows.length){
+    showMessage('Primero genera un informe.','error');
+    return;
+  }
+
+  const headers = ['Fecha','Hora','Usuario','Grupo','Coche','Taller','Tarea realizada','Estado','Observaciones'];
+  const csvRows = [headers];
+
+  rows.forEach(r=>{
+    const dt = getReportDateTime(r);
+    csvRows.push([
+      dt.fecha,
+      dt.hora,
+      getReportUser(r),
+      getReportGroup(r),
+      getReportVehicle(r),
+      getReportWorkshop(r),
+      getReportTask(r),
+      getReportEstado(r),
+      getAnyField(r,['OHARRAK','Oharrak','oharrak','DESCRIPCION','Detalle','DETALLE','test']) || ''
+    ]);
+  });
+
+  const csv = csvRows.map(row=>row.map(cell=>{
+    const s = String(cell||'');
+    return '"' + s.replace(/"/g,'""') + '"';
+  }).join(';')).join('\n');
+
+  const blob = new Blob(['\ufeff'+csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'MENDIcar_informe_trabajos.csv';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }
 
 </script>
