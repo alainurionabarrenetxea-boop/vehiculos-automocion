@@ -788,13 +788,7 @@ box-shadow:0 8px 18px rgba(220,38,38,.15);
     }
 
   
-    /* ===== MENDIcar v5.6 idioma visual EU/ES/CA ===== */
-    .language-bar{display:flex;gap:8px;justify-content:center;align-items:center;margin:10px 0 14px;flex-wrap:wrap}
-    .language-bar label{font-weight:900;color:#374151;margin:0}
-    .language-bar select{width:auto;min-width:150px;padding:9px 12px;border-radius:999px;font-weight:900}
-
-  
-    /* ===== MENDIcar v6.0 I18N FULL EU/ES/CA ===== */
+    /* ===== MENDIcar v6.0.2 idioma seguro EU/ES/CA ===== */
     .language-bar{display:flex;gap:8px;justify-content:center;align-items:center;margin:10px 0 14px;flex-wrap:wrap}
     .language-bar label{font-weight:900;color:#374151;margin:0}
     .language-bar select{width:auto;min-width:150px;padding:9px 12px;border-radius:999px;font-weight:900}
@@ -837,9 +831,9 @@ function showHomeDashboard(){
   document.getElementById('vehicleDetail').innerHTML = `
     <div class="main-dashboard">
       <div class="dashboard-user">
-        Bienvenido,<br>
+        ${LT('welcome')}<br>
         <strong>${escapeHtml(currentUser ? currentUser.name : '')}</strong><br>
-        Rol: <strong>${escapeHtml(currentUser ? currentUser.role : '')}</strong>
+        ${LT('role')} <strong>${escapeHtml(currentUser ? (currentUser.role==='profesor' ? LT('teacher') : currentUser.role==='alumno' ? LT('student') : currentUser.role) : '')}</strong>
       </div>
       ${languageSelectorHtml()}
 
@@ -4849,6 +4843,99 @@ function exportarInformeCSV(){
 
 
 
+// ===== MENDIcar v6.0.2 idioma seguro EU/ES/CA =====
+// Euskera por defecto. No usa observador global y no toca eventos/login.
+let APP_LANG = localStorage.getItem('MENDICAR_LANG') || 'EU';
+
+const LANG = {
+  EU:{language:"Hizkuntza",subtitle:"Automozioaren kudeaketa digitala",user:"Erabiltzailea / posta",pass:"Pasahitza",enter:"Sartu",made:"Aplikazioa sortzailea:",welcome:"Ongi etorri,",role:"Rola:",teacher:"irakaslea",student:"ikaslea",main:"Menu nagusia",all:"Ikusi guztiak",centerCars:"Ikastetxeko ibilgailuak",works:"Lanak",worksSub:"Lanak sortu eta aldatu",calendar:"Egutegia",calendarSub:"Hileko plangintza",history:"Historia",historySub:"Bilatu autoa, QR edo matrikula",reports:"Txostenak",reportsSub:"Ikaslea, lana eta data",settings:"Ezarpenak",settingsSub:"Hizkuntza eta konfigurazioa",logout:"Saioa itxi",help:"Laguntza",back:"Itzuli menu nagusira"},
+  ES:{language:"Idioma",subtitle:"Gestión digital de automoción",user:"Usuario / correo",pass:"Contraseña",enter:"Entrar",made:"Aplicación realizada por",welcome:"Bienvenido,",role:"Rol:",teacher:"profesor",student:"alumno",main:"Panel principal",all:"Ver todos",centerCars:"Vehículos del centro",works:"Trabajos",worksSub:"Crear y modificar tareas",calendar:"Calendario",calendarSub:"Planificación mensual",history:"Historial",historySub:"Buscar coche, QR o matrícula",reports:"Informes",reportsSub:"Alumno, tarea y fecha",settings:"Ajustes",settingsSub:"Idioma y configuración",logout:"Cerrar sesión",help:"Ayuda",back:"Volver al menú principal"},
+  CA:{language:"Idioma",subtitle:"Gestió digital d'automoció",user:"Usuari / correu",pass:"Contrasenya",enter:"Entrar",made:"Aplicació realitzada per",welcome:"Benvingut/da,",role:"Rol:",teacher:"professor",student:"alumne",main:"Panell principal",all:"Veure-ho tot",centerCars:"Vehicles del centre",works:"Treballs",worksSub:"Crear i modificar tasques",calendar:"Calendari",calendarSub:"Planificació mensual",history:"Historial",historySub:"Cercar vehicle, QR o matrícula",reports:"Informes",reportsSub:"Alumne, tasca i data",settings:"Configuració",settingsSub:"Idioma i configuració",logout:"Tancar sessió",help:"Ajuda",back:"Tornar al menú principal"}
+};
+function LT(k){return (LANG[APP_LANG]&&LANG[APP_LANG][k])||LANG.EU[k]||k;}
+
+function setLanguage(lang){
+  APP_LANG=['EU','ES','CA'].includes(lang)?lang:'EU';
+  localStorage.setItem('MENDICAR_LANG',APP_LANG);
+  translateSafe();
+}
+function languageSelectorHtml(){
+  return `<div class="language-bar no-print"><label>${LT('language')}</label><select id="appLangSelect" onchange="setLanguage(this.value)"><option value="EU" ${APP_LANG==='EU'?'selected':''}>EU · Euskera</option><option value="ES" ${APP_LANG==='ES'?'selected':''}>ES · Castellano</option><option value="CA" ${APP_LANG==='CA'?'selected':''}>CA · Català</option></select></div>`;
+}
+
+const SAFE_TRANSLATIONS=[
+  ['Gestión digital de automoción','subtitle'],['Automozioaren kudeaketa digitala','subtitle'],["Gestió digital d'automoció",'subtitle'],
+  ['Usuario / correo','user'],['Erabiltzailea / posta','user'],['Usuari / correu','user'],
+  ['Contraseña','pass'],['Pasahitza','pass'],['Contrasenya','pass'],
+  ['Entrar','enter'],['Sartu','enter'],
+  ['Aplicación realizada por','made'],['Aplikazioa sortzailea:','made'],['Aplicació realitzada per','made'],
+  ['Bienvenido,','welcome'],['Ongi etorri,','welcome'],['Benvingut/da,','welcome'],
+  ['Rol:','role'],['Rola:','role'],
+  ['profesor','teacher'],['irakaslea','teacher'],['professor','teacher'],
+  ['alumno','student'],['ikaslea','student'],['alumne','student'],
+  ['Panel principal','main'],['Menu nagusia','main'],['Panell principal','main'],
+  ['Ver todos','all'],['Ikusi guztiak','all'],['Veure-ho tot','all'],
+  ['Vehículos del centro','centerCars'],['Ikastetxeko ibilgailuak','centerCars'],['Vehicles del centre','centerCars'],
+  ['Trabajos','works'],['Lanak','works'],['Treballs','works'],
+  ['Crear y modificar tareas','worksSub'],['Lanak sortu eta aldatu','worksSub'],['Crear i modificar tasques','worksSub'],
+  ['Calendario','calendar'],['Egutegia','calendar'],['Calendari','calendar'],
+  ['Planificación mensual','calendarSub'],['Hileko plangintza','calendarSub'],['Planificació mensual','calendarSub'],
+  ['Historial','history'],['Historia','history'],
+  ['Buscar coche, QR o matrícula','historySub'],['Bilatu autoa, QR edo matrikula','historySub'],['Cercar vehicle, QR o matrícula','historySub'],
+  ['Informes','reports'],['Txostenak','reports'],
+  ['Alumno, tarea y fecha','reportsSub'],['Ikaslea, lana eta data','reportsSub'],['Alumne, tasca i data','reportsSub'],
+  ['Ajustes','settings'],['Ezarpenak','settings'],['Configuració','settings'],
+  ['Idioma y configuración','settingsSub'],['Hizkuntza eta konfigurazioa','settingsSub'],['Idioma i configuració','settingsSub'],
+  ['Cerrar sesión','logout'],['Saioa itxi','logout'],['Tancar sessió','logout'],
+  ['Ayuda','help'],['Laguntza','help'],['Ajuda','help'],
+  ['Volver al menú principal','back'],['Itzuli menu nagusira','back'],['Tornar al menú principal','back']
+];
+
+function translateSafe(){
+  const root=document.getElementById('appView')||document.body;
+  if(!root)return;
+
+  const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,null);
+  const nodes=[];
+  while(walker.nextNode())nodes.push(walker.currentNode);
+
+  nodes.forEach(n=>{
+    let s=n.nodeValue.trim();
+    if(!s)return;
+    SAFE_TRANSLATIONS.forEach(([from,key])=>{
+      if(s===from || s==='🚪 '+from || s==='? '+from){
+        let v=LT(key);
+        if(s.startsWith('🚪'))v='🚪 '+v;
+        if(s.startsWith('?'))v='? '+v;
+        n.nodeValue=n.nodeValue.replace(s,v);
+      }
+    });
+  });
+
+  root.querySelectorAll('input[placeholder],textarea[placeholder],button,option').forEach(el=>{
+    let s=(el.placeholder||el.textContent||'').trim();
+    SAFE_TRANSLATIONS.forEach(([from,key])=>{
+      if(s===from){
+        if(el.placeholder)el.placeholder=LT(key);
+        else el.textContent=LT(key);
+      }
+    });
+  });
+
+  const sel=document.getElementById('appLangSelect');
+  if(sel)sel.value=APP_LANG;
+}
+function patchSafeLang(fnName){
+  if(typeof window[fnName]!=='function'||window['__safeLang_'+fnName])return;
+  window['__safeLang_'+fnName]=window[fnName];
+  window[fnName]=function(...args){
+    const res=window['__safeLang_'+fnName].apply(this,args);
+    setTimeout(translateSafe,80);
+    return res;
+  };
+}
+['showLogin','showHomeDashboard','showWorksPanel','showCalendarPanel','showHistoryPanel','showReportsPanel','showSettingsPanel','renderVehicleDetail','renderWorksMixed','renderInformeTrabajos'].forEach(patchSafeLang);
+document.addEventListener('DOMContentLoaded',()=>setTimeout(translateSafe,150));
 
 </script>
 
