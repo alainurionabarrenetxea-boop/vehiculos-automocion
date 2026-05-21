@@ -5002,6 +5002,22 @@ function patchI18N(fn){
   };
 }
 ['showHomeDashboard','showWorksPanel','showCalendarPanel','showHistoryPanel','showReportsPanel','showSettingsPanel','renderVehicleDetail','renderWorksMixed','renderWorks','renderInformeTrabajos'].forEach(patchI18N);
+
+// v5.6.1 extra textos
+const EXTRA_I18N = {
+ "Cerrar sesión":{EU:"Saioa itxi",ES:"Cerrar sesión",CA:"Tancar sessió"},
+ "Aplicación realizada por":{EU:"Aplikazioa sortzailea:",ES:"Aplicación realizada por",CA:"Aplicació realitzada per"},
+ "Entrar":{EU:"Sartu",ES:"Entrar",CA:"Entrar"},
+ "Gestión digital de automoción":{EU:"Automozioaren kudeaketa digitala",ES:"Gestión digital de automoción",CA:"Gestió digital d'automoció"},
+ "Usuario / correo":{EU:"Erabiltzailea / posta",ES:"Usuario / correo",CA:"Usuari / correu"},
+ "Contraseña":{EU:"Pasahitza",ES:"Contraseña",CA:"Contrasenya"}
+};
+Object.keys(EXTRA_I18N).forEach(k=>{
+ I18N_ES[k]=EXTRA_I18N[k].ES;
+ I18N_EU[k]=EXTRA_I18N[k].EU;
+ I18N_CA[k]=EXTRA_I18N[k].CA;
+});
+
 document.addEventListener('DOMContentLoaded',()=>setTimeout(applyTranslations,150));
 
 </script>
