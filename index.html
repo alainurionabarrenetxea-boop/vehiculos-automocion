@@ -1783,7 +1783,8 @@ function showWorksPanel(){
               <option value="2AU3E">2AU3E</option>
               <option value="CARROCERIA">CARROCERIA</option>
               <option value="MEKANIKA">MEKANIKA</option>
-              <option value="LIBRE">LIBRE - solo vehículos DENAK</option>
+              <option value="DENAK">DENAK</option>
+              <option value="LIBRE">LIBRE / comunes</option>
             </select>
 
             <button id="btnLoadCenterVehicles" type="button" class="mini-load-btn" onclick="cargarVehiculosCentroParaGrupo()">
@@ -1796,7 +1797,7 @@ function showWorksPanel(){
               <option value="">Primero elige grupo y pulsa “Cargar coches del grupo”</option>
             </select>
             <div class="compact-note">
-              Primero elige grupo. Después pulsa el botón para cargar solo los vehículos asignados a ese grupo en AUTOAK / Egokitua.
+              Primero elige grupo. Después pulsa el botón para cargar exclusivamente exclusivamente los vehículos asignados a ese grupo en AUTOAK / Egokitua.
               No ocupa QR_HARRERA: usa el QR fijo del coche del centro.
             </div>
           </div>
@@ -3985,8 +3986,11 @@ function cargarVehiculosCentroParaGrupo(){
       const grupos = raw.split(/[;,/|]+/).map(x=>x.trim()).filter(Boolean);
       const esComun = grupos.includes('DENAK') || grupos.includes('TODOS') || grupos.includes('GUZTIAK');
 
-      if(selectedGroup === 'LIBRE') return esComun;
-      return esComun || grupos.includes(selectedGroup);
+      // IMPORTANTE v5.4.7:
+      // Si se elige un grupo concreto, se muestran SOLO los coches de ese grupo.
+      // Los DENAK solo aparecen si eliges DENAK o LIBRE.
+      if(selectedGroup === 'LIBRE' || selectedGroup === 'DENAK') return esComun;
+      return grupos.includes(selectedGroup);
     });
 
     sel.innerHTML = filtrados.length ? filtrados.map(v=>`
@@ -4144,8 +4148,11 @@ function cargarVehiculosCentroParaGrupo(){
       const grupos = raw.split(/[;,/|]+/).map(x=>x.trim()).filter(Boolean);
       const esComun = grupos.includes('DENAK') || grupos.includes('TODOS') || grupos.includes('GUZTIAK');
 
-      if(selectedGroup === 'LIBRE') return esComun;
-      return esComun || grupos.includes(selectedGroup);
+      // IMPORTANTE v5.4.7:
+      // Si se elige un grupo concreto, se muestran SOLO los coches de ese grupo.
+      // Los DENAK solo aparecen si eliges DENAK o LIBRE.
+      if(selectedGroup === 'LIBRE' || selectedGroup === 'DENAK') return esComun;
+      return grupos.includes(selectedGroup);
     });
 
     sel.innerHTML = filtrados.length ? filtrados.map(v=>`
@@ -4163,7 +4170,7 @@ function cargarVehiculosCentroParaGrupo(){
     }
 
     if(filtrados.length){
-      setCenterVehicleLoading(false, 'Cargados '+filtrados.length+' vehículos para '+selectedGroup+'.');
+      setCenterVehicleLoading(false, 'Cargados '+filtrados.length+' vehículos exclusivos de '+selectedGroup+'.');
     }else{
       const gruposDetectados = [...new Set(rows.map(v=>String(v.taldeaEsleitua||'').trim()).filter(Boolean))].slice(0,30);
       setCenterVehicleLoading(false, 'No hay vehículos para '+selectedGroup+'.');
