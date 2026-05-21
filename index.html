@@ -5282,6 +5282,109 @@ function translateWorkDetailExtra(root){
  }
 }
 setInterval(()=>translateWorkDetailExtra(document.body),1200);
+
+// ===== v6.0.9 estados desplegable + informes sin login/consultas =====
+(function(){
+  const STATUS_MAP_EU = {
+    'pendiente':'egiteke',
+    'en curso':'martxan',
+    'terminado':'amaituta',
+    'cancelado':'bertan behera',
+    'egiteke':'egiteke',
+    'martxan':'martxan',
+    'amaituta':'amaituta',
+    'bertan behera':'bertan behera'
+  };
+
+  function fixStatusSelectsAndCards(root){
+    root = root || document.body;
+
+    root.querySelectorAll('select').forEach(sel=>{
+      Array.from(sel.options || []).forEach(opt=>{
+        const k = String(opt.textContent || opt.value || '').trim().toLowerCase();
+        if(STATUS_MAP_EU[k]) opt.textContent = STATUS_MAP_EU[k];
+      });
+    });
+
+    const reps = [
+      [/Pulsa para tocar\s*para desplegar/g, 'Sakatu zabaltzeko'],
+      [/Pulsa para abrir/g, 'Sakatu zabaltzeko'],
+      [/Tocar para abrir\/cerrar/g, 'Sakatu ireki\/ixteko'],
+      [/Trabajos \/ Lanak/g, 'Lanak'],
+      [/Trabajos/g, 'Lanak'],
+      [/Guardar checklist/g, 'Checklist gorde'],
+      [/pendiente/g, 'egiteke'],
+      [/en curso/g, 'martxan'],
+      [/terminado/g, 'amaituta'],
+      [/cancelado/g, 'bertan behera']
+    ];
+
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+    const nodes = [];
+    while(walker.nextNode()) nodes.push(walker.currentNode);
+    nodes.forEach(n=>{
+      let t = n.nodeValue, old = t;
+      reps.forEach(([re,to])=>{ t = t.replace(re,to); });
+      if(t !== old) n.nodeValue = t;
+    });
+  }
+
+  window.fixStatusSelectsAndCards = fixStatusSelectsAndCards;
+  setInterval(()=>fixStatusSelectsAndCards(document.body), 900);
+
+  ['renderWorksMixed','renderWorks','showWorksPanel','renderVehicleDetail'].forEach(fn=>{
+    if(typeof window[fn] === 'function' && !window['__v609_'+fn]){
+      window['__v609_'+fn] = window[fn];
+      window[fn] = function(...args){
+        const res = window['__v609_'+fn].apply(this,args);
+        setTimeout(()=>fixStatusSelectsAndCards(document.body),100);
+        setTimeout(()=>fixStatusSelectsAndCards(document.body),500);
+        return res;
+      };
+    }
+  });
+})();
+
+// ===== v6.0.9 criterio de informes =====
+// NO incluir LOGIN ni consultas simples. SÍ incluir cambios/actividad real sobre vehículo o trabajo.
+function isReportableAction(row){
+  const txt = JSON.stringify(row || {}).toLowerCase();
+  if(!txt) return false;
+
+  const excluded = [
+    'login',
+    'entrada en la aplicación',
+    'consulta',
+    'calendario',
+    'historial',
+    'informe',
+    'informes',
+    'trabajos activos'
+  ];
+
+  const reportable = [
+    'guardado',
+    'creado',
+    'creación',
+    'cerrado',
+    'terminado',
+    'cancelado',
+    'bloqueado',
+    'liberado',
+    'evidencia',
+    'observación',
+    'observaciones',
+    'checklist',
+    'recepción',
+    'cambio de estado',
+    'tarea realizada',
+    'lana'
+  ];
+
+  const hasReportable = reportable.some(x => txt.includes(x));
+  if(!hasReportable && excluded.some(x => txt.includes(x))) return false;
+  return hasReportable;
+}
 </script>
 
 <div id="loadingOverlay" class="loading-overlay hidden">
