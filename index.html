@@ -681,6 +681,38 @@ box-shadow:0 8px 18px rgba(220,38,38,.15);
     .center-work-body{padding:16px;border-top:1px solid #e5e7eb}
     .type-chip{display:inline-block;padding:6px 10px;border-radius:999px;background:#dcfce7;color:#166534;font-size:12px;font-weight:950;margin-bottom:8px}
 
+  
+    /* ===== MENDIcar v5.4.6 botón cargar coches grupo ===== */
+    .mini-load-btn{
+      width:auto !important;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      padding:10px 14px !important;
+      border-radius:999px !important;
+      font-size:15px !important;
+      font-weight:950 !important;
+      margin:10px 0 12px 0 !important;
+    }
+    .mini-spinner{
+      display:inline-block;
+      width:18px;
+      height:18px;
+      border:3px solid rgba(37,99,235,.22);
+      border-top-color:#2563eb;
+      border-radius:50%;
+      animation:mendiSpin .8s linear infinite;
+      vertical-align:middle;
+    }
+    @keyframes mendiSpin{to{transform:rotate(360deg)}}
+    .load-status-line{
+      margin:6px 0 10px 0;
+      font-size:14px;
+      font-weight:800;
+      color:#6b7280;
+    }
+
   </style>
 </head>
 <body>
@@ -1741,7 +1773,7 @@ function showWorksPanel(){
 
           <div id="centerVehicleBlock" class="hidden" style="grid-column:1/-1;">
             <label><strong>Grupo asignado</strong></label>
-            <select id="workGrupoAsignado" onchange="populateCenterVehicleOptions()">
+            <select id="workGrupoAsignado" onchange="resetCenterVehicleSelector()">
               <option value="1AU3">1AU3</option>
               <option value="1AU3D">1AU3D</option>
               <option value="1AU3E">1AU3E</option>
@@ -1754,10 +1786,17 @@ function showWorksPanel(){
               <option value="LIBRE">LIBRE - solo vehículos DENAK</option>
             </select>
 
+            <button id="btnLoadCenterVehicles" type="button" class="mini-load-btn" onclick="cargarVehiculosCentroParaGrupo()">
+              Cargar coches del grupo
+            </button>
+            <div id="centerVehicleLoadStatus" class="load-status-line"></div>
+
             <label style="margin-top:14px;"><strong>Vehículo del centro</strong></label>
-            <select id="workCentroVehicle"></select>
+            <select id="workCentroVehicle">
+              <option value="">Primero elige grupo y pulsa “Cargar coches del grupo”</option>
+            </select>
             <div class="compact-note">
-              Primero elige grupo. Después se cargan aquí solo los vehículos asignados a ese grupo en la columna I/Egokitua de AUTOAK.
+              Primero elige grupo. Después pulsa el botón para cargar solo los vehículos asignados a ese grupo en AUTOAK / Egokitua.
               No ocupa QR_HARRERA: usa el QR fijo del coche del centro.
             </div>
           </div>
@@ -1795,7 +1834,7 @@ function showWorksPanel(){
     </div>
   `;
 
-  populateCenterVehicleOptions();
+  resetCenterVehicleSelector();
   toggleWorkVehicleType();
   loadWorks();
 }
@@ -3985,6 +4024,166 @@ function populateCenterVehicleOptions(){
 function getSelectedCenterVehicle(){
   const id = document.getElementById('workCentroVehicle')?.value || '';
   const cache = window.CENTER_AUTOAK_CACHE || vehicles || [];
+  return cache.find(v=>String(v.id)===String(id)) || null;
+}
+
+function syncSelectedCenterVehicle(){
+  const v = getSelectedCenterVehicle();
+  const autoa = document.getElementById('workAutoa');
+  const matricula = document.getElementById('workMatricula');
+
+  if(!v){
+    if(autoa){ autoa.value=''; autoa.disabled=true; }
+    if(matricula){ matricula.value=''; matricula.disabled=true; }
+    return;
+  }
+
+  if(autoa){
+    autoa.value = v.autoa || '';
+    autoa.disabled = true;
+  }
+  if(matricula){
+    matricula.value = v.id ? 'ID-'+v.id : '';
+    matricula.disabled = true;
+  }
+}
+
+
+
+// ===== MENDIcar v5.4.6 carga manual de coches de centro =====
+function resetCenterVehicleSelector(){
+  const sel = document.getElementById('workCentroVehicle');
+  if(sel){
+    sel.innerHTML = '<option value="">Pulsa “Cargar coches del grupo”</option>';
+  }
+  const status = document.getElementById('centerVehicleLoadStatus');
+  if(status) status.innerHTML = '';
+  const note = document.getElementById('centerVehicleDebug');
+  if(note) note.innerHTML = '';
+  window.CENTER_AUTOAK_CACHE = [];
+  syncSelectedCenterVehicle();
+}
+
+function setCenterVehicleLoading(isLoading, text){
+  const btn = document.getElementById('btnLoadCenterVehicles');
+  const status = document.getElementById('centerVehicleLoadStatus');
+  if(btn){
+    btn.disabled = !!isLoading;
+    btn.innerHTML = isLoading ? '<span class="mini-spinner"></span> Cargando...' : 'Cargar coches del grupo';
+  }
+  if(status){
+    status.innerHTML = isLoading ? '<span class="mini-spinner"></span> '+escapeHtml(text || 'Cargando vehículos...') : (text ? escapeHtml(text) : '');
+  }
+}
+
+function normalizeGroupValue(v){
+  return String(v || '').trim().toUpperCase();
+}
+
+function getAutoakGroupFromRow(r){
+  return value(getAnyField(r, [
+    'Egokitua','EGOKITUA','egokitua',
+    'TALDEA_ESLEITUA','TALDEA ASIGNADA','GRUPO_ASIGNADO',
+    'Taldea esleitua'
+  ])) || 'DENAK';
+}
+
+function mapAutoakRowToVehicle(r){
+  return {
+    id: value(getAnyField(r,['ID','Id','id'])),
+    qr: value(getAnyField(r,['QR','Qr','qr'])),
+    autoa: value(getAnyField(r,['Autoa','AUTOA','autoa','VEHICULO','Vehículo'])),
+    tailerra: value(getAnyField(r,['TAILERRA','Taller','TALLER'])),
+    color: value(getAnyField(r,['Kolorea','Color','COLOR'])),
+    vin: value(getAnyField(r,['VIN','vin'])),
+    taldeaEsleitua: getAutoakGroupFromRow(r)
+  };
+}
+
+function cargarVehiculosCentroParaGrupo(){
+  const sel = document.getElementById('workCentroVehicle');
+  if(!sel) return;
+
+  const groupSel = document.getElementById('workGrupoAsignado');
+  const selectedGroup = normalizeGroupValue(groupSel ? groupSel.value : '');
+
+  if(!selectedGroup){
+    showMessage('Primero selecciona un grupo.','error');
+    return;
+  }
+
+  sel.innerHTML = `<option value="">Cargando vehículos de ${escapeHtml(selectedGroup)}...</option>`;
+  setCenterVehicleLoading(true, 'Buscando en AUTOAK para '+selectedGroup+'...');
+  syncSelectedCenterVehicle();
+
+  let finished = false;
+  const timer = setTimeout(()=>{
+    if(finished) return;
+    finished = true;
+    setCenterVehicleLoading(false, 'La carga está tardando demasiado. Revisa conexión o Apps Script.');
+    sel.innerHTML = `<option value="">No se pudo cargar. Pulsa de nuevo.</option>`;
+  }, 15000);
+
+  callSaveAPI({accion:'listarAutoak', cacheBust: Date.now()}, resp=>{
+    if(finished) return;
+    finished = true;
+    clearTimeout(timer);
+
+    if(!resp || !resp.ok){
+      sel.innerHTML = `<option value="">Error cargando AUTOAK</option>`;
+      setCenterVehicleLoading(false, 'Error cargando AUTOAK.');
+      showMessage('No se han podido cargar los coches del centro desde AUTOAK.','error');
+      return;
+    }
+
+    const rows = (resp.rows || []).map(mapAutoakRowToVehicle).filter(v=>v.id);
+    window.CENTER_AUTOAK_CACHE = rows;
+
+    const filtrados = rows.filter(v=>{
+      const raw = normalizeGroupValue(v.taldeaEsleitua || 'DENAK');
+      const grupos = raw.split(/[;,/|]+/).map(x=>x.trim()).filter(Boolean);
+      const esComun = grupos.includes('DENAK') || grupos.includes('TODOS') || grupos.includes('GUZTIAK');
+
+      if(selectedGroup === 'LIBRE') return esComun;
+      return esComun || grupos.includes(selectedGroup);
+    });
+
+    sel.innerHTML = filtrados.length ? filtrados.map(v=>`
+      <option value="${escapeAttr(v.id)}">
+        ID ${escapeHtml(v.id)} · ${escapeHtml(v.autoa || 'Vehículo')} ${v.color ? '· '+escapeHtml(v.color) : ''} · Grupo: ${escapeHtml(v.taldeaEsleitua || 'DENAK')}
+      </option>
+    `).join('') : `<option value="">No hay vehículos disponibles para el grupo ${escapeHtml(selectedGroup)}</option>`;
+
+    let note = document.getElementById('centerVehicleDebug');
+    if(!note && sel.parentElement){
+      note = document.createElement('div');
+      note.id = 'centerVehicleDebug';
+      note.className = 'compact-note';
+      sel.parentElement.appendChild(note);
+    }
+
+    if(filtrados.length){
+      setCenterVehicleLoading(false, 'Cargados '+filtrados.length+' vehículos para '+selectedGroup+'.');
+    }else{
+      const gruposDetectados = [...new Set(rows.map(v=>String(v.taldeaEsleitua||'').trim()).filter(Boolean))].slice(0,30);
+      setCenterVehicleLoading(false, 'No hay vehículos para '+selectedGroup+'.');
+      if(note){
+        note.innerHTML = `Grupos detectados en AUTOAK/Egokitua: ${escapeHtml(gruposDetectados.join(', ') || 'ninguno')}`;
+      }
+    }
+
+    syncSelectedCenterVehicle();
+  });
+}
+
+// Mantengo este nombre porque otras partes del código lo llaman.
+function populateCenterVehicleOptions(){
+  cargarVehiculosCentroParaGrupo();
+}
+
+function getSelectedCenterVehicle(){
+  const id = document.getElementById('workCentroVehicle')?.value || '';
+  const cache = window.CENTER_AUTOAK_CACHE || [];
   return cache.find(v=>String(v.id)===String(id)) || null;
 }
 
