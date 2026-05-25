@@ -1255,49 +1255,48 @@ function parseTrabajosJsonFront(row){
 }
 
 function renderChecklist(idRecepcion, trabajos){
-  if(!trabajos || !trabajos.length) trabajos = [];
-
-  const r = getRecepcionById(idRecepcion) || {};
-  const creador = String(getAnyField(r, ['USUARIO','ERABILTZAILEA','ULTIMO_USUARIO','SORTZAILEA']) || '').trim().toLowerCase();
-  const usuarioActual = String(currentUser && (currentUser.username || currentUser.usuario || currentUser.email || currentUser.name) || '').trim().toLowerCase();
-  const role = String(currentUser && currentUser.role || '').trim().toLowerCase();
-
-  // Permiso: creador del QR/trabajo, profesor o gestor. La validación real queda registrada en REGISTRO/LANAK.
-  const puedeEditar = role === 'profesor' || (creador && usuarioActual && creador === usuarioActual);
-
-  const lista = trabajos.length ? trabajos.map(t=>{
-    const estado=String(t.estado||'pendiente').toLowerCase();
-    const done=estado==='terminado' || estado==='amaituta';
-    return `
-      <div class="check-item ${done?'check-item-done':''}" data-taskrow="${escapeAttr(t.id)}">
-        <input type="checkbox" data-idrecepcion="${escapeAttr(idRecepcion)}" data-idtarea="${escapeAttr(t.id)}" ${done?'checked':''} onchange="toggleChecklistItem('${escapeJs(idRecepcion)}','${escapeJs(t.id)}',this.checked)">
-        <span class="task-text" id="taskText_${escapeAttr(idRecepcion)}_${escapeAttr(t.id)}">${escapeHtml(t.texto||'')}</span>
-        ${puedeEditar ? `<button type="button" class="mini-inline-btn" onclick="editarTareaRecepcion('${escapeJs(idRecepcion)}','${escapeJs(t.id)}')">✏️ Editatu</button>` : ''}
-        <select class="task-state-select" id="estado_${escapeAttr(idRecepcion)}_${escapeAttr(t.id)}" onchange="selectChecklistState('${escapeJs(idRecepcion)}','${escapeJs(t.id)}',this.value)">
-          <option value="pendiente" ${estado==='pendiente'||estado==='egiteke'?'selected':''}>egiteke</option>
-          <option value="en curso" ${estado==='en curso'||estado==='martxan'?'selected':''}>martxan</option>
-          <option value="terminado" ${estado==='terminado'||estado==='amaituta'?'selected':''}>amaituta</option>
-          <option value="cancelado" ${estado==='cancelado'||estado==='bertan behera'?'selected':''}>bertan behera</option>
-        </select>
-      </div>`;
-  }).join('') : "<div class='ficha-box'>Lanik gabe</div>";
+  const tareasHtml = (!trabajos || !trabajos.length)
+    ? "<div class='ficha-box'>Lanik ez dago definituta</div>"
+    : trabajos.map(t=>{
+        const estado=String(t.estado||'pendiente').toLowerCase();
+        const done=estado==='terminado' || estado==='amaituta';
+        return `
+          <div class="check-item ${done?'check-item-done':''}">
+            <input type="checkbox" data-idrecepcion="${escapeAttr(idRecepcion)}" data-idtarea="${escapeAttr(t.id)}" ${done?'checked':''} onchange="toggleChecklistItem('${escapeJs(idRecepcion)}','${escapeJs(t.id)}',this.checked)">
+            <span>${escapeHtml(t.texto||'')}</span>
+            <select class="task-state-select" id="estado_${escapeAttr(idRecepcion)}_${escapeAttr(t.id)}" onchange="selectChecklistState('${escapeJs(idRecepcion)}','${escapeJs(t.id)}',this.value)">
+              <option value="pendiente" ${estado==='pendiente'||estado==='egiteke'?'selected':''}>egiteke</option>
+              <option value="en curso" ${estado==='en curso'||estado==='martxan'?'selected':''}>martxan</option>
+              <option value="terminado" ${estado==='terminado'||estado==='amaituta'?'selected':''}>amaituta</option>
+              <option value="cancelado" ${estado==='cancelado'||estado==='bertan behera'?'selected':''}>bertan behera</option>
+            </select>
+          </div>`;
+      }).join('');
 
   return `
     <div class="checklist-card">
       <h3>Lanak</h3>
-      ${lista}
+      ${tareasHtml}
 
-      ${puedeEditar ? `
-        <div class="ficha-box" style="margin-top:14px;">
-          <strong>Matxura edo lan berria gehitu</strong>
-          <p class="muted" style="margin:6px 0 8px;">QR hau sortu duen irakasleak lan gehiago gehitu edo editatu ditzake, tailerrean matxura gehiago agertzen bada.</p>
-          <textarea id="newTask_${escapeAttr(idRecepcion)}" placeholder="Adibidez: balazta-likido ihesa aurkitu da, diagnostikoa egin..."></textarea>
-          <button type="button" onclick="gehituTareaRecepcion('${escapeJs(idRecepcion)}')">+ Lana gehitu</button>
+      <details class="add-task-box" style="margin:12px 0;padding:12px;border:1px solid #dbeafe;border-radius:14px;background:#f8fafc;">
+        <summary style="cursor:pointer;font-weight:950;color:#1d4ed8;">+ Lana gehitu</summary>
+        <div style="margin-top:10px;">
+          <label><strong>Lan berria</strong></label>
+          <textarea id="newTaskText_${escapeAttr(idRecepcion)}" placeholder="Adibidez: eskuineko errotula hondatuta, pastillak gastatuta..." style="min-height:80px;"></textarea>
+
+          <label><strong>Lehentasuna</strong></label>
+          <select id="newTaskPriority_${escapeAttr(idRecepcion)}">
+            <option value="normal">normala</option>
+            <option value="alta">handia</option>
+            <option value="urgente">premiazkoa</option>
+          </select>
+
+          <button type="button" onclick="agregarTareaRecepcionFront('${escapeJs(idRecepcion)}')">Lana gehitu</button>
         </div>
-      ` : ''}
+      </details>
 
       <label><strong>Oharrak</strong></label>
-      <textarea id="obsChecklist_${escapeAttr(idRecepcion)}" placeholder="Adibidez: erradiadorea desmuntatuta, materiala falta da..."></textarea>
+      <textarea id="obsChecklist_${escapeAttr(idRecepcion)}" placeholder="Adibidea: erradiadorea desmuntatuta, materiala falta da..."></textarea>
       <button type="button" onclick="guardarChecklistRecepcion('${escapeJs(idRecepcion)}')">Checklist gorde</button>
     </div>`;
 }
@@ -1912,7 +1911,7 @@ function showWorksPanel(){
             <div id="centerVehicleLoadStatus" class="load-status-line"></div>
 
             <label style="margin-top:14px;"><strong>Vehículo del centro</strong></label>
-            <select id="workCentroVehicle" onchange="syncSelectedCenterVehicle()">
+            <select id="workCentroVehicle">
               <option value="">Primero elige grupo y pulsa “Cargar coches del grupo”</option>
             </select>
             <div class="compact-note">
@@ -4120,8 +4119,6 @@ function cargarVehiculosCentroParaGrupo(){
       return grupos.includes(selectedGroup);
     });
 
-    window.CENTER_AUTOAK_FILTERED_CACHE = filtrados;
-
     sel.innerHTML = filtrados.length ? filtrados.map(v=>`
       <option value="${escapeAttr(v.id)}">
         ID ${escapeHtml(v.id)} · ${escapeHtml(v.autoa || 'Vehículo')} ${v.color ? '· '+escapeHtml(v.color) : ''} · Grupo: ${escapeHtml(v.taldeaEsleitua || 'DENAK')}
@@ -5905,221 +5902,59 @@ function mostrarAvisoQrLiberado(resp){
 
 
 
-// ===== v6.1.5 editar/ampliar trabajos de una recepción QR =====
-function normalizarIdTareaNueva(trabajos){
-  let max = 0;
-  (trabajos || []).forEach(t=>{
-    const m = String(t.id || '').match(/T(\d+)/i);
-    if(m) max = Math.max(max, parseInt(m[1],10));
-  });
-  return 'T' + (max + 1);
-}
+// ===== v6.1.5 añadir tarea desde trabajo activo =====
+function agregarTareaRecepcionFront(idRecepcion){
+  const txt = document.getElementById('newTaskText_'+idRecepcion)?.value || '';
+  const prioridad = document.getElementById('newTaskPriority_'+idRecepcion)?.value || 'normal';
+  const texto = txt.trim();
 
-function guardarTrabajosRecepcionSilencioso(idRecepcion, trabajos, motivo, cb){
-  const r = getRecepcionById(idRecepcion);
-  if(!r){ showMessage('Ez da harrera aurkitu.', 'error'); return; }
-
-  const obs = document.getElementById('obsChecklist_'+idRecepcion)?.value || motivo || '';
-  r.TRABAJOS_JSON = JSON.stringify(trabajos);
-
-  callSaveAPI({
-    accion:'actualizarTrabajosRecepcion',
-    idRecepcion:idRecepcion,
-    trabajosJson:JSON.stringify(trabajos),
-    usuario:currentUser ? currentUser.username : '',
-    rol:currentUser ? currentUser.role : '',
-    taldea:currentUser ? currentUser.taldea : '',
-    oharrak:obs || motivo || ''
-  }, resp=>{
-    if(!resp || !resp.ok){
-      showMessage('Errorea lanak gordetzean: '+(resp && resp.msg ? resp.msg : 'errore ezezaguna'), 'error');
-      return;
-    }
-    if(typeof cb === 'function') cb(resp);
-  });
-}
-
-function gehituTareaRecepcion(idRecepcion){
-  const r = getRecepcionById(idRecepcion);
-  if(!r){ showMessage('Ez da harrera aurkitu.', 'error'); return; }
-
-  const txtEl = document.getElementById('newTask_'+idRecepcion);
-  const texto = String(txtEl ? txtEl.value : '').trim();
   if(!texto){
-    showMessage('Idatzi gehitu nahi den lan edo matxura berria.', 'error');
+    showMessage('Idatzi lan berria.', 'error');
     return;
   }
 
-  const trabajos = parseTrabajosJsonFront(r);
-  trabajos.push({
-    id: normalizarIdTareaNueva(trabajos),
-    texto: texto,
-    estado: 'pendiente',
-    obs: '',
-    evidencias: [],
-    sortzailea: currentUser ? currentUser.username : '',
-    sortzeData: new Date().toISOString()
-  });
+  if(SAVE_LOCKS['addtask_'+idRecepcion]){
+    showMessage('Lan berria gordetzen ari da.', 'error');
+    return;
+  }
 
+  SAVE_LOCKS['addtask_'+idRecepcion] = true;
   showMessage('Lan berria gehitzen...', 'success');
 
-  guardarTrabajosRecepcionSilencioso(idRecepcion, trabajos, 'Lan berria gehituta: '+texto, resp=>{
-    showMessage('Lan berria gehitu da.', 'success');
-    if(txtEl) txtEl.value = '';
-    setTimeout(()=>{ const entry=getEntryParams(); if(entry.qrHarrera){loadReceptionQR(entry.qrHarrera)}else{showWorksPanel()} },500);
-  });
-}
+  callSaveAPI({
+    accion:'agregarTareaRecepcion',
+    idRecepcion:idRecepcion,
+    texto:texto,
+    prioridad:prioridad,
+    usuario:currentUser ? currentUser.username : '',
+    rol:currentUser ? currentUser.role : '',
+    taldea:currentUser ? currentUser.taldea : ''
+  }, resp=>{
+    SAVE_LOCKS['addtask_'+idRecepcion] = false;
 
-function editarTareaRecepcion(idRecepcion, idTarea){
-  const r = getRecepcionById(idRecepcion);
-  if(!r){ showMessage('Ez da harrera aurkitu.', 'error'); return; }
-
-  const trabajos = parseTrabajosJsonFront(r);
-  const t = trabajos.find(x=>String(x.id)===String(idTarea));
-  if(!t){ showMessage('Ez da lana aurkitu.', 'error'); return; }
-
-  const nuevo = prompt('Editatu lana:', t.texto || '');
-  if(nuevo === null) return;
-
-  const texto = String(nuevo || '').trim();
-  if(!texto){
-    showMessage('Lana ezin da hutsik utzi.', 'error');
-    return;
-  }
-
-  const anterior = t.texto || '';
-  t.texto = texto;
-  t.editatua = true;
-  t.azkenEditorea = currentUser ? currentUser.username : '';
-  t.azkenEdizioa = new Date().toISOString();
-
-  showMessage('Lana eguneratzen...', 'success');
-
-  guardarTrabajosRecepcionSilencioso(idRecepcion, trabajos, 'Lana editatuta: '+anterior+' → '+texto, resp=>{
-    showMessage('Lana eguneratu da.', 'success');
-    setTimeout(()=>{ const entry=getEntryParams(); if(entry.qrHarrera){loadReceptionQR(entry.qrHarrera)}else{showWorksPanel()} },500);
-  });
-}
-
-
-
-// ===== v6.1.6 fijar selección de vehículo de centro por ID real =====
-// Problema corregido: al elegir otro vehículo del desplegable, los campos Auto/Matrícula podían quedarse con el coche anterior.
-// Ahora el desplegable sincroniza siempre por el ID real de AUTOAK, no por posición ni por caché antigua.
-(function(){
-  function normId616(v){
-    return String(v || '').trim().replace(/^ID[-\s]*/i,'');
-  }
-
-  window.getSelectedCenterVehicle = function(){
-    const sel = document.getElementById('workCentroVehicle');
-    const id = normId616(sel ? sel.value : '');
-    if(!id) return null;
-
-    const caches = [
-      window.CENTER_AUTOAK_CACHE || [],
-      window.CENTER_AUTOAK_FILTERED_CACHE || [],
-      window.vehicles || [],
-      typeof vehicles !== 'undefined' ? vehicles : []
-    ];
-
-    for(const cache of caches){
-      const found = (cache || []).find(v => normId616(v.id || v.ID || v.Id) === id);
-      if(found){
-        return {
-          id: normId616(found.id || found.ID || found.Id),
-          qr: found.qr || found.QR || '',
-          autoa: found.autoa || found.Autoa || found.AUTOA || found['Vehículo'] || found.VEHICULO || '',
-          color: found.color || found.Kolorea || found.COLOR || '',
-          vin: found.vin || found.VIN || '',
-          taldeaEsleitua: found.taldeaEsleitua || found.Egokitua || found.EGOKITUA || ''
-        };
-      }
-    }
-
-    // Fallback: si no hay caché, al menos leer el texto del option seleccionado.
-    const opt = sel && sel.selectedOptions && sel.selectedOptions[0] ? sel.selectedOptions[0] : null;
-    if(opt){
-      const txt = String(opt.textContent || '');
-      const parts = txt.split('·').map(x=>x.trim());
-      const namePart = parts[1] || '';
-      return { id:id, qr:'', autoa:namePart, color:'', vin:'', taldeaEsleitua:'' };
-    }
-
-    return null;
-  };
-
-  window.syncSelectedCenterVehicle = function(){
-    const v = window.getSelectedCenterVehicle();
-    const autoa = document.getElementById('workAutoa');
-    const matricula = document.getElementById('workMatricula');
-
-    if(!v){
-      if(autoa){ autoa.value=''; autoa.disabled=true; }
-      if(matricula){ matricula.value=''; matricula.disabled=true; }
+    if(!resp || !resp.ok){
+      showMessage('Errorea lana gehitzean: '+(resp && resp.msg ? resp.msg : 'errore ezezaguna'), 'error');
       return;
     }
 
-    if(autoa){
-      autoa.value = v.autoa || '';
-      autoa.disabled = true;
+    const r = getRecepcionById(idRecepcion);
+    if(r && resp.trabajosJson){
+      r.TRABAJOS_JSON = resp.trabajosJson;
+      r.trabajos_json = resp.trabajosJson;
     }
-    if(matricula){
-      matricula.value = v.id ? 'ID-' + normId616(v.id) : '';
-      matricula.disabled = true;
-    }
-  };
 
-  function bindCenterSelect616(){
-    const sel = document.getElementById('workCentroVehicle');
-    if(sel && !sel.dataset.boundCenterSync616){
-      sel.dataset.boundCenterSync616 = '1';
-      sel.addEventListener('change', ()=>window.syncSelectedCenterVehicle());
-      sel.addEventListener('input', ()=>window.syncSelectedCenterVehicle());
-    }
-  }
+    showMessage('Lana gehituta.', 'success');
 
-  // Guardar solo los filtrados para evitar mezclas visuales con cachés antiguas.
-  if(typeof window.__cargarVehiculosCentroParaGrupo616 === 'undefined' && typeof cargarVehiculosCentroParaGrupo === 'function'){
-    window.__cargarVehiculosCentroParaGrupo616 = cargarVehiculosCentroParaGrupo;
-    cargarVehiculosCentroParaGrupo = function(...args){
-      const res = window.__cargarVehiculosCentroParaGrupo616.apply(this,args);
-      setTimeout(()=>{
-        bindCenterSelect616();
-        window.syncSelectedCenterVehicle();
-      },200);
-      setTimeout(()=>{
-        bindCenterSelect616();
-        window.syncSelectedCenterVehicle();
-      },800);
-      return res;
-    };
-  }
-
-  // Antes de crear el trabajo, forzar sincronización del coche actualmente seleccionado.
-  if(typeof window.__createWork616 === 'undefined' && typeof createWork === 'function'){
-    window.__createWork616 = createWork;
-    createWork = function(...args){
-      const tipo = document.getElementById('workVehicleType')?.value || 'EXTERNO';
-      if(tipo === 'CENTRO') window.syncSelectedCenterVehicle();
-      return window.__createWork616.apply(this,args);
-    };
-  }
-
-  ['showWorksPanel','toggleWorkVehicleType','resetCenterVehicleSelector'].forEach(fn=>{
-    if(typeof window[fn] === 'function' && !window['__v616_'+fn]){
-      window['__v616_'+fn] = window[fn];
-      window[fn] = function(...args){
-        const res = window['__v616_'+fn].apply(this,args);
-        setTimeout(bindCenterSelect616,100);
-        setTimeout(()=>window.syncSelectedCenterVehicle(),250);
-        return res;
-      };
-    }
+    setTimeout(()=>{
+      const entry = getEntryParams();
+      if(entry.qrHarrera){
+        loadReceptionQR(entry.qrHarrera);
+      }else{
+        showWorksPanel();
+      }
+    },600);
   });
-
-  setInterval(bindCenterSelect616, 1500);
-})();
+}
 
 </script>
 
