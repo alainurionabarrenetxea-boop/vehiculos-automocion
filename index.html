@@ -1038,7 +1038,7 @@ function showAllVehicles(){
 function renderVehicleDetail(vehicle){const isProfesor=currentUser&&currentUser.role==='profesor',isBlockedForStudent=!isProfesor&&vehicle.blokatuta==='Bai';document.getElementById('viewModeText').textContent=isProfesor?'Ficha de vehículo':'Ficha asignada por QR';document.getElementById('tableContainer').classList.add('hidden');document.getElementById('showAllBtn').classList.toggle('hidden',!isProfesor);document.getElementById('vehicleDetail').innerHTML=`${vehicle.blokatuta==='Bai'?`<div class="danger-banner">🚫 VEHÍCULO BLOQUEADO\n${vehicle.idBlokeoa?'Bloqueado por: '+escapeHtml(vehicle.idBlokeoa):''}${vehicle.blokeoData?'\nFecha: '+escapeHtml(vehicle.blokeoData):''}${vehicle.blokeoZergatia?'\nMotivo: '+escapeHtml(vehicle.blokeoZergatia):''}</div>`:''}<div class="vehicle-card"><h2 class="vehicle-title">${escapeHtml(vehicle.autoa||'Vehículo')}</h2><div class="vehicle-grid"><div class="field"><div class="field-label">ID</div><div class="field-value">${escapeHtml(vehicle.id)}</div></div><div class="field"><div class="field-label">Taller</div><div class="field-value">${escapeHtml(vehicle.tailerra)}</div></div><div class="field"><div class="field-label">Color</div><div class="field-value">${escapeHtml(vehicle.color)}</div></div><div class="field"><div class="field-label">VIN</div><div class="field-value">${escapeHtml(vehicle.vin)}</div></div><div class="field"><div class="field-label">Egokitua</div><div class="field-value">${escapeHtml(vehicle.egokitua)}</div></div><div class="field"><div class="field-label">Erabilpena</div><div class="field-value">${escapeHtml(vehicle.erabilpena)}</div></div></div><div class="edit-box"><div id="saveStatus" class="save-status">Lista para guardar.</div><div class="form-grid"><div><label><strong>Estado / Egoera</strong></label><textarea id="estadoInput" ${isBlockedForStudent?'disabled':''}>${escapeHtml(vehicle.estado)}</textarea></div><div><label><strong>Observaciones / Oharrak</strong></label><textarea id="observacionesInput" ${isBlockedForStudent?'disabled':''}>${escapeHtml(vehicle.observaciones||'')}</textarea></div><div><label><strong>Arrankatzen du</strong></label><select id="piztenDuInput" ${isBlockedForStudent?'disabled':''}><option value="Bai" ${vehicle.piztenDu==='Bai'?'selected':''}>Bai</option><option value="Ez" ${vehicle.piztenDu==='Ez'?'selected':''}>Ez</option></select></div><div><label><strong>Arrankatu behar du</strong></label><select id="piztuBeharDuInput" ${isBlockedForStudent?'disabled':''}><option value="Bai" ${vehicle.piztuBeharDu==='Bai'?'selected':''}>Bai</option><option value="Ez" ${vehicle.piztuBeharDu==='Ez'?'selected':''}>Ez</option></select></div>${isProfesor?`<div><label><strong>BLOKATUTA</strong></label><select id="blokatutaInput"><option value="Bai" ${vehicle.blokatuta==='Bai'?'selected':''}>Bai</option><option value="Ez" ${vehicle.blokatuta==='Ez'?'selected':''}>Ez</option></select></div><div><label><strong>BLOKEO ZERGATIA</strong></label><textarea id="blokeoZergatiaInput">${escapeHtml(vehicle.blokeoZergatia||'')}</textarea></div>`:''}</div>${!isBlockedForStudent?`<button type="button" onclick="saveVehicleChanges('${escapeJs(vehicle.id)}')">Guardar cambios</button>`:''}</div>${renderFichaTecnica(vehicle.fitxaTeknika)}${renderRTA(vehicle.rta)}</div>`}
 function setSaveStatus(t,err=false){const e=document.getElementById('saveStatus');if(!e)return;e.textContent=t;e.style.background=err?'#fef2f2':'#eff6ff';e.style.color=err?'#b91c1c':'#1d4ed8'}function saveVehicleChanges(id){const v=vehicles.find(x=>String(x.id)===String(id));if(!v||!currentUser)return;const payload={accion:'guardarVehiculo',usuario:currentUser.username,rol:currentUser.role,idVehiculo:v.id,autoa:v.autoa,estado:document.getElementById('estadoInput').value.trim(),observaciones:document.getElementById('observacionesInput').value.trim(),piztenDu:document.getElementById('piztenDuInput').value,piztuBeharDu:document.getElementById('piztuBeharDuInput').value,blokeado:currentUser.role==='profesor'&&document.getElementById('blokatutaInput')?document.getElementById('blokatutaInput').value:v.blokatuta,motivo:currentUser.role==='profesor'&&document.getElementById('blokeoZergatiaInput')?document.getElementById('blokeoZergatiaInput').value.trim():v.blokeoZergatia};callSaveAPI(payload,r=>{hideLoading();
     if(!r||!r.ok){showMessage('Error al guardar:\n'+(r&&r.msg?r.msg:'Error desconocido'),'error');setSaveStatus('Error al guardar.',true);return}showMessage('Cambios guardados correctamente.','success');loadVehiclesJSONP()})}
-async function normKeyValue(v){return String(v||'').trim().toLowerCase()}
+function normKeyValue(v){return String(v||'').trim().toLowerCase()}
 function getField(r,names){if(!r)return '';for(let i=0;i<names.length;i++){const n=names[i];if(r[n]!==undefined&&r[n]!==null&&String(r[n]).trim()!=='')return String(r[n]).trim()}return ''}
 
 function getLatestByQR(rows, qrId){
@@ -1255,28 +1255,50 @@ function parseTrabajosJsonFront(row){
 }
 
 function renderChecklist(idRecepcion, trabajos){
-  if(!trabajos || !trabajos.length) return "<div class='ficha-box'>Sin trabajos definidos</div>";
+  if(!trabajos || !trabajos.length) trabajos = [];
+
+  const r = getRecepcionById(idRecepcion) || {};
+  const creador = String(getAnyField(r, ['USUARIO','ERABILTZAILEA','ULTIMO_USUARIO','SORTZAILEA']) || '').trim().toLowerCase();
+  const usuarioActual = String(currentUser && (currentUser.username || currentUser.usuario || currentUser.email || currentUser.name) || '').trim().toLowerCase();
+  const role = String(currentUser && currentUser.role || '').trim().toLowerCase();
+
+  // Permiso: creador del QR/trabajo, profesor o gestor. La validación real queda registrada en REGISTRO/LANAK.
+  const puedeEditar = role === 'profesor' || (creador && usuarioActual && creador === usuarioActual);
+
+  const lista = trabajos.length ? trabajos.map(t=>{
+    const estado=String(t.estado||'pendiente').toLowerCase();
+    const done=estado==='terminado' || estado==='amaituta';
+    return `
+      <div class="check-item ${done?'check-item-done':''}" data-taskrow="${escapeAttr(t.id)}">
+        <input type="checkbox" data-idrecepcion="${escapeAttr(idRecepcion)}" data-idtarea="${escapeAttr(t.id)}" ${done?'checked':''} onchange="toggleChecklistItem('${escapeJs(idRecepcion)}','${escapeJs(t.id)}',this.checked)">
+        <span class="task-text" id="taskText_${escapeAttr(idRecepcion)}_${escapeAttr(t.id)}">${escapeHtml(t.texto||'')}</span>
+        ${puedeEditar ? `<button type="button" class="mini-inline-btn" onclick="editarTareaRecepcion('${escapeJs(idRecepcion)}','${escapeJs(t.id)}')">✏️ Editatu</button>` : ''}
+        <select class="task-state-select" id="estado_${escapeAttr(idRecepcion)}_${escapeAttr(t.id)}" onchange="selectChecklistState('${escapeJs(idRecepcion)}','${escapeJs(t.id)}',this.value)">
+          <option value="pendiente" ${estado==='pendiente'||estado==='egiteke'?'selected':''}>egiteke</option>
+          <option value="en curso" ${estado==='en curso'||estado==='martxan'?'selected':''}>martxan</option>
+          <option value="terminado" ${estado==='terminado'||estado==='amaituta'?'selected':''}>amaituta</option>
+          <option value="cancelado" ${estado==='cancelado'||estado==='bertan behera'?'selected':''}>bertan behera</option>
+        </select>
+      </div>`;
+  }).join('') : "<div class='ficha-box'>Lanik gabe</div>";
+
   return `
     <div class="checklist-card">
-      <h3>Trabajos / Lanak</h3>
-      ${trabajos.map(t=>{
-        const estado=String(t.estado||'pendiente').toLowerCase();
-        const done=estado==='terminado';
-        return `
-          <div class="check-item ${done?'check-item-done':''}">
-            <input type="checkbox" data-idrecepcion="${escapeAttr(idRecepcion)}" data-idtarea="${escapeAttr(t.id)}" ${done?'checked':''} onchange="toggleChecklistItem('${escapeJs(idRecepcion)}','${escapeJs(t.id)}',this.checked)">
-            <span>${escapeHtml(t.texto||'')}</span>
-            <select class="task-state-select" id="estado_${escapeAttr(idRecepcion)}_${escapeAttr(t.id)}" onchange="selectChecklistState('${escapeJs(idRecepcion)}','${escapeJs(t.id)}',this.value)">
-              <option value="pendiente" ${estado==='pendiente'?'selected':''}>pendiente</option>
-              <option value="en curso" ${estado==='en curso'?'selected':''}>en curso</option>
-              <option value="terminado" ${estado==='terminado'?'selected':''}>terminado</option>
-              <option value="cancelado" ${estado==='cancelado'?'selected':''}>cancelado</option>
-            </select>
-          </div>`;
-      }).join('')}
-      <label><strong>Observaciones / Oharrak</strong></label>
-      <textarea id="obsChecklist_${escapeAttr(idRecepcion)}" placeholder="Ejemplo: radiador desmontado, falta material..."></textarea>
-      <button type="button" onclick="guardarChecklistRecepcion('${escapeJs(idRecepcion)}')">Guardar checklist</button>
+      <h3>Lanak</h3>
+      ${lista}
+
+      ${puedeEditar ? `
+        <div class="ficha-box" style="margin-top:14px;">
+          <strong>Matxura edo lan berria gehitu</strong>
+          <p class="muted" style="margin:6px 0 8px;">QR hau sortu duen irakasleak lan gehiago gehitu edo editatu ditzake, tailerrean matxura gehiago agertzen bada.</p>
+          <textarea id="newTask_${escapeAttr(idRecepcion)}" placeholder="Adibidez: balazta-likido ihesa aurkitu da, diagnostikoa egin..."></textarea>
+          <button type="button" onclick="gehituTareaRecepcion('${escapeJs(idRecepcion)}')">+ Lana gehitu</button>
+        </div>
+      ` : ''}
+
+      <label><strong>Oharrak</strong></label>
+      <textarea id="obsChecklist_${escapeAttr(idRecepcion)}" placeholder="Adibidez: erradiadorea desmuntatuta, materiala falta da..."></textarea>
+      <button type="button" onclick="guardarChecklistRecepcion('${escapeJs(idRecepcion)}')">Checklist gorde</button>
     </div>`;
 }
 
@@ -1890,7 +1912,7 @@ function showWorksPanel(){
             <div id="centerVehicleLoadStatus" class="load-status-line"></div>
 
             <label style="margin-top:14px;"><strong>Vehículo del centro</strong></label>
-            <select id="workCentroVehicle">
+            <select id="workCentroVehicle" onchange="syncSelectedCenterVehicle()">
               <option value="">Primero elige grupo y pulsa “Cargar coches del grupo”</option>
             </select>
             <div class="compact-note">
@@ -4098,6 +4120,8 @@ function cargarVehiculosCentroParaGrupo(){
       return grupos.includes(selectedGroup);
     });
 
+    window.CENTER_AUTOAK_FILTERED_CACHE = filtrados;
+
     sel.innerHTML = filtrados.length ? filtrados.map(v=>`
       <option value="${escapeAttr(v.id)}">
         ID ${escapeHtml(v.id)} · ${escapeHtml(v.autoa || 'Vehículo')} ${v.color ? '· '+escapeHtml(v.color) : ''} · Grupo: ${escapeHtml(v.taldeaEsleitua || 'DENAK')}
@@ -5812,6 +5836,291 @@ setInterval(()=>translateWorkDetailExtra(document.body),1200);
   // Aplicación suave, pero no toca datos ni llamadas: solo textos DOM.
   setInterval(()=>fixDom612(document.body), 2000);
 })();
+
+
+// ===== v6.1.3 reparación recepción QR externo =====
+// Si un QR externo no tiene recepción activa en HARRERA, debe dejar rellenar matrícula/cliente aunque QR_HARRERA esté marcado como ocupado.
+function loadReceptionQR(qrId){
+  clearMessage();
+  registrarActividadQR('HARRERA', qrId, 'ENTRA_QR', 'Entrada al QR de recepción');
+
+  callSaveAPI({accion:'comprobarQrHarrera', qrRecepcion: qrId}, checkResp => {
+    if(checkResp && checkResp.ok && checkResp.ocupado){
+      showMessage(
+        'QR hau dagoeneko okupatuta dago. Harrera aktiboa badu, ezin da berriro sortu.',
+        'error'
+      );
+
+      renderOccupiedQrSummary(qrId, checkResp.recepcion || {}, checkResp.sugerido || '');
+
+      callSaveAPI({accion:'listarLanak'}, lResp => {
+        if(lResp && lResp.ok) WORK_ROWS_CACHE = lResp.rows || [];
+      });
+      return;
+    }
+
+    // No hay recepción activa: se permite crear la recepción aunque QR_HARRERA figure como ocupado por error.
+    callSaveAPI({accion:'listarQrHarrera'}, qrResp => {
+      if(!qrResp || !qrResp.ok){
+        showMessage('Errorea: ezin da QR zerrenda kargatu.', 'error');
+        return;
+      }
+
+      const rows = qrResp.rows || [];
+      const qr = rows.find(r => {
+        const v = r.QR_HARRERA || r.QR || r.qr || r['QR HARRERA'] || '';
+        return String(v).trim() === String(qrId).trim();
+      });
+
+      if(!qr){
+        showMessage('QR hau ez dago QR_HARRERA taulan: ' + qrId, 'error');
+        return;
+      }
+
+      const estado = String(qr.EGOERA || qr.ESTADO || qr.Estado || '').trim().toLowerCase();
+
+      // Si el estado no es libre pero no existe recepción activa, se enseña el formulario.
+      // Esto repara estados antiguos mal cerrados.
+      if(estado && estado !== 'libre'){
+        showMessage('Oharra: QR hau libre ez bezala agertzen da, baina ez du harrera aktiborik. Harrera berria sortzen utziko da.', 'success');
+      }
+
+      renderReceptionForm(qrId);
+    });
+  });
+}
+
+
+
+// ===== v6.1.4 aviso visual de QR liberado =====
+function mostrarAvisoQrLiberado(resp){
+  if(resp && resp.qrLiberado){
+    const qr = resp.qrLiberadoId ? (" " + resp.qrLiberadoId) : "";
+    showMessage("QR liberado" + qr + ". Ya se puede reutilizar en otra recepción.", "success");
+    setTimeout(()=>{ if(typeof showWorksPanel === "function") showWorksPanel(); }, 900);
+    return true;
+  }
+  return false;
+}
+
+
+
+// ===== v6.1.5 editar/ampliar trabajos de una recepción QR =====
+function normalizarIdTareaNueva(trabajos){
+  let max = 0;
+  (trabajos || []).forEach(t=>{
+    const m = String(t.id || '').match(/T(\d+)/i);
+    if(m) max = Math.max(max, parseInt(m[1],10));
+  });
+  return 'T' + (max + 1);
+}
+
+function guardarTrabajosRecepcionSilencioso(idRecepcion, trabajos, motivo, cb){
+  const r = getRecepcionById(idRecepcion);
+  if(!r){ showMessage('Ez da harrera aurkitu.', 'error'); return; }
+
+  const obs = document.getElementById('obsChecklist_'+idRecepcion)?.value || motivo || '';
+  r.TRABAJOS_JSON = JSON.stringify(trabajos);
+
+  callSaveAPI({
+    accion:'actualizarTrabajosRecepcion',
+    idRecepcion:idRecepcion,
+    trabajosJson:JSON.stringify(trabajos),
+    usuario:currentUser ? currentUser.username : '',
+    rol:currentUser ? currentUser.role : '',
+    taldea:currentUser ? currentUser.taldea : '',
+    oharrak:obs || motivo || ''
+  }, resp=>{
+    if(!resp || !resp.ok){
+      showMessage('Errorea lanak gordetzean: '+(resp && resp.msg ? resp.msg : 'errore ezezaguna'), 'error');
+      return;
+    }
+    if(typeof cb === 'function') cb(resp);
+  });
+}
+
+function gehituTareaRecepcion(idRecepcion){
+  const r = getRecepcionById(idRecepcion);
+  if(!r){ showMessage('Ez da harrera aurkitu.', 'error'); return; }
+
+  const txtEl = document.getElementById('newTask_'+idRecepcion);
+  const texto = String(txtEl ? txtEl.value : '').trim();
+  if(!texto){
+    showMessage('Idatzi gehitu nahi den lan edo matxura berria.', 'error');
+    return;
+  }
+
+  const trabajos = parseTrabajosJsonFront(r);
+  trabajos.push({
+    id: normalizarIdTareaNueva(trabajos),
+    texto: texto,
+    estado: 'pendiente',
+    obs: '',
+    evidencias: [],
+    sortzailea: currentUser ? currentUser.username : '',
+    sortzeData: new Date().toISOString()
+  });
+
+  showMessage('Lan berria gehitzen...', 'success');
+
+  guardarTrabajosRecepcionSilencioso(idRecepcion, trabajos, 'Lan berria gehituta: '+texto, resp=>{
+    showMessage('Lan berria gehitu da.', 'success');
+    if(txtEl) txtEl.value = '';
+    setTimeout(()=>{ const entry=getEntryParams(); if(entry.qrHarrera){loadReceptionQR(entry.qrHarrera)}else{showWorksPanel()} },500);
+  });
+}
+
+function editarTareaRecepcion(idRecepcion, idTarea){
+  const r = getRecepcionById(idRecepcion);
+  if(!r){ showMessage('Ez da harrera aurkitu.', 'error'); return; }
+
+  const trabajos = parseTrabajosJsonFront(r);
+  const t = trabajos.find(x=>String(x.id)===String(idTarea));
+  if(!t){ showMessage('Ez da lana aurkitu.', 'error'); return; }
+
+  const nuevo = prompt('Editatu lana:', t.texto || '');
+  if(nuevo === null) return;
+
+  const texto = String(nuevo || '').trim();
+  if(!texto){
+    showMessage('Lana ezin da hutsik utzi.', 'error');
+    return;
+  }
+
+  const anterior = t.texto || '';
+  t.texto = texto;
+  t.editatua = true;
+  t.azkenEditorea = currentUser ? currentUser.username : '';
+  t.azkenEdizioa = new Date().toISOString();
+
+  showMessage('Lana eguneratzen...', 'success');
+
+  guardarTrabajosRecepcionSilencioso(idRecepcion, trabajos, 'Lana editatuta: '+anterior+' → '+texto, resp=>{
+    showMessage('Lana eguneratu da.', 'success');
+    setTimeout(()=>{ const entry=getEntryParams(); if(entry.qrHarrera){loadReceptionQR(entry.qrHarrera)}else{showWorksPanel()} },500);
+  });
+}
+
+
+
+// ===== v6.1.6 fijar selección de vehículo de centro por ID real =====
+// Problema corregido: al elegir otro vehículo del desplegable, los campos Auto/Matrícula podían quedarse con el coche anterior.
+// Ahora el desplegable sincroniza siempre por el ID real de AUTOAK, no por posición ni por caché antigua.
+(function(){
+  function normId616(v){
+    return String(v || '').trim().replace(/^ID[-\s]*/i,'');
+  }
+
+  window.getSelectedCenterVehicle = function(){
+    const sel = document.getElementById('workCentroVehicle');
+    const id = normId616(sel ? sel.value : '');
+    if(!id) return null;
+
+    const caches = [
+      window.CENTER_AUTOAK_CACHE || [],
+      window.CENTER_AUTOAK_FILTERED_CACHE || [],
+      window.vehicles || [],
+      typeof vehicles !== 'undefined' ? vehicles : []
+    ];
+
+    for(const cache of caches){
+      const found = (cache || []).find(v => normId616(v.id || v.ID || v.Id) === id);
+      if(found){
+        return {
+          id: normId616(found.id || found.ID || found.Id),
+          qr: found.qr || found.QR || '',
+          autoa: found.autoa || found.Autoa || found.AUTOA || found['Vehículo'] || found.VEHICULO || '',
+          color: found.color || found.Kolorea || found.COLOR || '',
+          vin: found.vin || found.VIN || '',
+          taldeaEsleitua: found.taldeaEsleitua || found.Egokitua || found.EGOKITUA || ''
+        };
+      }
+    }
+
+    // Fallback: si no hay caché, al menos leer el texto del option seleccionado.
+    const opt = sel && sel.selectedOptions && sel.selectedOptions[0] ? sel.selectedOptions[0] : null;
+    if(opt){
+      const txt = String(opt.textContent || '');
+      const parts = txt.split('·').map(x=>x.trim());
+      const namePart = parts[1] || '';
+      return { id:id, qr:'', autoa:namePart, color:'', vin:'', taldeaEsleitua:'' };
+    }
+
+    return null;
+  };
+
+  window.syncSelectedCenterVehicle = function(){
+    const v = window.getSelectedCenterVehicle();
+    const autoa = document.getElementById('workAutoa');
+    const matricula = document.getElementById('workMatricula');
+
+    if(!v){
+      if(autoa){ autoa.value=''; autoa.disabled=true; }
+      if(matricula){ matricula.value=''; matricula.disabled=true; }
+      return;
+    }
+
+    if(autoa){
+      autoa.value = v.autoa || '';
+      autoa.disabled = true;
+    }
+    if(matricula){
+      matricula.value = v.id ? 'ID-' + normId616(v.id) : '';
+      matricula.disabled = true;
+    }
+  };
+
+  function bindCenterSelect616(){
+    const sel = document.getElementById('workCentroVehicle');
+    if(sel && !sel.dataset.boundCenterSync616){
+      sel.dataset.boundCenterSync616 = '1';
+      sel.addEventListener('change', ()=>window.syncSelectedCenterVehicle());
+      sel.addEventListener('input', ()=>window.syncSelectedCenterVehicle());
+    }
+  }
+
+  // Guardar solo los filtrados para evitar mezclas visuales con cachés antiguas.
+  if(typeof window.__cargarVehiculosCentroParaGrupo616 === 'undefined' && typeof cargarVehiculosCentroParaGrupo === 'function'){
+    window.__cargarVehiculosCentroParaGrupo616 = cargarVehiculosCentroParaGrupo;
+    cargarVehiculosCentroParaGrupo = function(...args){
+      const res = window.__cargarVehiculosCentroParaGrupo616.apply(this,args);
+      setTimeout(()=>{
+        bindCenterSelect616();
+        window.syncSelectedCenterVehicle();
+      },200);
+      setTimeout(()=>{
+        bindCenterSelect616();
+        window.syncSelectedCenterVehicle();
+      },800);
+      return res;
+    };
+  }
+
+  // Antes de crear el trabajo, forzar sincronización del coche actualmente seleccionado.
+  if(typeof window.__createWork616 === 'undefined' && typeof createWork === 'function'){
+    window.__createWork616 = createWork;
+    createWork = function(...args){
+      const tipo = document.getElementById('workVehicleType')?.value || 'EXTERNO';
+      if(tipo === 'CENTRO') window.syncSelectedCenterVehicle();
+      return window.__createWork616.apply(this,args);
+    };
+  }
+
+  ['showWorksPanel','toggleWorkVehicleType','resetCenterVehicleSelector'].forEach(fn=>{
+    if(typeof window[fn] === 'function' && !window['__v616_'+fn]){
+      window['__v616_'+fn] = window[fn];
+      window[fn] = function(...args){
+        const res = window['__v616_'+fn].apply(this,args);
+        setTimeout(bindCenterSelect616,100);
+        setTimeout(()=>window.syncSelectedCenterVehicle(),250);
+        return res;
+      };
+    }
+  });
+
+  setInterval(bindCenterSelect616, 1500);
+})();
+
 </script>
 
 <div id="loadingOverlay" class="loading-overlay hidden">
