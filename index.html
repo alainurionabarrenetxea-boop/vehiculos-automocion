@@ -811,7 +811,13 @@ if(localStorage.getItem('MENDICAR_I18N_VERSION') !== '6.0.5'){
 
 let USERS=[],vehicles=[],currentUser=null;const SHEET_ID="1sf2TS8gCKachrkz66S6E_zQuafVpu7F_AhSLdhi-W-g",SHEET_GID="0",SAVE_API_URL="https://script.google.com/macros/s/AKfycbwBYs2oADcw-Za-nLVbR0oF5L6ZHx2gYd1JS-0vjIW9IbD53P9j7U68R09-WGieM2Er2A/exec";
 function showLoginError(t){const e=document.getElementById('loginError');e.textContent=t;e.classList.remove('hidden')}function clearLoginError(){const e=document.getElementById('loginError');e.textContent='';e.classList.add('hidden')}function showMessage(t,type='info'){const e=document.getElementById('appMessage');e.textContent=t;e.className='msg '+type;e.classList.remove('hidden')}function clearMessage(){const e=document.getElementById('appMessage');e.textContent='';e.classList.add('hidden')}function value(v){return v==null?'':String(v).trim()}function normalizeYesNo(v){const x=String(v||'').trim().toLowerCase();if(['bai','si','sí','yes'].includes(x))return'Bai';if(['ez','no'].includes(x))return'Ez';return'Ez'}function normalizeRole(v){const x=String(v||'').trim().toLowerCase();if(x==='profesor'||x==='irakaslea')return'profesor';if(x==='alumno'||x==='ikaslea')return'alumno';return x}function isActive(v){const x=String(v||'').trim().toLowerCase();return ['bai','si','sí','yes','1','true'].includes(x)}function escapeHtml(v){return String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}function escapeAttr(v){return escapeHtml(v)}function escapeJs(v){return String(v??'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'\\"')}function getEntryParams(){const p=new URLSearchParams(location.search);return{id:p.get('id'),trabajo:p.get('trabajo'),profesor:p.get('profesor'),panel:p.get('panel'),qrHarrera:p.get('qrHarrera')||p.get('harrera')||p.get('qr')}}
-async function login(){clearLoginError();const username=document.getElementById('username').value.trim().toLowerCase(),password=document.getElementById('password').value.trim();try{const r=await fetch('https://opensheet.elk.sh/'+SHEET_ID+'/ERABILTZAILEAK');USERS=await r.json();const user=USERS.find(u=>String(u.usuario||'').trim().toLowerCase()===username&&String(u.password||'').trim()===password&&isActive(u.activo));if(!user){showLoginError('Usuario o contraseña incorrectos, o usuario inactivo.');return}const role=normalizeRole(user.rol),entry=getEntryParams();if(role==='alumno'&&!entry.id&&!entry.trabajo&&!entry.qrHarrera){showLoginError('Acceso solo permitido mediante QR del coche, ficha de trabajo o QR de recepción.');return}currentUser={username:String(user.usuario||'').trim(),role,name:String(user.nombre||user.usuario||'').trim(),taldea:String(user.taldea||'').trim()};document.getElementById('loginView').classList.add('hidden');document.getElementById('appView').classList.remove('hidden');document.getElementById('helpBtn').classList.remove('hidden');document.getElementById('welcomeText').textContent='Bienvenido, '+currentUser.name+' · Rol: '+currentUser.role;if(currentUser.role==='profesor'){document.getElementById('showWorksBtn').classList.remove('hidden');document.getElementById('showCalendarBtn').classList.remove('hidden');document.getElementById('showQrHistoryBtn').classList.remove('hidden');}registrarUsoApp('LOGIN','Entrada en la aplicación','','','');
+async function login(){clearLoginError();const username=document.getElementById('username').value.trim().toLowerCase(),password=document.getElementById('password').value.trim();try{const r=await fetch('https://opensheet.elk.sh/'+SHEET_ID+'/ERABILTZAILEAK');USERS=await r.json();const user=USERS.find(u=>String(u.usuario||'').trim().toLowerCase()===username&&String(u.password||'').trim()===password&&isActive(u.activo));if(!user){showLoginError('Usuario o contraseña incorrectos, o usuario inactivo.');return}const role=normalizeRole(user.rol),entry=getEntryParams();if(role==='alumno'&&!entry.id&&!entry.trabajo&&!entry.qrHarrera){showLoginError('Acceso solo permitido mediante QR del coche, ficha de trabajo o QR de recepción.');return}currentUser={
+  username:String(user.usuario||'').trim(),
+  role,
+  name:String(user.nombre||user.usuario||'').trim(),
+  taldea:String(user.taldea||'').trim(),
+  kanpokoKudeatzailea:isKanpokoKudeatzaileaUser(user)
+};document.getElementById('loginView').classList.add('hidden');document.getElementById('appView').classList.remove('hidden');document.getElementById('helpBtn').classList.remove('hidden');document.getElementById('welcomeText').textContent='Bienvenido, '+currentUser.name+' · Rol: '+currentUser.role;if(currentUser.role==='profesor'){document.getElementById('showWorksBtn').classList.remove('hidden');document.getElementById('showCalendarBtn').classList.remove('hidden');document.getElementById('showQrHistoryBtn').classList.remove('hidden');}registrarUsoApp('LOGIN','Entrada en la aplicación','','','');
 if(entry.qrHarrera || entry.id || entry.trabajo){
   loadVehiclesJSONP();
 }else{
@@ -825,6 +831,43 @@ function clearMainContent(){
   clearMessage();
   document.getElementById('tableContainer').classList.add('hidden');
   document.getElementById('vehicleDetail').innerHTML='';
+}
+
+
+// ===== v6.1.7 gestores de solicitudes de formulario =====
+function isKanpokoKudeatzaileaUser(user){
+  const raw = String(
+    user.KANPOKO_KUDEATZAILEA ||
+    user.kanpoko_kudeatzailea ||
+    user.Kanpoko_kudeatzailea ||
+    user.HARRERA_KUDEATZAILEA ||
+    ''
+  ).trim().toUpperCase();
+
+  if(['BAI','SI','SÍ','YES','TRUE','1'].includes(raw)) return true;
+
+  const email = String(user.usuario || user.email || '').trim().toLowerCase();
+  const name = String(user.nombre || '').trim().toLowerCase();
+
+  // Fallback mientras añadimos la columna a ERABILTZAILEAK.
+  return (
+    email.includes('alainurionabarrenetxea') ||
+    email.includes('ivan') ||
+    email.includes('i.van') ||
+    email.includes('rausta') ||
+    email.includes('barrena') ||
+    email.includes('jorge.bellanco') ||
+    name.includes('alain') ||
+    name.includes('iván') ||
+    name.includes('ivan') ||
+    name.includes('rausta') ||
+    name.includes('barrena') ||
+    name.includes('jorge bellanco')
+  );
+}
+
+function canManageFormRequests(){
+  return currentUser && currentUser.role === 'profesor' && currentUser.kanpokoKudeatzailea;
 }
 
 function showHomeDashboard(){
@@ -875,6 +918,14 @@ function showHomeDashboard(){
           <div class="dashboard-icon">🧾</div>
           <div class="dashboard-title">Informes</div>
           <div class="dashboard-subtitle">Alumno, tarea y fecha</div>
+        </button>
+        ` : ''}
+
+        ${canManageFormRequests() ? `
+        <button class="dashboard-tile tile-red" type="button" onclick="openDashboardSection('harrera_eskaerak')">
+          <div class="dashboard-icon">📝</div>
+          <div class="dashboard-title">Harrera eskaerak</div>
+          <div class="dashboard-subtitle">Formulario bidez jasotakoak</div>
         </button>
         ` : ''}
 
@@ -6024,6 +6075,137 @@ function agregarTareaRecepcionFront(idRecepcion){
   const txt = document.getElementById('newTaskText_'+idRecepcion)?.value || '';
   const prioridad = document.getElementById('newTaskPriority_'+idRecepcion)?.value || 'normal';
   agregarTareaRecepcionDirecta(idRecepcion, txt.trim(), prioridad);
+}
+
+
+
+// ===== v6.1.7 panel de solicitudes de Google Forms =====
+function showFormRequestsPanel(){
+  if(!canManageFormRequests()){
+    showMessage('Ez duzu harrera eskaerak kudeatzeko baimenik.', 'error');
+    return;
+  }
+
+  clearMessage();
+  document.getElementById('viewModeText').textContent = 'Harrera eskaerak';
+  document.getElementById('tableContainer').classList.add('hidden');
+  document.getElementById('showAllBtn').classList.remove('hidden');
+
+  document.getElementById('vehicleDetail').innerHTML = `
+    <div class="panel-actions-top">
+      <button type="button" class="section-back" onclick="showHomeDashboard()">← Itzuli menu nagusira</button>
+    </div>
+
+    <div class="vehicle-card">
+      <h2 class="vehicle-title">Formulario bidezko harrera eskaerak</h2>
+      <p style="color:#6b7280;margin-top:-8px;">
+        Hemen formulario bidez sartzen diren eskaerak agertzen dira. Lehentasuna aukeratzean aplikazioak lehen QR librea esleituko du.
+      </p>
+      <div id="formRequestsList">Kargatzen...</div>
+    </div>
+  `;
+
+  loadFormRequests();
+}
+
+function isFormRequestRow(r){
+  const j = String(getAnyField(r,['JATORRIA','ORIGEN']) || '').trim().toUpperCase();
+  const estado = String(getAnyField(r,['ESTADO_RECEPCION','ESTADO RECEPCION']) || '').trim().toLowerCase();
+  const qr = String(getAnyField(r,['QR_RECEPCION','QR RECEPCION']) || '').trim();
+  return j === 'FORM' && (!qr || estado === 'berria' || estado === 'nueva' || estado === 'pendiente');
+}
+
+function loadFormRequests(){
+  callSaveAPI({accion:'listarHarrera'}, resp=>{
+    if(!resp || !resp.ok){
+      document.getElementById('formRequestsList').innerHTML = "<div class='ficha-box'>Errorea eskaerak kargatzean.</div>";
+      return;
+    }
+
+    const rows = (resp.rows || []).filter(isFormRequestRow);
+    renderFormRequests(rows);
+  });
+}
+
+function renderFormRequests(rows){
+  const box = document.getElementById('formRequestsList');
+  if(!rows.length){
+    box.innerHTML = "<div class='ficha-box'>Ez dago formulariotik etorritako eskaera berririk.</div>";
+    return;
+  }
+
+  box.innerHTML = rows.map(r=>{
+    const id = getAnyField(r,['ID_RECEPCION','ID RECEPCION']);
+    const fecha = getAnyField(r,['FECHA','DATA']);
+    const hora = getAnyField(r,['HORA','ORDUA']);
+    const cliente = getAnyField(r,['CLIENTE','BEZEROA']);
+    const telefono = getAnyField(r,['TELEFONO','TELÉFONO']);
+    const email = getAnyField(r,['EMAIL','POSTA']);
+    const mat = getAnyField(r,['MATRICULA','MATRIKULA']);
+    const marca = getAnyField(r,['MARCA']);
+    const modelo = getAnyField(r,['MODELO']);
+    const trabajo = getAnyField(r,['TRABAJO_SOLICITADO','QUEJA_CLIENTE','LANA']);
+
+    return `
+      <div class="work-reception-card" style="padding:16px;">
+        <div class="work-head-main">
+          <div class="work-head-left">
+            <span class="work-head-qr">FORM</span>
+            <div class="work-head-title">${escapeHtml(marca + ' ' + modelo)} ${mat ? `<span style="color:#6b7280;">· ${escapeHtml(mat)}</span>` : ''}</div>
+            <div class="work-head-meta">
+              ${escapeHtml(cliente || '')}${telefono ? ' · ' + escapeHtml(telefono) : ''}<br>
+              ${email ? escapeHtml(email) + '<br>' : ''}
+              ${fecha || ''} ${hora || ''}
+            </div>
+          </div>
+          <span class="badge badge-pendiente">BERRIA</span>
+        </div>
+
+        <div class="ficha-box" style="margin-top:12px;">${escapeHtml(trabajo || 'Lan eskaerarik gabe')}</div>
+
+        <div class="form-grid" style="margin-top:12px;">
+          <div>
+            <label><strong>Lehentasuna</strong></label>
+            <select id="prio_${escapeAttr(id)}">
+              <option value="normal">normala</option>
+              <option value="alta">handia</option>
+              <option value="urgente">premiazkoa</option>
+              <option value="baja">baxua</option>
+            </select>
+          </div>
+        </div>
+
+        <button type="button" onclick="asignarPrioridadQrFormFront('${escapeJs(id)}')">
+          Lehentasuna gorde eta QR librea esleitu
+        </button>
+      </div>
+    `;
+  }).join('');
+}
+
+function asignarPrioridadQrFormFront(idRecepcion){
+  const prio = document.getElementById('prio_'+idRecepcion)?.value || 'normal';
+
+  if(!confirm('Lehentasuna gorde eta lehen QR librea esleitu nahi duzu?')){
+    return;
+  }
+
+  showMessage('QR librea bilatzen eta eskaera aktibatzen...', 'success');
+
+  callSaveAPI({
+    accion:'asignarPrioridadQrForm',
+    idRecepcion:idRecepcion,
+    prioridad:prio,
+    usuario:currentUser ? currentUser.username : ''
+  }, resp=>{
+    if(!resp || !resp.ok){
+      showMessage('Errorea: '+(resp && resp.msg ? resp.msg : 'errore ezezaguna'), 'error');
+      return;
+    }
+
+    showMessage(resp.msg || 'Eskaera aktibatuta.', 'success');
+    loadFormRequests();
+  });
 }
 
 </script>
