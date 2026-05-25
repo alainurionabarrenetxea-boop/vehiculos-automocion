@@ -1302,7 +1302,11 @@ function renderChecklist(idRecepcion, trabajos){
 }
 
 function getRecepcionById(idRecepcion){
-  return (window.RECEPCIONES_CACHE||[]).find(r=>String(r.ID_RECEPCION||'').trim()===String(idRecepcion).trim());
+  const target = String(idRecepcion || '').trim();
+  return (window.RECEPCIONES_CACHE||[]).find(r=>{
+    const v = getAnyField ? getAnyField(r,['ID_RECEPCION','ID RECEPCION','ID_RECEPCIÓN']) : (r.ID_RECEPCION || r['ID RECEPCION'] || '');
+    return String(v || '').trim() === target;
+  });
 }
 
 function toggleChecklistItem(idRecepcion,idTarea,checked){
@@ -1397,6 +1401,7 @@ function renderReceptionDetail(qr, harrera, lanakRows){
     <div class="vehicle-card">
       <h2 class="vehicle-title">Recepción y trabajos</h2>
       <p style="margin-top:-8px;color:#6b7280;">Despliega cada tarea para cambiar estado, prioridad o añadir progreso.</p>
+      <button type="button" class="secondary-btn" onclick="pedirAgregarTareaRecepcion('${escapeJs(idRecepcion)}')">+ Lana gehitu</button>
       ${renderChecklist(idRecepcion, parseTrabajosJsonFront(harrera || {}))}
     </div>
 
@@ -2103,9 +2108,11 @@ function renderChecklist(idRecepcion, trabajos){
 }
 
 function getRecepcionById(idRecepcion){
-  return (window.RECEPCIONES_CACHE || []).find(r =>
-    String(getAnyField(r, ['ID_RECEPCION','ID RECEPCION']) || '').trim() === String(idRecepcion).trim()
-  );
+  const target = String(idRecepcion || '').trim();
+  return (window.RECEPCIONES_CACHE||[]).find(r=>{
+    const v = getAnyField ? getAnyField(r,['ID_RECEPCION','ID RECEPCION','ID_RECEPCIÓN']) : (r.ID_RECEPCION || r['ID RECEPCION'] || '');
+    return String(v || '').trim() === target;
+  });
 }
 
 function toggleChecklistItem(idRecepcion, idTarea, checked){
@@ -2342,6 +2349,9 @@ function renderReceptionWorkList(rows){
           </div>
         </summary>
 
+        <div style="padding:0 16px 12px 16px;">
+          <button type="button" class="secondary-btn" onclick="event.preventDefault();event.stopPropagation();pedirAgregarTareaRecepcion('${escapeJs(idRecepcion)}')">+ Lana gehitu</button>
+        </div>
         ${renderChecklist(idRecepcion, trabajos)}
       </details>
     `;
@@ -5954,6 +5964,66 @@ function agregarTareaRecepcionFront(idRecepcion){
       }
     },600);
   });
+}
+
+
+
+// ===== v6.1.6 botón directo para añadir tareas en trabajos activos =====
+function pedirAgregarTareaRecepcion(idRecepcion){
+  const texto = prompt('Lan berria / Nueva tarea:');
+  if(!texto || !String(texto).trim()) return;
+  agregarTareaRecepcionDirecta(idRecepcion, String(texto).trim(), 'normal');
+}
+
+function agregarTareaRecepcionDirecta(idRecepcion, texto, prioridad){
+  if(!idRecepcion){
+    showMessage('Ez da harrera ID aurkitu.', 'error');
+    return;
+  }
+  if(!texto){
+    showMessage('Idatzi lan berria.', 'error');
+    return;
+  }
+  if(SAVE_LOCKS['addtask_'+idRecepcion]){
+    showMessage('Lan berria gordetzen ari da.', 'error');
+    return;
+  }
+
+  SAVE_LOCKS['addtask_'+idRecepcion] = true;
+  showMessage('Lan berria gehitzen...', 'success');
+
+  callSaveAPI({
+    accion:'agregarTareaRecepcion',
+    idRecepcion:idRecepcion,
+    texto:texto,
+    prioridad:prioridad || 'normal',
+    usuario:currentUser ? currentUser.username : '',
+    rol:currentUser ? currentUser.role : '',
+    taldea:currentUser ? currentUser.taldea : ''
+  }, resp=>{
+    SAVE_LOCKS['addtask_'+idRecepcion] = false;
+
+    if(!resp || !resp.ok){
+      showMessage('Errorea lana gehitzean: '+(resp && resp.msg ? resp.msg : 'errore ezezaguna'), 'error');
+      return;
+    }
+
+    const r = getRecepcionById(idRecepcion);
+    if(r && resp.trabajosJson){
+      r.TRABAJOS_JSON = resp.trabajosJson;
+      r.trabajos_json = resp.trabajosJson;
+    }
+
+    showMessage('Lana gehituta.', 'success');
+    setTimeout(()=>showWorksPanel(),700);
+  });
+}
+
+// Compatibilidad con el botón desplegable anterior.
+function agregarTareaRecepcionFront(idRecepcion){
+  const txt = document.getElementById('newTaskText_'+idRecepcion)?.value || '';
+  const prioridad = document.getElementById('newTaskPriority_'+idRecepcion)?.value || 'normal';
+  agregarTareaRecepcionDirecta(idRecepcion, txt.trim(), prioridad);
 }
 
 </script>
