@@ -2415,19 +2415,19 @@ function renderReceptionWorkList(rows){
 
   return rows.map(r=>{
     const idRecepcion = String(getAnyField(r, ['ID_RECEPCION','ID RECEPCION']) || '').trim();
-    const qr = String(getAnyField(r, ['QR_RECEPCION','QR RECEPCION']) || '').trim();
-    const marca = getAnyField(r, ['MARCA','Marca']);
-    const modelo = getAnyField(r, ['MODELO','Modelo']);
-    const autoa = ((marca || '') + ' ' + (modelo || '')).trim() || 'Vehículo';
-    const matricula = getAnyField(r, ['MATRICULA','MATRIKULA','Matrícula']);
-    const cliente = getAnyField(r, ['CLIENTE','BEZEROA','Cliente']);
-    const profesor = getAnyField(r,['ERABILTZAILEA','USUARIO','IRAKASLEA','PROFESOR']) || '';
+    const f = getRequestFields(r);
+    const qr = String(f.qr || '').trim();
+    const autoa = f.autoa || 'Ibilgailua';
+    const matricula = f.matricula;
+    const cliente = f.cliente || f.email || '';
+    const profesor = getAnyField(r,['ERABILTZAILEA','USUARIO','IRAKASLEA','PROFESOR','KUDEATZAILEA']) || '';
     const taller = getReceptionWorkshop(r);
     const trabajos = parseTrabajosJsonFront(r);
+    const trabajoResumen = f.trabajo || (trabajos[0] ? trabajos[0].texto : '');
 
     const pendientes = trabajos.filter(t=>{
       const e = String(t.estado || '').toLowerCase();
-      return e !== 'terminado' && e !== 'cancelado';
+      return e !== 'terminado' && e !== 'cancelado' && e !== 'amaituta' && e !== 'bertan behera';
     }).length;
 
     const estadoCard = pendientes ? 'AKTIBO' : 'ITXITA';
@@ -2444,9 +2444,9 @@ function renderReceptionWorkList(rows){
                 ${matricula ? `<span style="color:#6b7280;font-weight:800;"> · ${escapeHtml(matricula)}</span>` : ''}
               </div>
               <div class="work-head-meta">
-                ${escapeHtml(cliente || '')}
-                ${cliente ? '<br>' : ''}
-                ${profesor ? `Irakasle arduraduna: ${escapeHtml(profesor)}<br>` : ''}
+                <strong>Nork bidali du:</strong> ${escapeHtml(cliente || '-')}<br>
+                <strong>Zer egin behar zaio:</strong> ${escapeHtml(trabajoResumen || '-')}<br>
+                ${profesor ? `Irakasle / kudeatzailea: ${escapeHtml(profesor)}<br>` : ''}
                 Tailerra: ${escapeHtml(taller)} · Egitekoak: ${pendientes}
               </div>
               <div class="work-head-open">Sakatu zabaltzeko</div>
@@ -6173,8 +6173,17 @@ function showFormRequestsPanel(){
 function isFormRequestRow(r){
   const j = String(getAnyField(r,['JATORRIA','ORIGEN']) || '').trim().toUpperCase();
   const estado = String(getAnyField(r,['ESTADO_RECEPCION','ESTADO RECEPCION']) || '').trim().toLowerCase();
-  const qr = String(getAnyField(r,['QR_RECEPCION','QR RECEPCION']) || '').trim();
-  return j === 'FORM' && (!qr || estado === 'berria' || estado === 'nueva' || estado === 'pendiente');
+  const qr = String(getAnyField(r,['QR_RECEPCION','QR RECEPCION','QR_HARRERA']) || '').trim();
+
+  // En Lan eskaerak solo deben estar las solicitudes FORM sin QR asignado.
+  // Cuando el gestor da prioridad y se asigna QR, desaparecen de aquí y pasan a Lanak.
+  return j === 'FORM' && !qr && (
+    !estado ||
+    estado === 'berria' ||
+    estado === 'nueva' ||
+    estado === 'pendiente' ||
+    estado === 'sin_qr'
+  );
 }
 
 function loadFormRequests(){
@@ -6189,6 +6198,44 @@ function loadFormRequests(){
   });
 }
 
+
+// ===== v6.2.2 campos claros en Harrera eskaerak y Lanak =====
+function getRequestFields(row){
+  const cliente = getAnyField(row, [
+    'CLIENTE','BEZEROA','Cliente','Izen abizenak','Izen-abizenak','Nombre y apellidos'
+  ]);
+  const telefono = getAnyField(row, [
+    'TELEFONO','TELÉFONO','Telefono zenbakia','Teléfono','Telefonoa'
+  ]);
+  const email = getAnyField(row, [
+    'EMAIL','POSTA','Dirección de correo electrónico','Correo electrónico','Email Address','Email','USUARIO'
+  ]);
+  const matricula = getAnyField(row, [
+    'MATRICULA','MATRIKULA','Kotxearen matrikula','Matrícula','Matricula'
+  ]);
+  const marca = getAnyField(row, [
+    'MARCA','Kotxearen marka','Marca','Marka'
+  ]);
+  const modelo = getAnyField(row, [
+    'MODELO','Kotxearen modeloa','Modelo','Modeloa'
+  ]);
+  const trabajo = getAnyField(row, [
+    'TRABAJO_SOLICITADO','QUEJA_CLIENTE','LANA','Zein da egiteko lana?',
+    'Zein da egiteko lana? Erantzun motza (Adibidez: mantenua, balaztak, motoreak arazo bat dauka, kotxeak soinu arraro bat egiten du...)',
+    'Trabajo solicitado','Egin beharreko lana'
+  ]);
+  const prioridad = getAnyField(row, ['LEHENTASUNA','PRIORIDAD','Prioridad']);
+  const qr = getAnyField(row, ['QR_RECEPCION','QR RECEPCION','QR_HARRERA']);
+  const id = getAnyField(row, ['ID_RECEPCION','ID RECEPCION']);
+  const fecha = getAnyField(row, ['FECHA','DATA']);
+  const hora = getAnyField(row, ['HORA','ORDUA']);
+
+  return {
+    id, qr, cliente, telefono, email, matricula, marca, modelo, trabajo, prioridad, fecha, hora,
+    autoa: ((marca || '') + ' ' + (modelo || '')).trim()
+  };
+}
+
 function renderFormRequests(rows){
   const box = document.getElementById('formRequestsList');
   if(!rows.length){
@@ -6197,38 +6244,47 @@ function renderFormRequests(rows){
   }
 
   box.innerHTML = rows.map(r=>{
-    const id = getAnyField(r,['ID_RECEPCION','ID RECEPCION']);
-    const fecha = getAnyField(r,['FECHA','DATA']);
-    const hora = getAnyField(r,['HORA','ORDUA']);
-    const cliente = getAnyField(r,['CLIENTE','BEZEROA']);
-    const telefono = getAnyField(r,['TELEFONO','TELÉFONO']);
-    const email = getAnyField(r,['EMAIL','POSTA']);
-    const mat = getAnyField(r,['MATRICULA','MATRIKULA']);
-    const marca = getAnyField(r,['MARCA']);
-    const modelo = getAnyField(r,['MODELO']);
-    const trabajo = getAnyField(r,['TRABAJO_SOLICITADO','QUEJA_CLIENTE','LANA']);
+    const f = getRequestFields(r);
+    const tituloAuto = f.autoa || 'Autoa zehaztu gabe';
+    const quien = f.cliente || f.email || 'Eskatzailea zehaztu gabe';
+    const que = f.trabajo || 'Lan eskaerarik gabe';
 
     return `
-      <div class="work-reception-card" style="padding:16px;">
+      <div class="work-reception-card" style="padding:16px;border-left:10px solid #f59e0b;">
         <div class="work-head-main">
           <div class="work-head-left">
-            <span class="work-head-qr">FORM</span>
-            <div class="work-head-title">${escapeHtml(marca + ' ' + modelo)} ${mat ? `<span style="color:#6b7280;">· ${escapeHtml(mat)}</span>` : ''}</div>
+            <span class="work-head-qr">FORM · BERRIA</span>
+            <div class="work-head-title">
+              ${escapeHtml(tituloAuto)}
+              ${f.matricula ? `<span style="color:#6b7280;"> · ${escapeHtml(f.matricula)}</span>` : ''}
+            </div>
             <div class="work-head-meta">
-              ${escapeHtml(cliente || '')}${telefono ? ' · ' + escapeHtml(telefono) : ''}<br>
-              ${email ? escapeHtml(email) + '<br>' : ''}
-              ${fecha || ''} ${hora || ''}
+              <strong>Nork bidali du:</strong> ${escapeHtml(quien)}${f.telefono ? ' · ' + escapeHtml(f.telefono) : ''}<br>
+              ${f.email ? `<strong>Email:</strong> ${escapeHtml(f.email)}<br>` : ''}
+              <strong>Noiz:</strong> ${escapeHtml((f.fecha || '') + ' ' + (f.hora || ''))}
             </div>
           </div>
-          <span class="badge badge-pendiente">BERRIA</span>
+          <span class="badge badge-pendiente">BALORATU GABE</span>
         </div>
 
-        <div class="ficha-box" style="margin-top:12px;">${escapeHtml(trabajo || 'Lan eskaerarik gabe')}</div>
+        <div class="ficha-box" style="margin-top:12px;">
+          <strong>Zer egin behar zaio?</strong><br>
+          ${escapeHtml(que)}
+        </div>
+
+        <div class="vehicle-grid" style="margin-top:12px;">
+          <div class="field"><div class="field-label">Eskatzailea</div><div class="field-value">${escapeHtml(quien)}</div></div>
+          <div class="field"><div class="field-label">Telefonoa</div><div class="field-value">${escapeHtml(f.telefono || '-')}</div></div>
+          <div class="field"><div class="field-label">Matrikula</div><div class="field-value">${escapeHtml(f.matricula || '-')}</div></div>
+          <div class="field"><div class="field-label">Marka</div><div class="field-value">${escapeHtml(f.marca || '-')}</div></div>
+          <div class="field"><div class="field-label">Modeloa</div><div class="field-value">${escapeHtml(f.modelo || '-')}</div></div>
+          <div class="field"><div class="field-label">ID</div><div class="field-value">${escapeHtml(f.id || '-')}</div></div>
+        </div>
 
         <div class="form-grid" style="margin-top:12px;">
           <div>
             <label><strong>Lehentasuna</strong></label>
-            <select id="prio_${escapeAttr(id)}">
+            <select id="prio_${escapeAttr(f.id)}">
               <option value="normal">normala</option>
               <option value="alta">handia</option>
               <option value="urgente">premiazkoa</option>
@@ -6237,7 +6293,7 @@ function renderFormRequests(rows){
           </div>
         </div>
 
-        <button type="button" onclick="asignarPrioridadQrFormFront('${escapeJs(id)}')">
+        <button type="button" onclick="asignarPrioridadQrFormFront('${escapeJs(f.id)}')">
           Lehentasuna gorde eta QR librea esleitu
         </button>
       </div>
