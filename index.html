@@ -793,11 +793,44 @@ box-shadow:0 8px 18px rgba(220,38,38,.15);
     .language-bar label{font-weight:900;color:#374151;margin:0}
     .language-bar select{width:auto;min-width:150px;padding:9px 12px;border-radius:999px;font-weight:900}
 
-  </style>
+  
+/* ===== v6.2.1 navegación universal ===== */
+.global-nav-panel{
+  display:none;
+  padding:14px 18px 0 18px;
+}
+.global-nav{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin:0 0 14px 0;
+}
+.global-nav button{
+  flex:1;
+  min-width:120px;
+  border:0;
+  border-radius:18px;
+  padding:14px 10px;
+  font-size:15px;
+  font-weight:950;
+  cursor:pointer;
+}
+.nav-back{background:#eaf1ff;color:#0f172a;}
+.nav-home{background:#0f172a;color:white;}
+.nav-works{background:#eef2ff;color:#1d4ed8;}
+.nav-requests{background:#2563eb;color:white;}
+@media(max-width:700px){
+  .global-nav-panel{padding:10px 14px 0 14px;}
+  .global-nav{gap:7px;}
+  .global-nav button{font-size:13px;padding:12px 7px;min-width:0;}
+}
+
+</style>
 </head>
 <body>
 <div id="loginView" class="box"><div class="header"><div class="header-logo"><img src="icono-512.png" alt="MENDIcar"><div><h2>MENDIcar</h2><p>Automozioaren kudeaketa digitala</p></div></div></div><div class="content"><input id="username" type="text" placeholder="Erabiltzailea / posta"><input id="password" type="password" placeholder="Pasahitza"><button type="button" onclick="login()">Sartu</button><div id="loginError" class="msg error hidden"></div></div><div class="footer-credit">Aplikazioa sortzailea: <strong>Alain Urionabarrenetxea</strong></div></div>
-<div id="appView" class="box hidden"><div class="header"><div class="header-logo"><img src="icono-512.png" alt="MENDIcar"><div><h2>MENDIcar</h2><p id="welcomeText"></p></div></div></div><div class="content"><div class="topbar"><div id="viewModeText">Consulta de vehículo</div><div class="topbar-actions"><button id="showAllBtn" class="small-btn hidden" type="button" onclick="showAllVehicles()">Ver todos</button><button id="showWorksBtn" class="small-btn hidden" type="button" onclick="showWorksPanel()">Trabajos</button><button id="showCalendarBtn" class="small-btn hidden" type="button" onclick="showCalendarPanel()">Calendario</button><button id="showQrHistoryBtn" class="small-btn hidden" type="button" onclick="showHistoryPanel()">Historial</button><button class="small-btn secondary-btn" type="button" onclick="logout()">Cerrar sesión</button></div></div><div id="appMessage" class="msg info hidden"></div><div id="vehicleDetail"></div><div id="tableContainer" class="table-wrap hidden"><table><thead><tr><th>ID</th><th>Vehículo</th><th>Color</th><th>VIN</th><th>Estado</th><th>Observaciones</th></tr></thead><tbody id="tableBody"></tbody></table></div></div><div class="footer-credit">Aplikazioa sortzailea: <strong>Alain Urionabarrenetxea</strong></div></div>
+<div id="appView" class="box hidden"><div class="header"><div class="header-logo"><img src="icono-512.png" alt="MENDIcar"><div><h2>MENDIcar</h2><p id="welcomeText"></p></div></div></div><div class="content"><div class="topbar"><div id="globalNavPanel" class="global-nav-panel"></div>
+      <div id="viewModeText">Consulta de vehículo</div><div class="topbar-actions"><button id="showAllBtn" class="small-btn hidden" type="button" onclick="showAllVehicles()">Ver todos</button><button id="showWorksBtn" class="small-btn hidden" type="button" onclick="showWorksPanel()">Trabajos</button><button id="showCalendarBtn" class="small-btn hidden" type="button" onclick="showCalendarPanel()">Calendario</button><button id="showQrHistoryBtn" class="small-btn hidden" type="button" onclick="showHistoryPanel()">Historial</button><button class="small-btn secondary-btn" type="button" onclick="logout()">Cerrar sesión</button></div></div><div id="appMessage" class="msg info hidden"></div><div id="vehicleDetail"></div><div id="tableContainer" class="table-wrap hidden"><table><thead><tr><th>ID</th><th>Vehículo</th><th>Color</th><th>VIN</th><th>Estado</th><th>Observaciones</th></tr></thead><tbody id="tableBody"></tbody></table></div></div><div class="footer-credit">Aplikazioa sortzailea: <strong>Alain Urionabarrenetxea</strong></div></div>
 <button id="helpBtn" class="help-floating hidden" type="button" onclick="startTutorial(true)">❓ Ayuda</button>
 
 <script>
@@ -1284,8 +1317,8 @@ function getReceptionWorkshop(row){
     row.TIPO_TRABAJO,
     row.TAILERRA,
     row.TALLER,
-    row.QUEJA_CLIENTE,
-    row.TRABAJO_SOLICITADO
+    row.MODULUA,
+    row.MODULE
   ];
 
   for(const value of candidates){
@@ -1298,7 +1331,17 @@ function getReceptionWorkshop(row){
     if(s === 'KARROZERIA' || s === 'CARROCERIA' || s === 'CARROCERÍA'){
       return 'KARROZERIA';
     }
+
+    if(s === 'BIAK'){
+      return 'MEKANIKA';
+    }
   }
+
+  // Los que vienen del formulario, al priorizarlos, entran por defecto en MEKANIKA.
+  // Luego el gestor/profesor ya podrá moverlos si procede.
+  const jatorria = String(getAnyField(row, ['JATORRIA','ORIGEN']) || '').trim().toUpperCase();
+  const qr = String(getAnyField(row, ['QR_RECEPCION','QR RECEPCION']) || '').trim();
+  if(jatorria === 'FORM' && qr) return 'MEKANIKA';
 
   return 'SIN_TALLER';
 }
@@ -1492,7 +1535,7 @@ function renderHistoryByRecepcion(idRecepcion,matricula){
     const estado=String(r.EGOERA||'').trim();
     const prioridad=String(r.LEHENTASUNA||'normal').trim();
     const badgeClass=estado==='en curso'?'badge-curso':estado==='terminado'?'badge-terminado':estado==='cancelado'?'badge-cancelado':'badge-pendiente';
-    return `<div class="work-card priority-${escapeAttr(prioridad)}"><strong>${escapeHtml(r.AUTOA||'')}</strong> · ${escapeHtml(r.MATRIKULA||'')}<br>ID recepción: ${escapeHtml(r.ID_RECEPCION||'')}<br>Fecha: ${escapeHtml(r.DATA||r.SORTZE_DATA||'')} ${escapeHtml(r.ORDUA||r.SORTZE_ORDUA||'')}<br>Usuario: ${escapeHtml(r.ERABILTZAILEA||'')}<br>Taller: ${escapeHtml(r.TAILERRA||'')}<br>Prioridad: ${escapeHtml(prioridad)}<br><span class="badge ${badgeClass}">${escapeHtml(estado)}</span><br><br>${escapeHtml(r.LANA||'')}${getProgressValue(r)?`<br><br><strong>Progreso:</strong><br>${escapeHtml(getProgressValue(r))}`:''}</div>`;
+    return `<div class="work-card priority-${escapeAttr(prioridad)}"><strong>${escapeHtml(r.AUTOA||'')}</strong> · ${escapeHtml(r.MATRIKULA||'')}<br>ID recepción: ${escapeHtml(r.ID_RECEPCION||'')}<br>Fecha: ${escapeHtml(r.DATA||r.SORTZE_DATA||'')} ${escapeHtml(r.ORDUA||r.SORTZE_ORDUA||'')}<br>Usuario: ${escapeHtml(r.ERABILTZAILEA||'')}<br>Tailerra: ${escapeHtml(r.TAILERRA||'')}<br>Prioridad: ${escapeHtml(prioridad)}<br><span class="badge ${badgeClass}">${escapeHtml(estado)}</span><br><br>${escapeHtml(r.LANA||'')}${getProgressValue(r)?`<br><br><strong>Progreso:</strong><br>${escapeHtml(getProgressValue(r))}`:''}</div>`;
   }).join('');
 }
 
@@ -1524,7 +1567,7 @@ function renderHistoryByMatricula(matricula){
         <br>
         Usuario: ${escapeHtml(r.ERABILTZAILEA || '')}
         <br>
-        Taller: ${escapeHtml(r.TAILERRA || '')}
+        Tailerra: ${escapeHtml(r.TAILERRA || '')}
         <br>
         Prioridad: ${escapeHtml(prioridad)}
         <br>
@@ -2284,12 +2327,16 @@ function loadWorks(){
       if(!idRecepcion && !qr) return false;
       if(estadoRecepcion === 'cerrada' || estadoRecepcion === 'cerrado') return false;
 
-      // Activa si tiene tareas pendientes/en curso o si no hay JSON todavía pero hay trabajo solicitado
+      // Activa si tiene QR asignado desde formulario o si tiene tareas pendientes/en curso.
+      const jatorria = String(getAnyField(r, ['JATORRIA','ORIGEN']) || '').trim().toUpperCase();
+      if(jatorria === 'FORM' && qr) return true;
+
+      // Activa si no hay JSON todavía pero hay trabajo solicitado.
       if(!trabajos.length) return true;
 
       return !trabajos.every(t=>{
         const e = String(t.estado || '').toLowerCase();
-        return e === 'terminado' || e === 'cancelado';
+        return e === 'terminado' || e === 'cancelado' || e === 'amaituta' || e === 'bertan behera';
       });
     });
 
@@ -2383,7 +2430,7 @@ function renderReceptionWorkList(rows){
       return e !== 'terminado' && e !== 'cancelado';
     }).length;
 
-    const estadoCard = pendientes ? 'ACTIVO' : 'CERRADO';
+    const estadoCard = pendientes ? 'AKTIBO' : 'ITXITA';
     const badgeClass = pendientes ? 'badge-pendiente' : 'badge-terminado';
 
     return `
@@ -2399,10 +2446,10 @@ function renderReceptionWorkList(rows){
               <div class="work-head-meta">
                 ${escapeHtml(cliente || '')}
                 ${cliente ? '<br>' : ''}
-                ${profesor ? `Profesor responsable: ${escapeHtml(profesor)}<br>` : ''}
-                Taller: ${escapeHtml(taller)} · Pendientes: ${pendientes}
+                ${profesor ? `Irakasle arduraduna: ${escapeHtml(profesor)}<br>` : ''}
+                Tailerra: ${escapeHtml(taller)} · Egitekoak: ${pendientes}
               </div>
-              <div class="work-head-open">Pulsa para</div>
+              <div class="work-head-open">Sakatu zabaltzeko</div>
             </div>
 
             <span class="badge ${badgeClass}">${estadoCard}</span>
@@ -2597,7 +2644,7 @@ function showWorkHistory(){
         <br>
         Usuario: ${escapeHtml(r.ERABILTZAILEA || '')}
         <br>
-        Taller: ${escapeHtml(r.TAILERRA || '')}
+        Tailerra: ${escapeHtml(r.TAILERRA || '')}
         <br>
         Prioridad: ${escapeHtml(prioridad)}
         <br>
@@ -3904,7 +3951,7 @@ function createWork(){
             <div class="qr-assigned-title">✅ PRÁCTICA CREADA</div>
             <div class="qr-assigned-note">Vehículo del centro:</div>
             <div class="qr-assigned-code">${escapeHtml(payload.autoa)}</div>
-            <div class="qr-assigned-note">Grupo: ${escapeHtml(payload.grupoAsignado || 'LIBRE')} · Taller: ${escapeHtml(payload.tailerra)}</div>
+            <div class="qr-assigned-note">Grupo: ${escapeHtml(payload.grupoAsignado || 'LIBRE')} · Tailerra: ${escapeHtml(payload.tailerra)}</div>
           </div>`;
       }
       registrarUsoApp('CREAR_TRABAJO_CENTRO','Trabajo creado en vehículo del centro',payload.idAutoak,payload.qrAutoak,payload.matricula);
@@ -3982,7 +4029,7 @@ function getLatestCenterWorks(rows){
 
   return Object.values(latest).filter(r=>{
     const estado = String(getAnyField(r,['EGOERA','ESTADO','Estado']) || '').toLowerCase();
-    const visible = String(getAnyField(r,['VISIBLE_ACTIVO','VISIBLE','ACTIVO']) || 'SI').toUpperCase();
+    const visible = String(getAnyField(r,['VISIBLE_AKTIBO','VISIBLE','AKTIBO']) || 'SI').toUpperCase();
     return visible !== 'NO' && estado !== 'terminado' && estado !== 'cancelado';
   });
 }
@@ -4051,7 +4098,7 @@ function renderCenterWorkList(rows){
           <div class="center-work-title">${escapeHtml(autoa)} ${idAutoak ? '· ID '+escapeHtml(idAutoak) : ''}</div>
           <div class="center-work-meta">
             QR: ${escapeHtml(qr || '-')}<br>
-            Grupo: ${escapeHtml(grupo)} · Taller: ${escapeHtml(taller)} · Profesor: ${escapeHtml(profesor || '-')}
+            Grupo: ${escapeHtml(grupo)} · Tailerra: ${escapeHtml(taller)} · Profesor: ${escapeHtml(profesor || '-')}
           </div>
           <div class="pending-line">Pulsa para desplegar la práctica</div>
         </summary>
@@ -5111,7 +5158,7 @@ const LANG = {
     examples:"Ejemplos:", searchPlaceholder:"Matrícula, coche, QR, ID, modelo...", onlyLast:"Mostrar solo el último registro de cada coche / QR",
     introduceSearch:"Introduce una búsqueda para cargar el historial. No se carga todo automáticamente.",
     reportsExplain:"Consulta quién ha realizado cada labor, cuándo, en qué coche y con qué estado. La información sale de LANAK, que es la hoja de trabajos realizados.",
-    normal:"normal", high:"alta", urgent:"urgente", active:"ACTIVO", responsibleTeacher:"Profesor responsable", pendingLabel:"Pendientes", clickToExpand:"Pulsa para tocar para desplegar", workshopLabel:"Taller", touchToExpand:"Pulsa para tocar para desplegar", pendingPlural:"Pendientes", externalCars:"Vehículos externos", bodyCars:"Trabajos de carrocería", mechanicCars:"Trabajos de mecánica"
+    normal:"normal", high:"alta", urgent:"urgente", active:"AKTIBO", responsibleTeacher:"Profesor responsable", pendingLabel:"Pendientes", clickToExpand:"Pulsa para tocar para desplegar", workshopLabel:"Taller", touchToExpand:"Pulsa para tocar para desplegar", pendingPlural:"Pendientes", externalCars:"Vehículos externos", bodyCars:"Trabajos de carrocería", mechanicCars:"Trabajos de mecánica"
   },
   CA:{
     language:"Idioma", subtitle:"Gestió digital d'automoció", user:"Usuari / correu", pass:"Contrasenya", enter:"Entrar", made:"Aplicació realitzada per",
@@ -5187,10 +5234,10 @@ function buildMap(){
   addMap('records','reg.','erreg.');
   addMap('planned','plan.');
 
-  addMap('active','ACTIVO','AKTIBO','ACTIU');
+  addMap('active','AKTIBO','AKTIBO','ACTIU');
   addMap('responsibleTeacher','Profesor responsable','Irakasle arduraduna','Professor responsable');
   addMap('pendingLabel','Pendientes','Egiteke','Pendents');
-  addMap('pendingPlural','Pendientes:','Egitekoak:','Pendents:');
+  addMap('pendingPlural','Egitekoak:','Egitekoak:','Pendents:');
   addMap('workshopLabel','Taller','Tailerra');
   addMap('clickToExpand','Pulsa para tocar para desplegar','Sakatu zabaltzeko','Prem per desplegar');
   addMap('touchToExpand','Tocar para abrir/cerrar','Sakatu ireki/itxi','Toca per obrir/tancar');
@@ -5367,11 +5414,11 @@ function translateWorkCardsExtra(root){
     if(!compact) return;
 
     const replacements = [
-      [/ACTIVO/g, LT('active')],
-      [/Profesor responsable:/g, LT('responsibleTeacher') + ':'],
+      [/AKTIBO/g, LT('active')],
+      [/Irakasle arduraduna:/g, LT('responsibleTeacher') + ':'],
       [/Profesor responsable/g, LT('responsibleTeacher')],
-      [/Taller:/g, LT('workshopLabel') + ':'],
-      [/Pendientes:/g, LT('pendingPlural') + ':'],
+      [/Tailerra:/g, LT('workshopLabel') + ':'],
+      [/Egitekoak:/g, LT('pendingPlural') + ':'],
       [/Pendientes/g, LT('pendingLabel')],
       [/Pulsa para tocar\s*para desplegar/g, LT('clickToExpand')],
       [/Tocar para abrir\/cerrar/g, LT('touchToExpand')],
@@ -5399,7 +5446,7 @@ function translateWorkCardsExtra(root){
       if(el.hasAttribute && el.hasAttribute(attr)){
         let v = el.getAttribute(attr);
         let old = v;
-        v = v.replace(/ACTIVO/g, LT('active'))
+        v = v.replace(/AKTIBO/g, LT('active'))
              .replace(/Profesor responsable/g, LT('responsibleTeacher'))
              .replace(/Taller/g, LT('workshopLabel'))
              .replace(/Pendientes/g, LT('pendingLabel'))
@@ -5410,7 +5457,7 @@ function translateWorkCardsExtra(root){
 
     if(el.tagName === 'BUTTON' || el.tagName === 'OPTION'){
       let old = el.textContent;
-      let v = old.replace(/ACTIVO/g, LT('active'))
+      let v = old.replace(/AKTIBO/g, LT('active'))
                  .replace(/Profesor responsable/g, LT('responsibleTeacher'))
                  .replace(/Taller/g, LT('workshopLabel'))
                  .replace(/Pendientes/g, LT('pendingLabel'))
@@ -6233,6 +6280,123 @@ function openHarreraEskaerakSafe(){
     showMessage('Harrera eskaerak modulua ez dago kargatuta.', 'error');
     showHomeDashboard();
   }
+}
+
+
+
+// ===== v6.2.1 navegación universal en todas las pantallas =====
+function canShowGlobalNav(){
+  return currentUser && !document.getElementById('appView').classList.contains('hidden');
+}
+
+function renderGlobalNav(options){
+  options = options || {};
+  const panel = document.getElementById('globalNavPanel');
+  if(!panel) return;
+
+  if(!canShowGlobalNav() || options.hide){
+    panel.style.display = 'none';
+    panel.innerHTML = '';
+    return;
+  }
+
+  const showWorks = currentUser && currentUser.role === 'profesor';
+  const showRequests = typeof canManageFormRequests === 'function' && canManageFormRequests();
+
+  panel.style.display = 'block';
+  panel.innerHTML = `
+    <div class="global-nav">
+      <button type="button" class="nav-back" onclick="goBackSafe()">← Atzera</button>
+      <button type="button" class="nav-home" onclick="showHomeDashboard()">🏠 Menua</button>
+      ${showWorks ? `<button type="button" class="nav-works" onclick="showWorksPanel()">📋 Lanak</button>` : ''}
+      ${showRequests ? `<button type="button" class="nav-requests" onclick="openHarreraEskaerakSafe()">📝 Eskaerak</button>` : ''}
+    </div>
+  `;
+}
+
+function goBackSafe(){
+  try{
+    if(window.history.length > 1){
+      history.back();
+      return;
+    }
+  }catch(e){}
+  showHomeDashboard();
+}
+
+// Reforzamos pantallas principales para que siempre aparezca la botonera.
+// En el menú principal se oculta para no duplicar botones.
+const __oldShowHomeDashboard = typeof showHomeDashboard === 'function' ? showHomeDashboard : null;
+if(__oldShowHomeDashboard){
+  showHomeDashboard = function(){
+    __oldShowHomeDashboard();
+    renderGlobalNav({hide:true});
+  };
+}
+
+const __oldShowWorksPanel = typeof showWorksPanel === 'function' ? showWorksPanel : null;
+if(__oldShowWorksPanel){
+  showWorksPanel = function(){
+    __oldShowWorksPanel();
+    renderGlobalNav();
+  };
+}
+
+const __oldShowCalendarPanel = typeof showCalendarPanel === 'function' ? showCalendarPanel : null;
+if(__oldShowCalendarPanel){
+  showCalendarPanel = function(){
+    __oldShowCalendarPanel();
+    renderGlobalNav();
+  };
+}
+
+const __oldShowHistoryPanel = typeof showHistoryPanel === 'function' ? showHistoryPanel : null;
+if(__oldShowHistoryPanel){
+  showHistoryPanel = function(){
+    __oldShowHistoryPanel();
+    renderGlobalNav();
+  };
+}
+
+const __oldShowReportsPanel = typeof showReportsPanel === 'function' ? showReportsPanel : null;
+if(__oldShowReportsPanel){
+  showReportsPanel = function(){
+    __oldShowReportsPanel();
+    renderGlobalNav();
+  };
+}
+
+const __oldShowSettingsPanel = typeof showSettingsPanel === 'function' ? showSettingsPanel : null;
+if(__oldShowSettingsPanel){
+  showSettingsPanel = function(){
+    __oldShowSettingsPanel();
+    renderGlobalNav();
+  };
+}
+
+const __oldShowFormRequestsPanel = typeof showFormRequestsPanel === 'function' ? showFormRequestsPanel : null;
+if(__oldShowFormRequestsPanel){
+  showFormRequestsPanel = function(){
+    __oldShowFormRequestsPanel();
+    renderGlobalNav();
+  };
+}
+
+// Se puede llamar tras cargar fichas individuales.
+const __oldRenderVehicleDetail = typeof renderVehicleDetail === 'function' ? renderVehicleDetail : null;
+if(__oldRenderVehicleDetail){
+  renderVehicleDetail = function(vehicle){
+    __oldRenderVehicleDetail(vehicle);
+    renderGlobalNav();
+  };
+}
+
+const __oldRenderReceptionDetail = typeof renderReceptionDetail === 'function' ? renderReceptionDetail : null;
+if(__oldRenderReceptionDetail){
+  renderReceptionDetail = function(qrId, harrera){
+    __oldRenderReceptionDetail(qrId, harrera);
+    renderGlobalNav();
+  };
 }
 
 </script>
