@@ -817,7 +817,7 @@ async function login(){clearLoginError();const username=document.getElementById(
   name:String(user.nombre||user.usuario||'').trim(),
   taldea:String(user.taldea||'').trim(),
   kanpokoKudeatzailea:isKanpokoKudeatzaileaUser(user)
-};document.getElementById('loginView').classList.add('hidden');document.getElementById('appView').classList.remove('hidden');document.getElementById('helpBtn').classList.remove('hidden');document.getElementById('welcomeText').textContent='Bienvenido, '+currentUser.name+' · Rol: '+currentUser.role;if(currentUser.role==='profesor'){document.getElementById('showWorksBtn').classList.remove('hidden');document.getElementById('showCalendarBtn').classList.remove('hidden');document.getElementById('showQrHistoryBtn').classList.remove('hidden');}registrarUsoApp('LOGIN','Entrada en la aplicación','','','');
+};document.getElementById('loginView').classList.add('hidden');document.getElementById('appView').classList.remove('hidden');document.getElementById('helpBtn').classList.remove('hidden');document.getElementById('welcomeText').textContent='Ongi etorri, '+currentUser.name+' · Rola: '+(currentUser.role==='profesor'?'irakaslea':currentUser.role==='alumno'?'ikaslea':currentUser.role);if(currentUser.role==='profesor'){document.getElementById('showWorksBtn').classList.remove('hidden');document.getElementById('showCalendarBtn').classList.remove('hidden');document.getElementById('showQrHistoryBtn').classList.remove('hidden');}registrarUsoApp('LOGIN','Entrada en la aplicación','','','');
 if(entry.qrHarrera || entry.id || entry.trabajo){
   loadVehiclesJSONP();
 }else{
@@ -874,7 +874,7 @@ function showHomeDashboard(){
   clearMessage();
   if(typeof forceHideLoading === 'function') forceHideLoading();
 
-  document.getElementById('viewModeText').textContent='Panel principal';
+  document.getElementById('viewModeText').textContent='Menu nagusia';
   document.getElementById('tableContainer').classList.add('hidden');
 
   const isProfesor = currentUser && currentUser.role === 'profesor';
@@ -922,7 +922,7 @@ function showHomeDashboard(){
         ` : ''}
 
         ${canManageFormRequests() ? `
-        <button class="dashboard-tile tile-red" type="button" onclick="openDashboardSection('harrera_eskaerak')">
+        <button class="dashboard-tile tile-red" type="button" onclick="openHarreraEskaerakSafe()">
           <div class="dashboard-icon">📝</div>
           <div class="dashboard-title">Harrera eskaerak</div>
           <div class="dashboard-subtitle">Formulario bidez jasotakoak</div>
@@ -993,10 +993,19 @@ function openDashboardSection(section){
     return;
   }
 
+  if(section === 'harrera_eskaerak'){
+    showFormRequestsPanel();
+    setTimeout(()=>addBackToHome(),250);
+    return;
+  }
+
   if(section === 'ajustes'){
     showSettingsPanel();
     return;
   }
+
+  showMessage('Atala ez da ezagutzen: ' + section, 'error');
+  showHomeDashboard();
 }
 
 function showSettingsPanel(){
@@ -2735,7 +2744,7 @@ function getTutorialSteps(){
   if(role==='profesor'){
     return [
       {title:'Bienvenido a MENDIcar',text:'Esta aplicación sirve para gestionar vehículos, recepciones, trabajos de mecánica y carrocería, progresos e histórico del taller.'},
-      {title:'Panel principal',text:'Como profesor puedes ver todos los vehículos, abrir fichas, revisar estados y acceder al panel de trabajos.'},
+      {title:'Menu nagusia',text:'Como profesor puedes ver todos los vehículos, abrir fichas, revisar estados y acceder al panel de trabajos.'},
       {title:'QR del centro',text:'Los QR de vehículos del centro abren directamente la ficha del coche.'},
       {title:'QR de recepción libre',text:'Si escaneas un QR de HARRERA libre, se abre el formulario de recepción.'},
       {title:'QR de recepción ocupado',text:'Si el QR ya está ocupado por un coche externo, debe abrirse la orden viva de trabajo.'},
@@ -3697,6 +3706,12 @@ function openDashboardSection(section){
 
   if(section === 'informes'){
     showReportsPanel();
+    setTimeout(()=>addBackToHome(),250);
+    return;
+  }
+
+  if(section === 'harrera_eskaerak'){
+    showFormRequestsPanel();
     setTimeout(()=>addBackToHome(),250);
     return;
   }
@@ -5069,7 +5084,7 @@ const LANG = {
   ES:{
     language:"Idioma", subtitle:"Automozioaren kudeaketa digitala", user:"Erabiltzailea / posta", pass:"Pasahitza", enter:"Entrar", made:"Aplikazioa sortzailea:",
     welcome:"Bienvenido,", role:"Rol:", teacher:"profesor", student:"alumno",
-    main:"Panel principal", workPanel:"Panel de trabajos", all:"Ver todos", centerCars:"Vehículos del centro",
+    main:"Menu nagusia", workPanel:"Panel de trabajos", all:"Ver todos", centerCars:"Vehículos del centro",
     works:"Trabajos", worksSub:"Crear y modificar tareas", calendar:"Calendario", calendarSub:"Planificación mensual",
     history:"Historial", historySub:"Buscar coche, QR o matrícula", reports:"Informes", reportsSub:"Alumno, tarea y fecha",
     settings:"Ajustes", settingsSub:"Idioma y configuración", logout:"Cerrar sesión", help:"Ayuda", back:"Volver al menú principal",
@@ -5565,7 +5580,7 @@ setInterval(()=>translateWorkDetailExtra(document.body),1200);
       "IBIlGAILUA": "IBILGAILUA",
       "EGOERA": "EGOERA",
       "OHARRAK": "OHARRAK",
-      "Panel principal": "Menu nagusia",
+      "Menu nagusia": "Menu nagusia",
       "Trabajos": "Lanak",
       "Lanas": "Lanak",
       "Calendario": "Egutegia",
@@ -6206,6 +6221,18 @@ function asignarPrioridadQrFormFront(idRecepcion){
     showMessage(resp.msg || 'Eskaera aktibatuta.', 'success');
     loadFormRequests();
   });
+}
+
+
+
+// ===== v6.1.8 reparación pantalla vacía Harrera eskaerak =====
+function openHarreraEskaerakSafe(){
+  if(typeof showFormRequestsPanel === 'function'){
+    showFormRequestsPanel();
+  }else{
+    showMessage('Harrera eskaerak modulua ez dago kargatuta.', 'error');
+    showHomeDashboard();
+  }
 }
 
 </script>
