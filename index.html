@@ -825,6 +825,26 @@ box-shadow:0 8px 18px rgba(220,38,38,.15);
   .global-nav button{font-size:13px;padding:12px 7px;min-width:0;}
 }
 
+
+
+/* ===== MENDIcar v6.3 PRAKTIKAK ===== */
+.practice-toolbar{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:14px 0}
+.practice-group-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px}
+.practice-group-card{border:1px solid #e5e7eb;border-radius:18px;padding:14px;background:#fff;box-shadow:0 6px 18px rgba(15,23,42,.06)}
+.practice-group-head{display:flex;align-items:center;gap:10px;font-weight:950;font-size:17px;margin-bottom:10px}
+.practice-group-head input{width:23px;height:23px;margin:0;flex-shrink:0}
+.practice-resource-note{padding:12px 14px;border-radius:14px;background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;font-weight:850;margin:12px 0}
+.practice-link-row{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}
+.practice-link-row a{flex:1;min-width:160px;text-decoration:none}
+.practice-link-row button{margin:0}
+.practice-save-bar{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+.practice-save-bar button{flex:1;min-width:180px}
+.practice-session-card{border:1px solid #e5e7eb;border-left:8px solid #2563eb;border-radius:16px;padding:14px;background:white;margin:10px 0}
+.practice-session-title{font-weight:950;font-size:17px;color:#111827}
+.practice-session-meta{color:#6b7280;font-weight:750;line-height:1.45;margin-top:5px}
+.practice-empty{padding:16px;border:1px dashed #cbd5e1;border-radius:16px;color:#64748b;background:#f8fafc;font-weight:750}
+@media(max-width:700px){.practice-toolbar,.practice-group-grid{grid-template-columns:1fr}.practice-save-bar{flex-direction:column}.practice-save-bar button{width:100%}}
+
 </style>
 </head>
 <body>
@@ -842,7 +862,7 @@ if(localStorage.getItem('MENDICAR_I18N_VERSION') !== '6.0.5'){
   localStorage.setItem('MENDICAR_I18N_VERSION','6.0.5');
 }
 
-let USERS=[],vehicles=[],currentUser=null;const SHEET_ID="1sf2TS8gCKachrkz66S6E_zQuafVpu7F_AhSLdhi-W-g",SHEET_GID="0",SAVE_API_URL="https://script.google.com/macros/s/AKfycbwBYs2oADcw-Za-nLVbR0oF5L6ZHx2gYd1JS-0vjIW9IbD53P9j7U68R09-WGieM2Er2A/exec";
+let USERS=[],vehicles=[],currentUser=null;const SHEET_ID="1sf2TS8gCKachrkz66S6E_zQuafVpu7F_AhSLdhi-W-g",SHEET_GID="0",SAVE_API_URL="https://script.google.com/macros/s/AKfycbwBYs2oADcw-Za-nLVbR0oF5L6ZHx2gYd1JS-0vjIW9IbD53P9j7U68R09-WGieM2Er2A/exec",PRAKTIKA_API_URL="https://script.google.com/macros/s/AKfycbywJ9DAn3u98PoXSz7rSEreQXtqw31im8ugjoxTr1f3yKBlQ-IOWCchZolsDQhIjDt8Vg/exec";
 function showLoginError(t){const e=document.getElementById('loginError');e.textContent=t;e.classList.remove('hidden')}function clearLoginError(){const e=document.getElementById('loginError');e.textContent='';e.classList.add('hidden')}function showMessage(t,type='info'){const e=document.getElementById('appMessage');e.textContent=t;e.className='msg '+type;e.classList.remove('hidden')}function clearMessage(){const e=document.getElementById('appMessage');e.textContent='';e.classList.add('hidden')}function value(v){return v==null?'':String(v).trim()}function normalizeYesNo(v){const x=String(v||'').trim().toLowerCase();if(['bai','si','sí','yes'].includes(x))return'Bai';if(['ez','no'].includes(x))return'Ez';return'Ez'}function normalizeRole(v){const x=String(v||'').trim().toLowerCase();if(x==='profesor'||x==='irakaslea')return'profesor';if(x==='alumno'||x==='ikaslea')return'alumno';return x}function isActive(v){const x=String(v||'').trim().toLowerCase();return ['bai','si','sí','yes','1','true'].includes(x)}function escapeHtml(v){return String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}function escapeAttr(v){return escapeHtml(v)}function escapeJs(v){return String(v??'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'\\"')}function getEntryParams(){const p=new URLSearchParams(location.search);return{id:p.get('id'),trabajo:p.get('trabajo'),profesor:p.get('profesor'),panel:p.get('panel'),qrHarrera:p.get('qrHarrera')||p.get('harrera')||p.get('qr')}}
 async function login(){clearLoginError();const username=document.getElementById('username').value.trim().toLowerCase(),password=document.getElementById('password').value.trim();try{const r=await fetch('https://opensheet.elk.sh/'+SHEET_ID+'/ERABILTZAILEAK');USERS=await r.json();const user=USERS.find(u=>String(u.usuario||'').trim().toLowerCase()===username&&String(u.password||'').trim()===password&&isActive(u.activo));if(!user){showLoginError('Usuario o contraseña incorrectos, o usuario inactivo.');return}const role=normalizeRole(user.rol),entry=getEntryParams();if(role==='alumno'&&!entry.id&&!entry.trabajo&&!entry.qrHarrera){showLoginError('Acceso solo permitido mediante QR del coche, ficha de trabajo o QR de recepción.');return}currentUser={
   username:String(user.usuario||'').trim(),
@@ -947,6 +967,14 @@ function showHomeDashboard(){
 
 
         ${isProfesor ? `
+        <button class="dashboard-tile tile-green" type="button" onclick="openDashboardSection('praktikak')">
+          <div class="dashboard-icon">🔧</div>
+          <div class="dashboard-title">Praktikak</div>
+          <div class="dashboard-subtitle">Planificar y asignar prácticas</div>
+        </button>
+        ` : ''}
+
+        ${isProfesor ? `
         <button class="dashboard-tile tile-orange" type="button" onclick="openDashboardSection('informes')">
           <div class="dashboard-icon">🧾</div>
           <div class="dashboard-title">Informes</div>
@@ -1016,6 +1044,13 @@ function openDashboardSection(section){
 
   if(section === 'historial'){
     showHistoryPanel();
+    setTimeout(()=>addBackToHome(),250);
+    return;
+  }
+
+
+  if(section === 'praktikak'){
+    showPracticePlanningPanel();
     setTimeout(()=>addBackToHome(),250);
     return;
   }
@@ -3751,6 +3786,13 @@ function openDashboardSection(section){
     return;
   }
 
+
+  if(section === 'praktikak'){
+    showPracticePlanningPanel();
+    setTimeout(()=>addBackToHome(),250);
+    return;
+  }
+
   if(section === 'informes'){
     showReportsPanel();
     setTimeout(()=>addBackToHome(),250);
@@ -6343,6 +6385,266 @@ function openHarreraEskaerakSafe(){
 // ===== v6.2.1 navegación universal en todas las pantallas =====
 function canShowGlobalNav(){
   return currentUser && !document.getElementById('appView').classList.contains('hidden');
+}
+
+
+// ===== MENDIcar v6.3 planificación de prácticas =====
+window.PRAKTIKAK_CACHE = window.PRAKTIKAK_CACHE || [];
+window.PRAKTIKA_ASSIGNMENTS_CACHE = window.PRAKTIKA_ASSIGNMENTS_CACHE || [];
+window.PRAKTIKA_AUTOAK_CACHE = window.PRAKTIKA_AUTOAK_CACHE || [];
+
+function callPraktikaAPI(payload,onDone){
+  const callbackName='handlePraktikaResponse_'+Date.now()+'_'+Math.floor(Math.random()*100000);
+  window[callbackName]=function(result){
+    try{ onDone(result); }
+    finally{
+      const script=document.getElementById(callbackName);
+      if(script) script.remove();
+      try{ delete window[callbackName]; }catch(e){}
+    }
+  };
+  const params=new URLSearchParams();
+  params.set('callback',callbackName);
+  Object.keys(payload||{}).forEach(k=>params.set(k,payload[k]??''));
+  params.set('_ts',Date.now());
+  const script=document.createElement('script');
+  script.id=callbackName;
+  script.src=PRAKTIKA_API_URL+'?'+params.toString();
+  script.onerror=function(){
+    showMessage('Error al conectar con el servicio de prácticas.','error');
+    script.remove();
+    try{ delete window[callbackName]; }catch(e){}
+  };
+  document.body.appendChild(script);
+}
+
+function callPraktikaAPIPromise(payload){
+  return new Promise(resolve=>callPraktikaAPI(payload,resolve));
+}
+
+function praktikakResourceType(p){
+  let t=String((p&&p.baliabideMota)||'').trim();
+  if(t) return t;
+  const id=String((p&&p.idPraktika)||'').trim().toUpperCase();
+  // Fallback temporal del piloto si la columna H aún no llega por API.
+  if(id==='TRA-01' || id==='TRA-02') return 'Elebadorea';
+  if(id==='TRA-03' || id==='TRA-04') return 'Mahaiak';
+  return '';
+}
+
+function praktikakNeedsVehicle(p){
+  const t=praktikakResourceType(p).toUpperCase();
+  return t.includes('ELEB') || t.includes('ELEV') || t==='AUTOA' || t==='AUTO';
+}
+
+function praktikakTodayISO(){
+  const d=new Date();
+  const z=n=>String(n).padStart(2,'0');
+  return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate());
+}
+
+function showPracticePlanningPanel(){
+  if(!currentUser || currentUser.role!=='profesor'){
+    showMessage('Este apartado es solo para profesorado.','error');
+    return;
+  }
+  document.getElementById('viewModeText').textContent='Praktikak · Planificación';
+  document.getElementById('tableContainer').classList.add('hidden');
+  document.getElementById('vehicleDetail').innerHTML=`
+    <button type="button" class="section-back" onclick="showHomeDashboard()">← Volver al menú principal</button>
+    <div class="vehicle-card">
+      <h2 class="vehicle-title">🔧 Praktikak · Planificación</h2>
+      <div class="ficha-box">Selecciona una fecha y una práctica. Puedes asignar la misma práctica a varios grupos y dar un vehículo diferente a cada grupo.</div>
+      <div id="practicePlannerBody"><div class="practice-empty">Cargando prácticas...</div></div>
+    </div>
+    <div class="vehicle-card">
+      <h2 class="vehicle-title">Asignaciones del día</h2>
+      <div id="practiceAssignmentsDay"><div class="practice-empty">Selecciona una fecha.</div></div>
+    </div>`;
+  if(typeof renderGlobalNav==='function') renderGlobalNav();
+  loadPracticePlannerData();
+}
+
+function loadPracticePlannerData(){
+  showLoading('Cargando prácticas...');
+  callPraktikaAPI({accion:'listarPracticas'}, resp=>{
+    if(!resp || !resp.ok){
+      hideLoading();
+      showMessage('No se han podido cargar PRAKTIKAK: '+(resp&&resp.msg?resp.msg:'Error desconocido'),'error');
+      return;
+    }
+    window.PRAKTIKAK_CACHE=(resp.practicas||[]).filter(p=>String(p.idPraktika||'').trim() && String(p.praktika||'').trim());
+    callSaveAPI({accion:'listarAutoak',cacheBust:Date.now()}, autoResp=>{
+      hideLoading();
+      if(autoResp && autoResp.ok){
+        window.PRAKTIKA_AUTOAK_CACHE=(autoResp.rows||[]).map(mapAutoakRowToVehicle).filter(v=>v.id);
+      }else{
+        window.PRAKTIKA_AUTOAK_CACHE=Array.isArray(vehicles)?vehicles.slice():[];
+      }
+      renderPracticePlanner();
+      refreshPracticeAssignmentsDay();
+    });
+  });
+}
+
+function renderPracticePlanner(){
+  const body=document.getElementById('practicePlannerBody');
+  if(!body) return;
+  const practicas=window.PRAKTIKAK_CACHE||[];
+  if(!practicas.length){
+    body.innerHTML='<div class="practice-empty">No hay prácticas definidas en PRAKTIKAK.</div>';
+    return;
+  }
+  const options=practicas.map(p=>`<option value="${escapeAttr(p.idPraktika)}">${escapeHtml(p.idPraktika)} · ${escapeHtml(p.praktika)} · ${escapeHtml(praktikakResourceType(p)||'Sin recurso')}</option>`).join('');
+  body.innerHTML=`
+    <div class="practice-toolbar">
+      <div><label><strong>Fecha</strong></label><input id="praktikaData" type="date" value="${praktikakTodayISO()}" onchange="refreshPracticeAssignmentsDay()"></div>
+      <div><label><strong>Práctica</strong></label><select id="praktikaSelect" onchange="renderPracticeGroupAssignments()">${options}</select></div>
+    </div>
+    <div id="practiceInfo"></div>
+    <div id="practiceGroupAssignments"></div>
+    <label><strong>Observaciones generales de la sesión</strong></label>
+    <textarea id="praktikaSessionNotes" placeholder="Incidencias, organización, material, cambios de vehículo..."></textarea>
+    <div class="practice-save-bar">
+      <button id="praktikaSaveBtn" type="button" onclick="savePracticeGroupAssignments()">Guardar asignaciones seleccionadas</button>
+      <button class="secondary-btn" type="button" onclick="clearPracticeGroupSelections()">Limpiar selección</button>
+    </div>`;
+  renderPracticeGroupAssignments();
+}
+
+function getSelectedPraktika(){
+  const id=document.getElementById('praktikaSelect')?.value||'';
+  return (window.PRAKTIKAK_CACHE||[]).find(p=>String(p.idPraktika)===String(id))||null;
+}
+
+function renderPracticeGroupAssignments(){
+  const p=getSelectedPraktika();
+  const info=document.getElementById('practiceInfo');
+  const box=document.getElementById('practiceGroupAssignments');
+  if(!p || !info || !box) return;
+  const type=praktikakResourceType(p)||'Sin definir';
+  const needVehicle=praktikakNeedsVehicle(p);
+  const lang=typeof getCurrentLanguage==='function'?getCurrentLanguage():String(localStorage.getItem('MENDICAR_LANG')||'EU');
+  const ficha=(lang==='ES' ? p.fichaEs : p.fichaEu) || p.fichaEu || p.fichaEs || '';
+  const fichaAlt=(lang==='ES' ? p.fichaEu : p.fichaEs) || '';
+  info.innerHTML=`
+    <div class="practice-resource-note"><strong>${escapeHtml(p.praktika)}</strong> · ${escapeHtml(type)} · ${escapeHtml(String(p.iraupena||''))}${p.iraupena?' h':''}</div>
+    <div class="practice-link-row">
+      ${ficha?`<a href="${escapeAttr(ficha)}" target="_blank" rel="noopener"><button type="button">Abrir ficha</button></a>`:''}
+      ${fichaAlt && fichaAlt!==ficha?`<a href="${escapeAttr(fichaAlt)}" target="_blank" rel="noopener"><button class="secondary-btn" type="button">Abrir otra lengua</button></a>`:''}
+    </div>`;
+
+  const autoak=(window.PRAKTIKA_AUTOAK_CACHE||[]).slice().sort((a,b)=>String(a.autoa||'').localeCompare(String(b.autoa||''),'es'));
+  const vehicleOptions='<option value="">Seleccionar vehículo...</option>'+autoak.map(v=>{
+    const blocked=String(v.blokatuta||'').toLowerCase()==='bai';
+    const label=[v.id?'ID '+v.id:'',v.autoa||'Vehículo',v.color||'',blocked?'BLOQUEADO':''].filter(Boolean).join(' · ');
+    return `<option value="${escapeAttr(v.id)}" ${blocked?'disabled':''}>${escapeHtml(label)}</option>`;
+  }).join('');
+
+  box.innerHTML=`
+    <div class="practice-group-grid">
+      ${Array.from({length:10},(_,i)=>{
+        const g='G'+(i+1);
+        return `<div class="practice-group-card">
+          <label class="practice-group-head"><input class="praktika-group-check" type="checkbox" value="${g}" onchange="togglePracticeGroupCard('${g}')"> ${g}</label>
+          ${needVehicle?`<select id="praktikaAuto_${g}" disabled>${vehicleOptions}</select>`:`<div class="ficha-box" style="margin:0;">Mahaiak · ez da autorik behar</div>`}
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+
+function togglePracticeGroupCard(group){
+  const checked=[...document.querySelectorAll('.praktika-group-check')].find(x=>x.value===group)?.checked;
+  const sel=document.getElementById('praktikaAuto_'+group);
+  if(sel) sel.disabled=!checked;
+}
+
+function clearPracticeGroupSelections(){
+  document.querySelectorAll('.praktika-group-check').forEach(c=>{c.checked=false;togglePracticeGroupCard(c.value);});
+  const notes=document.getElementById('praktikaSessionNotes');
+  if(notes) notes.value='';
+}
+
+async function savePracticeGroupAssignments(){
+  const p=getSelectedPraktika();
+  const data=document.getElementById('praktikaData')?.value||'';
+  const notes=document.getElementById('praktikaSessionNotes')?.value.trim()||'';
+  const selected=[...document.querySelectorAll('.praktika-group-check:checked')].map(c=>c.value);
+  if(!p){showMessage('Selecciona una práctica.','error');return;}
+  if(!data){showMessage('Selecciona una fecha.','error');return;}
+  if(!selected.length){showMessage('Selecciona al menos un grupo.','error');return;}
+
+  const needVehicle=praktikakNeedsVehicle(p);
+  const payloads=[];
+  const usedVehicles=new Set();
+  for(const group of selected){
+    const idAutoa=needVehicle?(document.getElementById('praktikaAuto_'+group)?.value||''):'';
+    if(needVehicle && !idAutoa){showMessage('Falta seleccionar vehículo para '+group+'.','error');return;}
+    if(idAutoa && usedVehicles.has(idAutoa)){showMessage('El mismo vehículo está asignado dos veces en esta sesión. Cambia uno de los grupos.','error');return;}
+    if(idAutoa) usedVehicles.add(idAutoa);
+    payloads.push({accion:'guardarAsignacionPractica',data:data,taldea:group,idPraktika:p.idPraktika,idAutoa:idAutoa,egoera:'PENDIENTE',irakaslea:currentUser?currentUser.username:'',oharrak:notes});
+  }
+
+  const btn=document.getElementById('praktikaSaveBtn');
+  if(btn){btn.disabled=true;btn.textContent='Guardando...';}
+  showLoading('Guardando asignaciones...');
+  let ok=0, failures=[];
+  for(const payload of payloads){
+    const resp=await callPraktikaAPIPromise(payload);
+    if(resp && resp.ok) ok++; else failures.push((resp&&resp.msg)||payload.taldea);
+  }
+  hideLoading();
+  if(btn){btn.disabled=false;btn.textContent='Guardar asignaciones seleccionadas';}
+  if(failures.length){
+    showMessage('Guardadas '+ok+' asignaciones. Errores: '+failures.join(' | '),'error');
+  }else{
+    showMessage('Asignaciones guardadas correctamente: '+ok+'.','success');
+    clearPracticeGroupSelections();
+  }
+  refreshPracticeAssignmentsDay();
+}
+
+function refreshPracticeAssignmentsDay(){
+  const target=document.getElementById('practiceAssignmentsDay');
+  if(!target) return;
+  const data=document.getElementById('praktikaData')?.value||praktikakTodayISO();
+  target.innerHTML='<div class="practice-empty">Cargando asignaciones...</div>';
+  callPraktikaAPI({accion:'listarAsignacionesPracticas'}, resp=>{
+    if(!resp || !resp.ok){target.innerHTML='<div class="practice-empty">No se pudieron cargar las asignaciones.</div>';return;}
+    const rows=(resp.asignaciones||[]).filter(a=>String(a.data||'').slice(0,10)===String(data));
+    window.PRAKTIKA_ASSIGNMENTS_CACHE=resp.asignaciones||[];
+    renderPracticeAssignmentsDay(rows,data);
+  });
+}
+
+function renderPracticeAssignmentsDay(rows,data){
+  const target=document.getElementById('practiceAssignmentsDay');
+  if(!target) return;
+  if(!rows.length){target.innerHTML=`<div class="practice-empty">No hay asignaciones para ${escapeHtml(data)}.</div>`;return;}
+  const practicas=window.PRAKTIKAK_CACHE||[];
+  const autos=window.PRAKTIKA_AUTOAK_CACHE||[];
+  target.innerHTML=rows.map(a=>{
+    const p=practicas.find(x=>String(x.idPraktika)===String(a.idPraktika));
+    const v=autos.find(x=>String(x.id)===String(a.idAutoa));
+    const pname=p?p.praktika:a.idPraktika;
+    const vname=a.idAutoa?(v?`${v.autoa||'Vehículo'} · ID ${v.id}`:`ID ${a.idAutoa}`):'Mahaiak';
+    return `<div class="practice-session-card">
+      <div class="practice-session-title">${escapeHtml(a.taldea)} · ${escapeHtml(pname)}</div>
+      <div class="practice-session-meta">${escapeHtml(vname)}<br>Estado: ${escapeHtml(a.egoera||'PENDIENTE')} · Profesor: ${escapeHtml(a.irakaslea||'')}</div>
+      ${a.oharrak?`<div class="ficha-box">${escapeHtml(a.oharrak)}</div>`:''}
+      ${String(a.egoera||'').toUpperCase()!=='CANCELADA'?`<button class="danger-btn" type="button" onclick="cancelPracticeAssignment('${escapeJs(a.idEsleipena)}')">Cancelar asignación</button>`:''}
+    </div>`;
+  }).join('');
+}
+
+function cancelPracticeAssignment(id){
+  if(!id) return;
+  if(!confirm('¿Cancelar esta asignación?')) return;
+  callPraktikaAPI({accion:'cancelarAsignacionPractica',idEsleipena:id},resp=>{
+    if(!resp || !resp.ok){showMessage('No se pudo cancelar: '+(resp&&resp.msg?resp.msg:'Error desconocido'),'error');return;}
+    showMessage('Asignación cancelada.','success');
+    refreshPracticeAssignmentsDay();
+  });
 }
 
 function renderGlobalNav(options){
