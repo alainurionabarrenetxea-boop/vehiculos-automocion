@@ -6394,35 +6394,67 @@ window.PRAKTIKA_ASSIGNMENTS_CACHE = window.PRAKTIKA_ASSIGNMENTS_CACHE || [];
 window.PRAKTIKA_AUTOAK_CACHE = window.PRAKTIKA_AUTOAK_CACHE || [];
 
 function callPraktikaAPI(payload,onDone){
-  const callbackName='handlePraktikaResponse_'+Date.now()+'_'+Math.floor(Math.random()*100000);
   let finished=false;
-  const cleanup=()=>{
-    const script=document.getElementById(callbackName);
-    if(script) script.remove();
-    try{ delete window[callbackName]; }catch(e){}
-  };
-  const finish=result=>{
+  const finish=(result)=>{
     if(finished) return;
     finished=true;
-    clearTimeout(timer);
-    cleanup();
-    try{ if(onDone) onDone(result); }catch(e){ console.error(e); }
+    try{ onDone(result); }catch(e){ console.error('Praktikak callback error',e); }
   };
-  window[callbackName]=function(result){ finish(result); };
+
   const params=new URLSearchParams();
-  params.set('callback',callbackName);
   Object.keys(payload||{}).forEach(k=>params.set(k,payload[k]??''));
   params.set('_ts',Date.now());
-  const script=document.createElement('script');
-  script.id=callbackName;
-  script.src=PRAKTIKA_API_URL+'?'+params.toString();
-  script.onerror=function(){
-    finish({ok:false,msg:'No se ha podido conectar con el servicio de prácticas.'});
-  };
-  const timer=setTimeout(()=>{
-    finish({ok:false,msg:'Tiempo de espera agotado al conectar con el servicio de prácticas.'});
-  },12000);
-  document.body.appendChild(script);
+  const baseUrl=PRAKTIKA_API_URL+'?'+params.toString();
+
+  // 1) Intento normal con fetch. En móvil suele funcionar mejor que JSONP
+  // con las redirecciones de script.google.com -> script.googleusercontent.com.
+  const controller=(typeof AbortController!=='undefined')?new AbortController():null;
+  const fetchTimer=setTimeout(()=>{ try{ if(controller) controller.abort(); }catch(e){} },9000);
+
+  fetch(baseUrl,{method:'GET',cache:'no-store',redirect:'follow',signal:controller?controller.signal:undefined})
+    .then(r=>{
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      return r.text();
+    })
+    .then(txt=>{
+      clearTimeout(fetchTimer);
+      let data=null;
+      try{ data=JSON.parse(txt); }catch(e){ throw new Error('Respuesta no JSON'); }
+      finish(data);
+    })
+    .catch(()=>{
+      clearTimeout(fetchTimer);
+      if(finished) return;
+
+      // 2) Fallback JSONP para navegadores/redes donde fetch esté bloqueado por CORS.
+      const callbackName='handlePraktikaResponse_'+Date.now()+'_'+Math.floor(Math.random()*100000);
+      const jsonpParams=new URLSearchParams(params);
+      jsonpParams.set('callback',callbackName);
+      const script=document.createElement('script');
+      script.id=callbackName;
+      let jsonpFinished=false;
+      const cleanup=()=>{
+        if(jsonpFinished) return;
+        jsonpFinished=true;
+        clearTimeout(jsonpTimer);
+        try{ script.remove(); }catch(e){}
+        try{ delete window[callbackName]; }catch(e){}
+      };
+      window[callbackName]=function(result){
+        cleanup();
+        finish(result);
+      };
+      script.src=PRAKTIKA_API_URL+'?'+jsonpParams.toString();
+      script.onerror=function(){
+        cleanup();
+        finish({ok:false,msg:'No se ha podido conectar con el servicio de prácticas.'});
+      };
+      const jsonpTimer=setTimeout(()=>{
+        cleanup();
+        finish({ok:false,msg:'Tiempo de espera agotado al conectar con prácticas.'});
+      },10000);
+      document.body.appendChild(script);
+    });
 }
 
 function callPraktikaAPIPromise(payload){
@@ -6474,41 +6506,68 @@ function showPracticePlanningPanel(){
 
 function loadPracticePlannerData(){
   showLoading('Cargando prácticas...');
-  callPraktikaAPI({accion:'listarPracticas'}, resp=>{
+
+  const finishPlanner=(practicas)=>{
+    window.PRAKTIKAK_CACHE=(practicas||[]).filter(p=>String(p.idPraktika||'').trim() && String(p.praktika||'').trim());
     hideLoading();
-    if(!resp || !resp.ok){
-      const body=document.getElementById('practicePlannerBody');
-      if(body) body.innerHTML='<div class="msg error">No se han podido cargar las prácticas.</div>';
-      showMessage('No se han podido cargar PRAKTIKAK: '+(resp&&resp.msg?resp.msg:'Error desconocido'),'error');
-      return;
-    }
-
-    window.PRAKTIKAK_CACHE=(resp.practicas||[]).filter(p=>
-      String(p.idPraktika||'').trim() && String(p.praktika||'').trim()
-    );
-
-    // Abrimos el planificador inmediatamente. La carga de AUTOAK es secundaria
-    // y nunca debe dejar bloqueada toda la pantalla.
-    window.PRAKTIKA_AUTOAK_CACHE=Array.isArray(vehicles)?vehicles.slice():[];
     renderPracticePlanner();
     refreshPracticeAssignmentsDay();
 
-    let autoFinished=false;
-    const autoTimer=setTimeout(()=>{
-      if(autoFinished) return;
-      autoFinished=true;
-      console.warn('AUTOAK tardó demasiado; se mantiene el planificador abierto.');
-    },8000);
+    // Los coches se cargan en segundo plano. Si este backend falla,
+    // la pantalla de prácticas sigue funcionando igualmente.
+    let autosDone=false;
+    const autosTimer=setTimeout(()=>{
+      if(autosDone) return;
+      autosDone=true;
+      window.PRAKTIKA_AUTOAK_CACHE=Array.isArray(vehicles)?vehicles.slice():[];
+      try{ renderPracticeGroupAssignments(); }catch(e){}
+    },7000);
 
     callSaveAPI({accion:'listarAutoak',cacheBust:Date.now()}, autoResp=>{
-      if(autoFinished) return;
-      autoFinished=true;
-      clearTimeout(autoTimer);
+      if(autosDone) return;
+      autosDone=true;
+      clearTimeout(autosTimer);
       if(autoResp && autoResp.ok){
         window.PRAKTIKA_AUTOAK_CACHE=(autoResp.rows||[]).map(mapAutoakRowToVehicle).filter(v=>v.id);
-        renderPracticeGroupAssignments();
+      }else{
+        window.PRAKTIKA_AUTOAK_CACHE=Array.isArray(vehicles)?vehicles.slice():[];
       }
+      try{ renderPracticeGroupAssignments(); }catch(e){}
     });
+  };
+
+  callPraktikaAPI({accion:'listarPracticas'}, resp=>{
+    if(resp && resp.ok){
+      finishPlanner(resp.practicas||[]);
+      return;
+    }
+
+    // Fallback de lectura directa de la hoja. Login ya usa OpenSheet,
+    // así que aprovechamos el mismo camino para no bloquear el panel.
+    fetch('https://opensheet.elk.sh/'+SHEET_ID+'/PRAKTIKAK?cacheBust='+Date.now(),{cache:'no-store'})
+      .then(r=>{
+        if(!r.ok) throw new Error('HTTP '+r.status);
+        return r.json();
+      })
+      .then(rows=>{
+        const practicas=(rows||[]).map(r=>({
+          idPraktika:String(r.ID_PRAKTIKA||'').trim(),
+          ikasgaia:String(r.IKASGAIA||'').trim(),
+          praktika:String(r.PRAKTIKA||'').trim(),
+          fichaEu:String(r.FICHA_EU||'').trim(),
+          fichaEs:String(r.FICHA_ES||'').trim(),
+          iraupena:r.IRAUPENA||'',
+          oharrak:String(r.OHARRAK||'').trim(),
+          baliabideMota:String(r['BALIABIDE MOTA']||r.BALIABIDE_MOTA||'').trim()
+        }));
+        clearMessage();
+        finishPlanner(practicas);
+      })
+      .catch(err=>{
+        hideLoading();
+        document.getElementById('practicePlannerBody').innerHTML='<div class="msg error">No se han podido cargar las prácticas.</div>';
+        showMessage('No se han podido cargar PRAKTIKAK: '+((resp&&resp.msg)||err.message||'Error de conexión'),'error');
+      });
   });
 }
 
