@@ -6395,14 +6395,20 @@ window.PRAKTIKA_AUTOAK_CACHE = window.PRAKTIKA_AUTOAK_CACHE || [];
 
 function callPraktikaAPI(payload,onDone){
   const callbackName='handlePraktikaResponse_'+Date.now()+'_'+Math.floor(Math.random()*100000);
-  window[callbackName]=function(result){
-    try{ onDone(result); }
-    finally{
-      const script=document.getElementById(callbackName);
-      if(script) script.remove();
-      try{ delete window[callbackName]; }catch(e){}
-    }
+  let finished=false;
+  const cleanup=()=>{
+    const script=document.getElementById(callbackName);
+    if(script) script.remove();
+    try{ delete window[callbackName]; }catch(e){}
   };
+  const finish=result=>{
+    if(finished) return;
+    finished=true;
+    clearTimeout(timer);
+    cleanup();
+    try{ if(onDone) onDone(result); }catch(e){ console.error(e); }
+  };
+  window[callbackName]=function(result){ finish(result); };
   const params=new URLSearchParams();
   params.set('callback',callbackName);
   Object.keys(payload||{}).forEach(k=>params.set(k,payload[k]??''));
@@ -6411,10 +6417,11 @@ function callPraktikaAPI(payload,onDone){
   script.id=callbackName;
   script.src=PRAKTIKA_API_URL+'?'+params.toString();
   script.onerror=function(){
-    showMessage('Error al conectar con el servicio de prácticas.','error');
-    script.remove();
-    try{ delete window[callbackName]; }catch(e){}
+    finish({ok:false,msg:'No se ha podido conectar con el servicio de prácticas.'});
   };
+  const timer=setTimeout(()=>{
+    finish({ok:false,msg:'Tiempo de espera agotado al conectar con el servicio de prácticas.'});
+  },12000);
   document.body.appendChild(script);
 }
 
@@ -6468,21 +6475,39 @@ function showPracticePlanningPanel(){
 function loadPracticePlannerData(){
   showLoading('Cargando prácticas...');
   callPraktikaAPI({accion:'listarPracticas'}, resp=>{
+    hideLoading();
     if(!resp || !resp.ok){
-      hideLoading();
+      const body=document.getElementById('practicePlannerBody');
+      if(body) body.innerHTML='<div class="msg error">No se han podido cargar las prácticas.</div>';
       showMessage('No se han podido cargar PRAKTIKAK: '+(resp&&resp.msg?resp.msg:'Error desconocido'),'error');
       return;
     }
-    window.PRAKTIKAK_CACHE=(resp.practicas||[]).filter(p=>String(p.idPraktika||'').trim() && String(p.praktika||'').trim());
+
+    window.PRAKTIKAK_CACHE=(resp.practicas||[]).filter(p=>
+      String(p.idPraktika||'').trim() && String(p.praktika||'').trim()
+    );
+
+    // Abrimos el planificador inmediatamente. La carga de AUTOAK es secundaria
+    // y nunca debe dejar bloqueada toda la pantalla.
+    window.PRAKTIKA_AUTOAK_CACHE=Array.isArray(vehicles)?vehicles.slice():[];
+    renderPracticePlanner();
+    refreshPracticeAssignmentsDay();
+
+    let autoFinished=false;
+    const autoTimer=setTimeout(()=>{
+      if(autoFinished) return;
+      autoFinished=true;
+      console.warn('AUTOAK tardó demasiado; se mantiene el planificador abierto.');
+    },8000);
+
     callSaveAPI({accion:'listarAutoak',cacheBust:Date.now()}, autoResp=>{
-      hideLoading();
+      if(autoFinished) return;
+      autoFinished=true;
+      clearTimeout(autoTimer);
       if(autoResp && autoResp.ok){
         window.PRAKTIKA_AUTOAK_CACHE=(autoResp.rows||[]).map(mapAutoakRowToVehicle).filter(v=>v.id);
-      }else{
-        window.PRAKTIKA_AUTOAK_CACHE=Array.isArray(vehicles)?vehicles.slice():[];
+        renderPracticeGroupAssignments();
       }
-      renderPracticePlanner();
-      refreshPracticeAssignmentsDay();
     });
   });
 }
