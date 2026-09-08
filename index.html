@@ -845,6 +845,15 @@ box-shadow:0 8px 18px rgba(220,38,38,.15);
 .practice-empty{padding:16px;border:1px dashed #cbd5e1;border-radius:16px;color:#64748b;background:#f8fafc;font-weight:750}
 @media(max-width:700px){.practice-toolbar,.practice-group-grid{grid-template-columns:1fr}.practice-save-bar{flex-direction:column}.practice-save-bar button{width:100%}}
 
+
+/* ===== MENDIcar v6.4 acceso por horario / taller ===== */
+.area-choice-grid,.subject-choice-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:18px}
+.area-choice,.subject-choice{border:1px solid #e5e7eb;border-radius:24px;background:white;padding:24px 18px;box-shadow:0 10px 28px rgba(15,23,42,.08);cursor:pointer;text-align:center}
+.area-choice:hover,.subject-choice:hover{border-color:#2563eb;transform:translateY(-1px)}
+.area-choice-icon{font-size:48px;margin-bottom:10px}.area-choice-title{font-size:24px;font-weight:950}.area-choice-sub,.subject-choice-sub{margin-top:7px;color:#6b7280;font-weight:750;line-height:1.35}
+.subject-choice{text-align:left}.subject-choice-title{font-size:20px;font-weight:950;color:#111827}.context-strip{padding:12px 14px;border-radius:16px;background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;font-weight:900;margin-bottom:16px}
+@media(max-width:700px){.area-choice-grid,.subject-choice-grid{grid-template-columns:1fr}}
+
 </style>
 </head>
 <body>
@@ -862,22 +871,25 @@ if(localStorage.getItem('MENDICAR_I18N_VERSION') !== '6.0.5'){
   localStorage.setItem('MENDICAR_I18N_VERSION','6.0.5');
 }
 
-let USERS=[],vehicles=[],currentUser=null;const SHEET_ID="1sf2TS8gCKachrkz66S6E_zQuafVpu7F_AhSLdhi-W-g",SHEET_GID="0",SAVE_API_URL="https://script.google.com/macros/s/AKfycbwBYs2oADcw-Za-nLVbR0oF5L6ZHx2gYd1JS-0vjIW9IbD53P9j7U68R09-WGieM2Er2A/exec",PRAKTIKA_API_URL="https://script.google.com/macros/s/AKfycbywJ9DAn3u98PoXSz7rSEreQXtqw31im8ugjoxTr1f3yKBlQ-IOWCchZolsDQhIjDt8Vg/exec";
+let USERS=[],vehicles=[],currentUser=null,currentArea=null,currentTeachingContext=null,currentTeachingAccess=[];const ORDUTEGIAK_GID="1583722008";const SHEET_ID="1sf2TS8gCKachrkz66S6E_zQuafVpu7F_AhSLdhi-W-g",SHEET_GID="0",SAVE_API_URL="https://script.google.com/macros/s/AKfycbwBYs2oADcw-Za-nLVbR0oF5L6ZHx2gYd1JS-0vjIW9IbD53P9j7U68R09-WGieM2Er2A/exec",PRAKTIKA_API_URL="https://script.google.com/macros/s/AKfycbywJ9DAn3u98PoXSz7rSEreQXtqw31im8ugjoxTr1f3yKBlQ-IOWCchZolsDQhIjDt8Vg/exec";
 function showLoginError(t){const e=document.getElementById('loginError');e.textContent=t;e.classList.remove('hidden')}function clearLoginError(){const e=document.getElementById('loginError');e.textContent='';e.classList.add('hidden')}function showMessage(t,type='info'){const e=document.getElementById('appMessage');e.textContent=t;e.className='msg '+type;e.classList.remove('hidden')}function clearMessage(){const e=document.getElementById('appMessage');e.textContent='';e.classList.add('hidden')}function value(v){return v==null?'':String(v).trim()}function normalizeYesNo(v){const x=String(v||'').trim().toLowerCase();if(['bai','si','sí','yes'].includes(x))return'Bai';if(['ez','no'].includes(x))return'Ez';return'Ez'}function normalizeRole(v){const x=String(v||'').trim().toLowerCase();if(x==='profesor'||x==='irakaslea')return'profesor';if(x==='alumno'||x==='ikaslea')return'alumno';return x}function isActive(v){const x=String(v||'').trim().toLowerCase();return ['bai','si','sí','yes','1','true'].includes(x)}function escapeHtml(v){return String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}function escapeAttr(v){return escapeHtml(v)}function escapeJs(v){return String(v??'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'\\"')}function getEntryParams(){const p=new URLSearchParams(location.search);return{id:p.get('id'),trabajo:p.get('trabajo'),profesor:p.get('profesor'),panel:p.get('panel'),qrHarrera:p.get('qrHarrera')||p.get('harrera')||p.get('qr')}}
 async function login(){clearLoginError();const username=document.getElementById('username').value.trim().toLowerCase(),password=document.getElementById('password').value.trim();try{const r=await fetch('https://opensheet.elk.sh/'+SHEET_ID+'/ERABILTZAILEAK');USERS=await r.json();const user=USERS.find(u=>String(u.usuario||'').trim().toLowerCase()===username&&String(u.password||'').trim()===password&&isActive(u.activo));if(!user){showLoginError('Usuario o contraseña incorrectos, o usuario inactivo.');return}const role=normalizeRole(user.rol),entry=getEntryParams();if(role==='alumno'&&!entry.id&&!entry.trabajo&&!entry.qrHarrera){showLoginError('Acceso solo permitido mediante QR del coche, ficha de trabajo o QR de recepción.');return}currentUser={
   username:String(user.usuario||'').trim(),
   role,
   name:String(user.nombre||user.usuario||'').trim(),
   taldea:String(user.taldea||'').trim(),
-  kanpokoKudeatzailea:isKanpokoKudeatzaileaUser(user)
+  kanpokoKudeatzailea:isKanpokoKudeatzaileaUser(user),
+  ordutegiKodea:String(user.ORDUTEGI_KODEA||user.ordutegi_kodea||'').trim()
 };document.getElementById('loginView').classList.add('hidden');document.getElementById('appView').classList.remove('hidden');document.getElementById('helpBtn').classList.remove('hidden');document.getElementById('welcomeText').textContent='Ongi etorri, '+currentUser.name+' · Rola: '+(currentUser.role==='profesor'?'irakaslea':currentUser.role==='alumno'?'ikaslea':currentUser.role);if(currentUser.role==='profesor'){document.getElementById('showWorksBtn').classList.remove('hidden');document.getElementById('showCalendarBtn').classList.remove('hidden');document.getElementById('showQrHistoryBtn').classList.remove('hidden');}registrarUsoApp('LOGIN','Entrada en la aplicación','','','');
 if(entry.qrHarrera || entry.id || entry.trabajo){
   loadVehiclesJSONP();
+}else if(currentUser.role==='profesor'){
+  startTeacherAccessFlow();
 }else{
   showHomeDashboard();
 }
 maybeStartTutorial()}catch(err){showLoginError('Error cargando usuarios:\n'+err.message)}}
-function logout(){currentUser=null;vehicles=[];document.getElementById('appView').classList.add('hidden');document.getElementById('loginView').classList.remove('hidden');['username','password'].forEach(id=>document.getElementById(id).value='');document.getElementById('vehicleDetail').innerHTML='';document.getElementById('tableBody').innerHTML='';document.getElementById('tableContainer').classList.add('hidden');document.getElementById('showAllBtn').classList.add('hidden');document.getElementById('showWorksBtn').classList.add('hidden');clearMessage();clearLoginError()}
+function logout(){currentUser=null;vehicles=[];currentArea=null;currentTeachingContext=null;currentTeachingAccess=[];document.getElementById('appView').classList.add('hidden');document.getElementById('loginView').classList.remove('hidden');['username','password'].forEach(id=>document.getElementById(id).value='');document.getElementById('vehicleDetail').innerHTML='';document.getElementById('tableBody').innerHTML='';document.getElementById('tableContainer').classList.add('hidden');document.getElementById('showAllBtn').classList.add('hidden');document.getElementById('showWorksBtn').classList.add('hidden');clearMessage();clearLoginError()}
 
 // ===== MENDIcar v4.4 Dashboard limpio fijo =====
 function clearMainContent(){
@@ -922,6 +934,72 @@ function isKanpokoKudeatzaileaUser(user){
 function canManageFormRequests(){
   return currentUser && currentUser.role === 'profesor' && currentUser.kanpokoKudeatzailea;
 }
+
+// ===== v6.4 acceso docente automático desde ORDUTEGIAK =====
+function normalizeScheduleText(v){return String(v==null?'':v).replace(/\r/g,'').trim()}
+function inferTeachingArea(subject){
+  const x=String(subject||'').toLowerCase();
+  if(/pint|karroz|carroz|txapa|chapa|element|amov|sold|gainaz|superfic|kolore|color/.test(x)) return 'KARROZERIA';
+  if(/transmis|motor|mek|mec|elektr|electr|esek|susp|direk|direc|fren|balaz|gurpil|rued|diagn|mant/.test(x)) return 'MEKANIKA';
+  return 'BESTEAK';
+}
+function parseScheduleClassCell(raw,code){
+  const txt=normalizeScheduleText(raw); if(!txt || !new RegExp('\\b'+code+'\\b','i').test(txt)) return null;
+  const first=(txt.split('\n')[0]||'').trim(); if(!first.includes('_')) return null;
+  const parts=first.split('_').filter(Boolean); if(parts.length<2) return null;
+  let group=parts[0].trim();
+  let subject=parts.slice(1).join('_').replace(/_?AU\d+.*$/i,'').trim();
+  if(/^\dAU3$/i.test(group)){
+    const rest=txt.split('\n').slice(1).join(' ');
+    const m=rest.match(/(?:^|\s)(A|D)(?:\s|$)/i); if(m) group+=m[1].toUpperCase();
+  }
+  if(!subject) return null;
+  return {taldea:group,ikasgaia:subject,tailerra:inferTeachingArea(subject)};
+}
+function startTeacherAccessFlow(){
+  clearMainContent();
+  const code=String(currentUser&&currentUser.ordutegiKodea||'').trim();
+  if(!code){showMessage('Zure erabiltzaileak ez du ORDUTEGI_KODEA kodea. / Tu usuario no tiene ORDUTEGI_KODEA.','error');showHomeDashboard();return;}
+  showLoading('Ordutegia irakurtzen... / Leyendo horario...');
+  const cb='mendiOrdutegi_'+Date.now(); const old=document.getElementById('ordutegiJsonpScript'); if(old)old.remove();
+  window[cb]=function(resp){
+    try{
+      const found=[];
+      (resp&&resp.table&&resp.table.rows||[]).forEach(row=>(row.c||[]).forEach(cell=>{
+        if(!cell||cell.v==null)return; const a=parseScheduleClassCell(cell.v,code); if(a)found.push(a);
+      }));
+      const uniq=new Map(); found.forEach(a=>uniq.set([a.taldea,a.ikasgaia,a.tailerra].join('|').toUpperCase(),a));
+      currentTeachingAccess=[...uniq.values()];
+      hideLoading(); showAreaSelector();
+    }catch(e){hideLoading();showMessage('Error leyendo ORDUTEGIAK: '+e.message,'error');}
+    const sc=document.getElementById('ordutegiJsonpScript');if(sc)sc.remove();try{delete window[cb]}catch(e){}
+  };
+  const sc=document.createElement('script');sc.id='ordutegiJsonpScript';
+  sc.src='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?gid='+ORDUTEGIAK_GID+'&tqx=responseHandler:'+cb+'&cacheBust='+Date.now();
+  sc.onerror=function(){hideLoading();showMessage('No se ha podido leer ORDUTEGIAK.','error');}; document.body.appendChild(sc);
+}
+function showAreaSelector(){
+  clearMainContent(); document.getElementById('viewModeText').textContent='Tailerra aukeratu / Selecciona taller';
+  const mech=currentTeachingAccess.filter(x=>x.tailerra==='MEKANIKA'); const body=currentTeachingAccess.filter(x=>x.tailerra==='KARROZERIA');
+  document.getElementById('vehicleDetail').innerHTML=`<div class="vehicle-card"><h2 class="vehicle-title">Tailerra aukeratu / Selecciona taller</h2><p>ORDUTEGIAK-en <strong>${escapeHtml(currentUser.ordutegiKodea)}</strong> kodearekin dituzun eskolak bakarrik erakutsiko dira.</p><div class="area-choice-grid">${mech.length?`<button class="area-choice" onclick="selectTeachingArea('MEKANIKA')"><div class="area-choice-icon">🔧</div><div class="area-choice-title">MEKANIKA</div><div class="area-choice-sub">${mech.length} talde/ikasgai</div></button>`:''}${body.length?`<button class="area-choice" onclick="selectTeachingArea('KARROZERIA')"><div class="area-choice-icon">🎨</div><div class="area-choice-title">KARROZERIA</div><div class="area-choice-sub">${body.length} talde/ikasgai</div></button>`:''}</div>${(!mech.length&&!body.length)?'<div class="msg error">Ez da Mekanika edo Karrozeriako esleipenik aurkitu ordutegian.</div>':''}</div>`;
+}
+function selectTeachingArea(area){currentArea=area;currentTeachingContext=null;showSubjectSelector();}
+function showSubjectSelector(){
+  clearMainContent(); const rows=currentTeachingAccess.filter(x=>x.tailerra===currentArea);
+  document.getElementById('viewModeText').textContent=currentArea;
+  document.getElementById('vehicleDetail').innerHTML=`<button type="button" class="section-back" onclick="showAreaSelector()">← Cambiar taller</button><div class="vehicle-card"><h2 class="vehicle-title">${escapeHtml(currentArea)}</h2><p>Elige una de las clases que tienes asignadas en ORDUTEGIAK.</p><div class="subject-choice-grid">${rows.map((x,i)=>`<button class="subject-choice" onclick="selectTeachingContext(${i})"><div class="subject-choice-title">${escapeHtml(x.taldea)} · ${escapeHtml(x.ikasgaia)}</div><div class="subject-choice-sub">${escapeHtml(currentArea)}</div></button>`).join('')}</div></div>`;
+  window.__MENDI_AREA_ROWS=rows;
+}
+function selectTeachingContext(i){const rows=window.__MENDI_AREA_ROWS||[];if(!rows[i])return;currentTeachingContext=rows[i];showHomeDashboard();}
+function vehicleMatchesCurrentTeaching(v){
+  if(!currentUser||currentUser.role!=='profesor'||!currentTeachingContext)return true;
+  const ta=String(v.tailerra||'').toUpperCase(); const wantedArea=String(currentArea||'').toUpperCase();
+  const areaOK=!ta||ta==='DENAK'||ta==='BIAK'||ta.includes(wantedArea)|| (wantedArea==='MEKANIKA'&&ta.includes('MEKAN')) || (wantedArea==='KARROZERIA'&&(ta.includes('KARRO')||ta.includes('CARRO')));
+  const vg=String(v.taldeaEsleitua||'DENAK').toUpperCase().replace(/\s/g,''); const cg=String(currentTeachingContext.taldea||'').toUpperCase().replace(/\s/g,'');
+  const groupOK=!vg||vg==='DENAK'||vg==='GUZTIAK'||vg.split(/[,;/]+/).includes(cg);
+  return areaOK&&groupOK;
+}
+function getVisibleVehicles(){return vehicles.filter(vehicleMatchesCurrentTeaching)}
 
 function showHomeDashboard(){
   clearMessage();
@@ -1162,7 +1240,7 @@ function showAllVehicles(){
   document.getElementById('vehicleDetail').innerHTML='<button type="button" class="section-back" onclick="showHomeDashboard()">← Volver al menú principal</button>';
   document.getElementById('tableContainer').classList.remove('hidden');
   renderVehiclesTable();
-}function renderVehiclesTable(){document.getElementById('tableBody').innerHTML=vehicles.map(v=>`<tr class="clickable-row" onclick="openVehicleAsProfessor('${escapeJs(v.id)}')"><td>${escapeHtml(v.id)}</td><td>${escapeHtml(v.autoa)}</td><td>${escapeHtml(v.color)}</td><td>${escapeHtml(v.vin)}</td><td>${escapeHtml(v.estado)}</td><td>${escapeHtml(v.observaciones)}</td></tr>`).join('')}function openVehicleAsProfessor(id){const v=vehicles.find(x=>String(x.id)===String(id));if(v)renderVehicleDetail(v)}
+}function renderVehiclesTable(){document.getElementById('tableBody').innerHTML=getVisibleVehicles().map(v=>`<tr class="clickable-row" onclick="openVehicleAsProfessor('${escapeJs(v.id)}')"><td>${escapeHtml(v.id)}</td><td>${escapeHtml(v.autoa)}</td><td>${escapeHtml(v.color)}</td><td>${escapeHtml(v.vin)}</td><td>${escapeHtml(v.estado)}</td><td>${escapeHtml(v.observaciones)}</td></tr>`).join('')}function openVehicleAsProfessor(id){const v=vehicles.find(x=>String(x.id)===String(id));if(v&&vehicleMatchesCurrentTeaching(v))renderVehicleDetail(v);else if(v)showMessage('Este vehículo no corresponde al taller/grupo seleccionado.','error')}
 function renderVehicleDetail(vehicle){const isProfesor=currentUser&&currentUser.role==='profesor',isBlockedForStudent=!isProfesor&&vehicle.blokatuta==='Bai';document.getElementById('viewModeText').textContent=isProfesor?'Ficha de vehículo':'Ficha asignada por QR';document.getElementById('tableContainer').classList.add('hidden');document.getElementById('showAllBtn').classList.toggle('hidden',!isProfesor);document.getElementById('vehicleDetail').innerHTML=`${vehicle.blokatuta==='Bai'?`<div class="danger-banner">🚫 VEHÍCULO BLOQUEADO\n${vehicle.idBlokeoa?'Bloqueado por: '+escapeHtml(vehicle.idBlokeoa):''}${vehicle.blokeoData?'\nFecha: '+escapeHtml(vehicle.blokeoData):''}${vehicle.blokeoZergatia?'\nMotivo: '+escapeHtml(vehicle.blokeoZergatia):''}</div>`:''}<div class="vehicle-card"><h2 class="vehicle-title">${escapeHtml(vehicle.autoa||'Vehículo')}</h2><div class="vehicle-grid"><div class="field"><div class="field-label">ID</div><div class="field-value">${escapeHtml(vehicle.id)}</div></div><div class="field"><div class="field-label">Taller</div><div class="field-value">${escapeHtml(vehicle.tailerra)}</div></div><div class="field"><div class="field-label">Color</div><div class="field-value">${escapeHtml(vehicle.color)}</div></div><div class="field"><div class="field-label">VIN</div><div class="field-value">${escapeHtml(vehicle.vin)}</div></div><div class="field"><div class="field-label">Egokitua</div><div class="field-value">${escapeHtml(vehicle.egokitua)}</div></div><div class="field"><div class="field-label">Erabilpena</div><div class="field-value">${escapeHtml(vehicle.erabilpena)}</div></div></div><div class="edit-box"><div id="saveStatus" class="save-status">Lista para guardar.</div><div class="form-grid"><div><label><strong>Estado / Egoera</strong></label><textarea id="estadoInput" ${isBlockedForStudent?'disabled':''}>${escapeHtml(vehicle.estado)}</textarea></div><div><label><strong>Observaciones / Oharrak</strong></label><textarea id="observacionesInput" ${isBlockedForStudent?'disabled':''}>${escapeHtml(vehicle.observaciones||'')}</textarea></div><div><label><strong>Arrankatzen du</strong></label><select id="piztenDuInput" ${isBlockedForStudent?'disabled':''}><option value="Bai" ${vehicle.piztenDu==='Bai'?'selected':''}>Bai</option><option value="Ez" ${vehicle.piztenDu==='Ez'?'selected':''}>Ez</option></select></div><div><label><strong>Arrankatu behar du</strong></label><select id="piztuBeharDuInput" ${isBlockedForStudent?'disabled':''}><option value="Bai" ${vehicle.piztuBeharDu==='Bai'?'selected':''}>Bai</option><option value="Ez" ${vehicle.piztuBeharDu==='Ez'?'selected':''}>Ez</option></select></div>${isProfesor?`<div><label><strong>BLOKATUTA</strong></label><select id="blokatutaInput"><option value="Bai" ${vehicle.blokatuta==='Bai'?'selected':''}>Bai</option><option value="Ez" ${vehicle.blokatuta==='Ez'?'selected':''}>Ez</option></select></div><div><label><strong>BLOKEO ZERGATIA</strong></label><textarea id="blokeoZergatiaInput">${escapeHtml(vehicle.blokeoZergatia||'')}</textarea></div>`:''}</div>${!isBlockedForStudent?`<button type="button" onclick="saveVehicleChanges('${escapeJs(vehicle.id)}')">Guardar cambios</button>`:''}</div>${renderFichaTecnica(vehicle.fitxaTeknika)}${renderRTA(vehicle.rta)}</div>`}
 function setSaveStatus(t,err=false){const e=document.getElementById('saveStatus');if(!e)return;e.textContent=t;e.style.background=err?'#fef2f2':'#eff6ff';e.style.color=err?'#b91c1c':'#1d4ed8'}function saveVehicleChanges(id){const v=vehicles.find(x=>String(x.id)===String(id));if(!v||!currentUser)return;const payload={accion:'guardarVehiculo',usuario:currentUser.username,rol:currentUser.role,idVehiculo:v.id,autoa:v.autoa,estado:document.getElementById('estadoInput').value.trim(),observaciones:document.getElementById('observacionesInput').value.trim(),piztenDu:document.getElementById('piztenDuInput').value,piztuBeharDu:document.getElementById('piztuBeharDuInput').value,blokeado:currentUser.role==='profesor'&&document.getElementById('blokatutaInput')?document.getElementById('blokatutaInput').value:v.blokatuta,motivo:currentUser.role==='profesor'&&document.getElementById('blokeoZergatiaInput')?document.getElementById('blokeoZergatiaInput').value.trim():v.blokeoZergatia};callSaveAPI(payload,r=>{hideLoading();
     if(!r||!r.ok){showMessage('Error al guardar:\n'+(r&&r.msg?r.msg:'Error desconocido'),'error');setSaveStatus('Error al guardar.',true);return}showMessage('Cambios guardados correctamente.','success');loadVehiclesJSONP()})}
