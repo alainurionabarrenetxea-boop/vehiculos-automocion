@@ -880,13 +880,13 @@ async function login(){clearLoginError();const username=document.getElementById(
   taldea:String(user.taldea||'').trim(),
   kanpokoKudeatzailea:isKanpokoKudeatzaileaUser(user),
   ordutegiKodea:String(user.ORDUTEGI_KODEA||user.ordutegi_kodea||'').trim()
-};document.getElementById('loginView').classList.add('hidden');document.getElementById('appView').classList.remove('hidden');document.getElementById('helpBtn').classList.remove('hidden');document.getElementById('welcomeText').textContent='Ongi etorri, '+currentUser.name+' · Rola: '+(isStaffUser()?'irakaslea':currentUser.role==='alumno'?'ikaslea':currentUser.role);if(isStaffUser()){document.getElementById('showWorksBtn').classList.remove('hidden');document.getElementById('showCalendarBtn').classList.remove('hidden');document.getElementById('showQrHistoryBtn').classList.remove('hidden');}registrarUsoApp('LOGIN','Entrada en la aplicación','','','');
+};document.getElementById('loginView').classList.add('hidden');document.getElementById('appView').classList.remove('hidden');document.getElementById('helpBtn').classList.remove('hidden');document.getElementById('welcomeText').textContent='Ongi etorri, '+currentUser.name+' · Rola: '+(currentUser.role==='administrador'?'administratzailea':currentUser.role==='profesor'?'irakaslea':currentUser.role==='alumno'?'ikaslea':currentUser.role);if(isStaffUser()){document.getElementById('showWorksBtn').classList.remove('hidden');document.getElementById('showCalendarBtn').classList.remove('hidden');document.getElementById('showQrHistoryBtn').classList.remove('hidden');}registrarUsoApp('LOGIN','Entrada en la aplicación','','','');
 if(entry.qrHarrera || entry.id || entry.trabajo){
   loadVehiclesJSONP();
-}else if(isStaffUser()){
-  startTeacherAccessFlow();
 }else if(currentUser.role==='administrador'){
   currentArea='TODO'; currentTeachingContext=null; currentTeachingAccess=[]; showHomeDashboard();
+}else if(currentUser.role==='profesor'){
+  startTeacherAccessFlow();
 }else{
   showHomeDashboard();
 }
@@ -932,6 +932,7 @@ function parseScheduleClassCell(raw,code){
   return {taldea:group,ikasgaia:subject,tailerra:inferTeachingArea(subject)};
 }
 function startTeacherAccessFlow(){
+  if(currentUser && currentUser.role==='administrador'){ currentArea='TODO'; currentTeachingContext=null; currentTeachingAccess=[]; showHomeDashboard(); return; }
   clearMainContent();
   const code=String(currentUser&&currentUser.ordutegiKodea||'').trim();
   if(!code){showMessage('Zure erabiltzaileak ez du ORDUTEGI_KODEA kodea. / Tu usuario no tiene ORDUTEGI_KODEA.','error');showHomeDashboard();return;}
@@ -967,7 +968,7 @@ function showSubjectSelector(){
 }
 function selectTeachingContext(i){const rows=window.__MENDI_AREA_ROWS||[];if(!rows[i])return;currentTeachingContext=rows[i];showHomeDashboard();}
 function vehicleMatchesCurrentTeaching(v){
-  if(!currentUser||!isStaffUser()||!currentTeachingContext)return true;
+  if(!currentUser||currentUser.role==='administrador'||currentUser.role!=='profesor'||!currentTeachingContext)return true;
   const ta=String(v.tailerra||'').toUpperCase(); const wantedArea=String(currentArea||'').toUpperCase();
   const areaOK=!ta||ta==='DENAK'||ta==='BIAK'||ta.includes(wantedArea)|| (wantedArea==='MEKANIKA'&&ta.includes('MEKAN')) || (wantedArea==='KARROZERIA'&&(ta.includes('KARRO')||ta.includes('CARRO')));
   const vg=String(v.taldeaEsleitua||'DENAK').toUpperCase().replace(/\s/g,''); const cg=String(currentTeachingContext.taldea||'').toUpperCase().replace(/\s/g,'');
@@ -989,7 +990,7 @@ function showHomeDashboard(){
     <div class="main-dashboard">      <div class="dashboard-user">
         Ongi etorri,<br>
         <strong>${escapeHtml(currentUser ? currentUser.name : '')}</strong><br>
-        Rola: <strong>${escapeHtml(currentUser ? (isStaffUser() ? 'irakaslea' : currentUser.role==='administrador' ? 'administratzailea' : currentUser.role==='alumno' ? 'ikaslea' : currentUser.role) : '')}</strong>
+        Rola: <strong>${escapeHtml(currentUser ? (currentUser.role==='administrador' ? 'administratzailea' : currentUser.role==='profesor' ? 'irakaslea' : currentUser.role==='alumno' ? 'ikaslea' : currentUser.role) : '')}</strong>
       </div>
       ${languageSelectorHtml()}
 
@@ -2939,7 +2940,7 @@ function callSaveAPI(payload,onDone){const callbackName='handleSaveResponse_'+Da
 function renderFichaTecnica(link){if(!link)return'';return`<div class="ficha-box"><strong>Ficha técnica</strong><br><br><a class="button-link" href="${escapeAttr(link)}" target="_blank" rel="noopener"><button type="button" class="small-btn">Ver ficha técnica</button></a></div>`}function renderRTA(link){if(!link)return'';return`<div class="ficha-box"><strong>RTA</strong><br><br><a class="button-link" href="${escapeAttr(link)}" target="_blank" rel="noopener"><button type="button" class="small-btn">Ver RTA</button></a></div>`}
 function getTutorialSteps(){
   const role=currentUser&&currentUser.role?currentUser.role:'alumno';
-  if(role==='profesor'){
+  if(role==='profesor' || role==='administrador'){
     return [
       {title:'Bienvenido a MENDIcar',text:'Esta aplicación sirve para gestionar vehículos, recepciones, trabajos de mecánica y carrocería, progresos e histórico del taller.'},
       {title:'Menu nagusia',text:'Como profesor puedes ver todos los vehículos, abrir fichas, revisar estados y acceder al panel de trabajos.'},
