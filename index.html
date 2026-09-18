@@ -880,10 +880,10 @@ async function login(){clearLoginError();const username=document.getElementById(
   taldea:String(user.taldea||'').trim(),
   kanpokoKudeatzailea:isKanpokoKudeatzaileaUser(user),
   ordutegiKodea:String(user.ORDUTEGI_KODEA||user.ordutegi_kodea||'').trim()
-};document.getElementById('loginView').classList.add('hidden');document.getElementById('appView').classList.remove('hidden');document.getElementById('helpBtn').classList.remove('hidden');document.getElementById('welcomeText').textContent='Ongi etorri, '+currentUser.name+' · Rola: '+(currentUser.role==='profesor'?'irakaslea':currentUser.role==='alumno'?'ikaslea':currentUser.role);if(isStaffUser()){document.getElementById('showWorksBtn').classList.remove('hidden');document.getElementById('showCalendarBtn').classList.remove('hidden');document.getElementById('showQrHistoryBtn').classList.remove('hidden');}registrarUsoApp('LOGIN','Entrada en la aplicación','','','');
+};document.getElementById('loginView').classList.add('hidden');document.getElementById('appView').classList.remove('hidden');document.getElementById('helpBtn').classList.remove('hidden');document.getElementById('welcomeText').textContent='Ongi etorri, '+currentUser.name+' · Rola: '+(isStaffUser()?'irakaslea':currentUser.role==='alumno'?'ikaslea':currentUser.role);if(isStaffUser()){document.getElementById('showWorksBtn').classList.remove('hidden');document.getElementById('showCalendarBtn').classList.remove('hidden');document.getElementById('showQrHistoryBtn').classList.remove('hidden');}registrarUsoApp('LOGIN','Entrada en la aplicación','','','');
 if(entry.qrHarrera || entry.id || entry.trabajo){
   loadVehiclesJSONP();
-}else if(currentUser.role==='profesor'){
+}else if(isStaffUser()){
   startTeacherAccessFlow();
 }else if(currentUser.role==='administrador'){
   currentArea='TODO'; currentTeachingContext=null; currentTeachingAccess=[]; showHomeDashboard();
@@ -967,7 +967,7 @@ function showSubjectSelector(){
 }
 function selectTeachingContext(i){const rows=window.__MENDI_AREA_ROWS||[];if(!rows[i])return;currentTeachingContext=rows[i];showHomeDashboard();}
 function vehicleMatchesCurrentTeaching(v){
-  if(!currentUser||currentUser.role!=='profesor'||!currentTeachingContext)return true;
+  if(!currentUser||!isStaffUser()||!currentTeachingContext)return true;
   const ta=String(v.tailerra||'').toUpperCase(); const wantedArea=String(currentArea||'').toUpperCase();
   const areaOK=!ta||ta==='DENAK'||ta==='BIAK'||ta.includes(wantedArea)|| (wantedArea==='MEKANIKA'&&ta.includes('MEKAN')) || (wantedArea==='KARROZERIA'&&(ta.includes('KARRO')||ta.includes('CARRO')));
   const vg=String(v.taldeaEsleitua||'DENAK').toUpperCase().replace(/\s/g,''); const cg=String(currentTeachingContext.taldea||'').toUpperCase().replace(/\s/g,'');
@@ -983,13 +983,13 @@ function showHomeDashboard(){
   document.getElementById('viewModeText').textContent='Menu nagusia';
   document.getElementById('tableContainer').classList.add('hidden');
 
-  const isProfesor = currentUser && (currentUser.role === 'profesor' || currentUser.role === 'administrador');
+  const isProfesor = currentUser && (isStaffUser() || currentUser.role === 'administrador');
 
   document.getElementById('vehicleDetail').innerHTML = `
     <div class="main-dashboard">      <div class="dashboard-user">
         Ongi etorri,<br>
         <strong>${escapeHtml(currentUser ? currentUser.name : '')}</strong><br>
-        Rola: <strong>${escapeHtml(currentUser ? (currentUser.role==='profesor' ? 'irakaslea' : currentUser.role==='administrador' ? 'administratzailea' : currentUser.role==='alumno' ? 'ikaslea' : currentUser.role) : '')}</strong>
+        Rola: <strong>${escapeHtml(currentUser ? (isStaffUser() ? 'irakaslea' : currentUser.role==='administrador' ? 'administratzailea' : currentUser.role==='alumno' ? 'ikaslea' : currentUser.role) : '')}</strong>
       </div>
       ${languageSelectorHtml()}
 
@@ -1054,6 +1054,13 @@ function showHomeDashboard(){
           <div class="dashboard-icon">⚙️</div>
           <div class="dashboard-title">Ajustes</div>
           <div class="dashboard-subtitle">Idioma y configuración</div>
+        </button>
+        ` : ''}
+        ${currentUser && currentUser.role==='administrador' ? `
+        <button class="dashboard-tile tile-red" type="button" onclick="showAdminPanel()">
+          <div class="dashboard-icon">🛡️</div>
+          <div class="dashboard-title">Administración</div>
+          <div class="dashboard-subtitle">Reset de curso y control global</div>
         </button>
         ` : ''}
       </div>
@@ -1156,15 +1163,47 @@ function showAdminPanel(){
 function showSettingsPanel(){
   document.getElementById('viewModeText').textContent='Ajustes';
   document.getElementById('tableContainer').classList.add('hidden');
-
   document.getElementById('vehicleDetail').innerHTML = `
     <button type="button" class="section-back" onclick="showHomeDashboard()">← Volver al menú principal</button>
+    <div class="vehicle-card"><h2 class="vehicle-title">Ajustes</h2>
+    <div class="ficha-box">Configuración general de MENDIcar.</div>
+    ${currentUser && currentUser.role==='administrador' ? `<button class="danger-btn" type="button" onclick="showAdminPanel()">🛡️ Administración / Cambio de curso</button>` : ''}
+    </div>`;
+}
+
+function showAdminPanel(){
+  if(!currentUser || currentUser.role!=='administrador'){showMessage('Solo el administrador puede acceder a este apartado.','error');return;}
+  clearMessage();
+  document.getElementById('viewModeText').textContent='Administración';
+  document.getElementById('tableContainer').classList.add('hidden');
+  document.getElementById('vehicleDetail').innerHTML=`
+    <button type="button" class="section-back" onclick="showHomeDashboard()">← Volver al menú principal</button>
     <div class="vehicle-card">
-      <h2 class="vehicle-title">Ajustes</h2>
-      <p style="color:#6b7280;">Próximamente: idioma ES/EU, limpieza de caché y configuración del profesorado.</p>
-      <div class="ficha-box"><strong>Estado:</strong> apartado reservado para futuras mejoras.</div>
-    </div>
-  `;
+      <h2 class="vehicle-title">🛡️ Administración</h2>
+      <div class="ficha-box"><strong>Administrador:</strong> acceso global. Los usuarios, vehículos, horarios, QR físicos y catálogo de prácticas no se borran con el reset.</div>
+      <h3>🔄 Reiniciar datos de curso</h3>
+      <p class="muted">Vacía REGISTRO, HARRERA, LANAK, PRAKTIKA_AUTOAK, PRAKTIKA_ESLEIPENAK y EBIDENTZIAK, manteniendo sus cabeceras. Todos los QR de QR_HARRERA vuelven a <strong>Erabilgarri</strong>.</p>
+      <div class="msg error" style="display:block"><strong>Esta acción elimina datos operativos.</strong> No modifica AUTOAK, ORDUTEGIAK, Imp QR, ERABILTZAILEAK, PRAKTIKAK ni los códigos QR.</div>
+      <label><strong>Escribe REINICIAR para confirmar</strong></label>
+      <input id="resetCursoConfirm" autocomplete="off" placeholder="REINICIAR" style="margin:8px 0 12px">
+      <button class="danger-btn" type="button" onclick="resetCursoMendicar()">🗑️ REINICIAR CURSO Y LIBERAR QR</button>
+      <div id="resetCursoResult" class="ficha-box" style="margin-top:12px">Esperando acción.</div>
+    </div>`;
+}
+
+function resetCursoMendicar(){
+  if(!currentUser || currentUser.role!=='administrador') return;
+  const confirmText=String(document.getElementById('resetCursoConfirm')?.value||'').trim().toUpperCase();
+  if(confirmText!=='REINICIAR'){showMessage('Escribe REINICIAR para confirmar.','error');return;}
+  if(!confirm('Se borrarán los datos operativos del curso y se liberarán todos los QR de recepción. ¿Continuar?')) return;
+  const out=document.getElementById('resetCursoResult'); if(out) out.textContent='Reiniciando...';
+  showLoading('Reiniciando curso...');
+  callSaveAPI({accion:'resetCurso',usuario:currentUser.username,confirmacion:'REINICIAR',cacheBust:Date.now()},resp=>{
+    hideLoading();
+    if(!resp || !resp.ok){const msg=(resp&&resp.msg)||'El Apps Script todavía no tiene instalada la acción resetCurso.'; if(out) out.textContent=msg; showMessage(msg,'error'); return;}
+    const msg='Curso reiniciado. QR liberados: '+(resp.qrLiberados??'OK')+'. Hojas vaciadas: '+((resp.hojasVaciadas||[]).join(', ')||'OK')+'.';
+    if(out) out.textContent=msg; showMessage(msg,'success');
+  });
 }
 
 function loadVehiclesJSONP(){
@@ -1232,7 +1271,7 @@ function loadVehiclesJSONP(){
   s.onerror=()=>showMessage('No se ha podido cargar la hoja desde Google Sheets.','error');
   document.body.appendChild(s);
 }
-function routeAfterLoad(){const entry=getEntryParams();if(!currentUser)return;if(entry.qrHarrera){loadReceptionQR(entry.qrHarrera);return}if(currentUser.role==='profesor'||currentUser.role==='administrador'){if(entry.panel==='irakaslea' && (entry.id || entry.trabajo || entry.qrHarrera)){showWorksPanel();return}if(entry.id){const v=vehicles.find(x=>String(x.id)===String(entry.id));if(!v){showMessage('No se ha encontrado ningún vehículo con ese ID.','error');return}renderVehicleDetail(v);return}document.getElementById('viewModeText').textContent='Panel general de profesor';document.getElementById('tableContainer').classList.remove('hidden');document.getElementById('showAllBtn').classList.add('hidden');renderVehiclesTable();setTimeout(()=>addBackToHome(),100);return}if(currentUser.role==='alumno'){if(entry.id){const v=vehicles.find(x=>String(x.id)===String(entry.id));if(!v){showMessage('No se ha encontrado ningún vehículo con ese ID.','error');return}renderVehicleDetail(v);return}showMessage('Acceso denegado. El alumnado solo puede entrar desde QR o ficha de trabajo.','error')}}
+function routeAfterLoad(){const entry=getEntryParams();if(!currentUser)return;if(entry.qrHarrera){loadReceptionQR(entry.qrHarrera);return}if(isStaffUser()||currentUser.role==='administrador'){if(entry.panel==='irakaslea' && (entry.id || entry.trabajo || entry.qrHarrera)){showWorksPanel();return}if(entry.id){const v=vehicles.find(x=>String(x.id)===String(entry.id));if(!v){showMessage('No se ha encontrado ningún vehículo con ese ID.','error');return}renderVehicleDetail(v);return}document.getElementById('viewModeText').textContent='Panel general de profesor';document.getElementById('tableContainer').classList.remove('hidden');document.getElementById('showAllBtn').classList.add('hidden');renderVehiclesTable();setTimeout(()=>addBackToHome(),100);return}if(currentUser.role==='alumno'){if(entry.id){const v=vehicles.find(x=>String(x.id)===String(entry.id));if(!v){showMessage('No se ha encontrado ningún vehículo con ese ID.','error');return}renderVehicleDetail(v);return}showMessage('Acceso denegado. El alumnado solo puede entrar desde QR o ficha de trabajo.','error')}}
 function showAllVehicles(){
   if(!isStaffUser()) return;
   document.getElementById('viewModeText').textContent='Listado completo de vehículos';
@@ -1240,8 +1279,8 @@ function showAllVehicles(){
   document.getElementById('tableContainer').classList.remove('hidden');
   renderVehiclesTable();
 }function renderVehiclesTable(){document.getElementById('tableBody').innerHTML=getVisibleVehicles().map(v=>`<tr class="clickable-row" onclick="openVehicleAsProfessor('${escapeJs(v.id)}')"><td>${escapeHtml(v.id)}</td><td>${escapeHtml(v.autoa)}</td><td>${escapeHtml(v.color)}</td><td>${escapeHtml(v.vin)}</td><td>${escapeHtml(v.estado)}</td><td>${escapeHtml(v.observaciones)}</td></tr>`).join('')}function openVehicleAsProfessor(id){const v=vehicles.find(x=>String(x.id)===String(id));if(v&&vehicleMatchesCurrentTeaching(v))renderVehicleDetail(v);else if(v)showMessage('Este vehículo no corresponde al taller/grupo seleccionado.','error')}
-function renderVehicleDetail(vehicle){const isProfesor=currentUser&&(currentUser.role==='profesor'||currentUser.role==='administrador'),isBlockedForStudent=!isProfesor&&vehicle.blokatuta==='Bai';document.getElementById('viewModeText').textContent=isProfesor?'Ficha de vehículo':'Ficha asignada por QR';document.getElementById('tableContainer').classList.add('hidden');document.getElementById('showAllBtn').classList.toggle('hidden',!isProfesor);document.getElementById('vehicleDetail').innerHTML=`${vehicle.blokatuta==='Bai'?`<div class="danger-banner">🚫 VEHÍCULO BLOQUEADO\n${vehicle.idBlokeoa?'Bloqueado por: '+escapeHtml(vehicle.idBlokeoa):''}${vehicle.blokeoData?'\nFecha: '+escapeHtml(vehicle.blokeoData):''}${vehicle.blokeoZergatia?'\nMotivo: '+escapeHtml(vehicle.blokeoZergatia):''}</div>`:''}<div class="vehicle-card"><h2 class="vehicle-title">${escapeHtml(vehicle.autoa||'Vehículo')}</h2><div class="vehicle-grid"><div class="field"><div class="field-label">ID</div><div class="field-value">${escapeHtml(vehicle.id)}</div></div><div class="field"><div class="field-label">Taller</div><div class="field-value">${escapeHtml(vehicle.tailerra)}</div></div><div class="field"><div class="field-label">Color</div><div class="field-value">${escapeHtml(vehicle.color)}</div></div><div class="field"><div class="field-label">VIN</div><div class="field-value">${escapeHtml(vehicle.vin)}</div></div><div class="field"><div class="field-label">Egokitua</div><div class="field-value">${escapeHtml(vehicle.egokitua)}</div></div><div class="field"><div class="field-label">Erabilpena</div><div class="field-value">${escapeHtml(vehicle.erabilpena)}</div></div></div><div class="edit-box"><div id="saveStatus" class="save-status">Lista para guardar.</div><div class="form-grid"><div><label><strong>Estado / Egoera</strong></label><textarea id="estadoInput" ${isBlockedForStudent?'disabled':''}>${escapeHtml(vehicle.estado)}</textarea></div><div><label><strong>Observaciones / Oharrak</strong></label><textarea id="observacionesInput" ${isBlockedForStudent?'disabled':''}>${escapeHtml(vehicle.observaciones||'')}</textarea></div><div><label><strong>Arrankatzen du</strong></label><select id="piztenDuInput" ${isBlockedForStudent?'disabled':''}><option value="Bai" ${vehicle.piztenDu==='Bai'?'selected':''}>Bai</option><option value="Ez" ${vehicle.piztenDu==='Ez'?'selected':''}>Ez</option></select></div><div><label><strong>Arrankatu behar du</strong></label><select id="piztuBeharDuInput" ${isBlockedForStudent?'disabled':''}><option value="Bai" ${vehicle.piztuBeharDu==='Bai'?'selected':''}>Bai</option><option value="Ez" ${vehicle.piztuBeharDu==='Ez'?'selected':''}>Ez</option></select></div>${isProfesor?`<div><label><strong>BLOKATUTA</strong></label><select id="blokatutaInput"><option value="Bai" ${vehicle.blokatuta==='Bai'?'selected':''}>Bai</option><option value="Ez" ${vehicle.blokatuta==='Ez'?'selected':''}>Ez</option></select></div><div><label><strong>BLOKEO ZERGATIA</strong></label><textarea id="blokeoZergatiaInput">${escapeHtml(vehicle.blokeoZergatia||'')}</textarea></div>`:''}</div>${!isBlockedForStudent?`<button type="button" onclick="saveVehicleChanges('${escapeJs(vehicle.id)}')">Guardar cambios</button>`:''}</div>${renderFichaTecnica(vehicle.fitxaTeknika)}${renderRTA(vehicle.rta)}</div>`}
-function setSaveStatus(t,err=false){const e=document.getElementById('saveStatus');if(!e)return;e.textContent=t;e.style.background=err?'#fef2f2':'#eff6ff';e.style.color=err?'#b91c1c':'#1d4ed8'}function saveVehicleChanges(id){const v=vehicles.find(x=>String(x.id)===String(id));if(!v||!currentUser)return;const payload={accion:'guardarVehiculo',usuario:currentUser.username,rol:currentUser.role,idVehiculo:v.id,autoa:v.autoa,estado:document.getElementById('estadoInput').value.trim(),observaciones:document.getElementById('observacionesInput').value.trim(),piztenDu:document.getElementById('piztenDuInput').value,piztuBeharDu:document.getElementById('piztuBeharDuInput').value,blokeado:currentUser.role==='profesor'&&document.getElementById('blokatutaInput')?document.getElementById('blokatutaInput').value:v.blokatuta,motivo:currentUser.role==='profesor'&&document.getElementById('blokeoZergatiaInput')?document.getElementById('blokeoZergatiaInput').value.trim():v.blokeoZergatia};callSaveAPI(payload,r=>{hideLoading();
+function renderVehicleDetail(vehicle){const isProfesor=currentUser&&(isStaffUser()||currentUser.role==='administrador'),isBlockedForStudent=!isProfesor&&vehicle.blokatuta==='Bai';document.getElementById('viewModeText').textContent=isProfesor?'Ficha de vehículo':'Ficha asignada por QR';document.getElementById('tableContainer').classList.add('hidden');document.getElementById('showAllBtn').classList.toggle('hidden',!isProfesor);document.getElementById('vehicleDetail').innerHTML=`${vehicle.blokatuta==='Bai'?`<div class="danger-banner">🚫 VEHÍCULO BLOQUEADO\n${vehicle.idBlokeoa?'Bloqueado por: '+escapeHtml(vehicle.idBlokeoa):''}${vehicle.blokeoData?'\nFecha: '+escapeHtml(vehicle.blokeoData):''}${vehicle.blokeoZergatia?'\nMotivo: '+escapeHtml(vehicle.blokeoZergatia):''}</div>`:''}<div class="vehicle-card"><h2 class="vehicle-title">${escapeHtml(vehicle.autoa||'Vehículo')}</h2><div class="vehicle-grid"><div class="field"><div class="field-label">ID</div><div class="field-value">${escapeHtml(vehicle.id)}</div></div><div class="field"><div class="field-label">Taller</div><div class="field-value">${escapeHtml(vehicle.tailerra)}</div></div><div class="field"><div class="field-label">Color</div><div class="field-value">${escapeHtml(vehicle.color)}</div></div><div class="field"><div class="field-label">VIN</div><div class="field-value">${escapeHtml(vehicle.vin)}</div></div><div class="field"><div class="field-label">Egokitua</div><div class="field-value">${escapeHtml(vehicle.egokitua)}</div></div><div class="field"><div class="field-label">Erabilpena</div><div class="field-value">${escapeHtml(vehicle.erabilpena)}</div></div></div><div class="edit-box"><div id="saveStatus" class="save-status">Lista para guardar.</div><div class="form-grid"><div><label><strong>Estado / Egoera</strong></label><textarea id="estadoInput" ${isBlockedForStudent?'disabled':''}>${escapeHtml(vehicle.estado)}</textarea></div><div><label><strong>Observaciones / Oharrak</strong></label><textarea id="observacionesInput" ${isBlockedForStudent?'disabled':''}>${escapeHtml(vehicle.observaciones||'')}</textarea></div><div><label><strong>Arrankatzen du</strong></label><select id="piztenDuInput" ${isBlockedForStudent?'disabled':''}><option value="Bai" ${vehicle.piztenDu==='Bai'?'selected':''}>Bai</option><option value="Ez" ${vehicle.piztenDu==='Ez'?'selected':''}>Ez</option></select></div><div><label><strong>Arrankatu behar du</strong></label><select id="piztuBeharDuInput" ${isBlockedForStudent?'disabled':''}><option value="Bai" ${vehicle.piztuBeharDu==='Bai'?'selected':''}>Bai</option><option value="Ez" ${vehicle.piztuBeharDu==='Ez'?'selected':''}>Ez</option></select></div>${isProfesor?`<div><label><strong>BLOKATUTA</strong></label><select id="blokatutaInput"><option value="Bai" ${vehicle.blokatuta==='Bai'?'selected':''}>Bai</option><option value="Ez" ${vehicle.blokatuta==='Ez'?'selected':''}>Ez</option></select></div><div><label><strong>BLOKEO ZERGATIA</strong></label><textarea id="blokeoZergatiaInput">${escapeHtml(vehicle.blokeoZergatia||'')}</textarea></div>`:''}</div>${!isBlockedForStudent?`<button type="button" onclick="saveVehicleChanges('${escapeJs(vehicle.id)}')">Guardar cambios</button>`:''}</div>${renderFichaTecnica(vehicle.fitxaTeknika)}${renderRTA(vehicle.rta)}</div>`}
+function setSaveStatus(t,err=false){const e=document.getElementById('saveStatus');if(!e)return;e.textContent=t;e.style.background=err?'#fef2f2':'#eff6ff';e.style.color=err?'#b91c1c':'#1d4ed8'}function saveVehicleChanges(id){const v=vehicles.find(x=>String(x.id)===String(id));if(!v||!currentUser)return;const payload={accion:'guardarVehiculo',usuario:currentUser.username,rol:currentUser.role,idVehiculo:v.id,autoa:v.autoa,estado:document.getElementById('estadoInput').value.trim(),observaciones:document.getElementById('observacionesInput').value.trim(),piztenDu:document.getElementById('piztenDuInput').value,piztuBeharDu:document.getElementById('piztuBeharDuInput').value,blokeado:isStaffUser()&&document.getElementById('blokatutaInput')?document.getElementById('blokatutaInput').value:v.blokatuta,motivo:isStaffUser()&&document.getElementById('blokeoZergatiaInput')?document.getElementById('blokeoZergatiaInput').value.trim():v.blokeoZergatia};callSaveAPI(payload,r=>{hideLoading();
     if(!r||!r.ok){showMessage('Error al guardar:\n'+(r&&r.msg?r.msg:'Error desconocido'),'error');setSaveStatus('Error al guardar.',true);return}showMessage('Cambios guardados correctamente.','success');loadVehiclesJSONP()})}
 function normKeyValue(v){return String(v||'').trim().toLowerCase()}
 function getField(r,names){if(!r)return '';for(let i=0;i<names.length;i++){const n=names[i];if(r[n]!==undefined&&r[n]!==null&&String(r[n]).trim()!=='')return String(r[n]).trim()}return ''}
@@ -1625,7 +1664,7 @@ function renderReceptionDetail(qr, harrera, lanakRows){
       <div id="historyResult">${renderHistoryByRecepcion(idRecepcion, matricula)}</div>
     </div>
 
-    ${currentUser && currentUser.role === 'profesor' ? `
+    ${currentUser && isStaffUser() ? `
       <div class="vehicle-card">
         <button type="button" class="danger-btn" onclick="closeReceptionQR('${escapeJs(qr.QR_HARRERA)}')">
           Cerrar recepción y liberar QR
@@ -1830,7 +1869,7 @@ function registrarActividadQR(tipoQr, qr, accion, detalle){
   }catch(e){}
 }
 function showQrHistoryPanel(){
-  if(!currentUser || currentUser.role !== 'profesor'){
+  if(!currentUser || !isStaffUser()){
     showMessage('Solo el profesorado puede consultar el historial.', 'error');
     return;
   }
@@ -1947,7 +1986,7 @@ function forceHideLoading(){
 }
 
 function showCalendarPanel(){
-  if(!currentUser || currentUser.role !== 'profesor') return;
+  if(!currentUser || !isStaffUser()) return;
 
   clearMessage();
   registrarUsoApp('CALENDARIO','Consulta de planificación semanal','','','');
@@ -2072,7 +2111,7 @@ function renderCalendar(rows, mode, base){
 }
 
 function showWorksPanel(){
-  if(!currentUser || currentUser.role !== 'profesor') return;
+  if(!currentUser || !isStaffUser()) return;
   clearMessage();
   registrarUsoApp('TRABAJOS','Consulta de trabajos activos','','','');
 
@@ -2937,7 +2976,7 @@ document.getElementById('password').addEventListener('keydown',e=>{if(e.key==='E
 let CALENDAR_MONTH_DATE = new Date();
 
 function showCalendarPanel(){
-  if(!currentUser || currentUser.role !== 'profesor') return;
+  if(!currentUser || !isStaffUser()) return;
 
   clearMessage();
   registrarUsoApp('CALENDARIO','Consulta de calendario mensual','','','');
@@ -3282,7 +3321,7 @@ function loadQrHistory(){
 
 // ===== MENDIcar v3.7 Historial bajo demanda =====
 function showHistoryPanel(){
-  if(!currentUser || currentUser.role !== 'profesor'){
+  if(!currentUser || !isStaffUser()){
     showMessage('Solo el profesorado puede consultar el historial.', 'error');
     return;
   }
@@ -6560,7 +6599,7 @@ function praktikakTodayISO(){
 }
 
 function showPracticePlanningPanel(){
-  if(!currentUser || currentUser.role!=='profesor'){
+  if(!currentUser || !isStaffUser()){
     showMessage('Este apartado es solo para profesorado.','error');
     return;
   }
