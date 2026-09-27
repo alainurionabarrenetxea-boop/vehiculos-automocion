@@ -855,6 +855,63 @@ box-shadow:0 8px 18px rgba(220,38,38,.15);
 @media(max-width:700px){.area-choice-grid,.subject-choice-grid{grid-template-columns:1fr}}
 
 </style>
+
+<style id="mendicar-quick-requests-style">
+.quick-actions-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin:16px 0}
+.quick-action-card{border:2px solid #dbeafe;border-radius:18px;background:#fff;padding:18px;text-align:left;cursor:pointer;box-shadow:0 4px 14px rgba(15,23,42,.06)}
+.quick-action-card:hover{transform:translateY(-1px);box-shadow:0 8px 20px rgba(15,23,42,.10)}
+.quick-action-card .qa-icon{font-size:30px;margin-bottom:8px}.quick-action-card .qa-title{font-weight:800;font-size:18px}.quick-action-card .qa-sub{font-size:13px;color:#64748b;margin-top:4px}
+.request-people{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:10px 0 16px}
+.request-person{border:2px solid #e2e8f0;border-radius:14px;background:#fff;padding:12px;cursor:pointer;text-align:left}
+.request-person.selected{border-color:#2563eb;background:#eff6ff;box-shadow:0 0 0 2px rgba(37,99,235,.12)}
+.request-person .name{font-weight:800}.request-person .mail{font-size:11px;color:#64748b;overflow-wrap:anywhere}
+.request-step{border:1px solid #e2e8f0;border-radius:18px;background:#fff;padding:16px;margin:14px 0}
+.request-step h3{margin:0 0 12px;font-size:18px}
+.request-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
+.request-fields label{font-weight:700;font-size:13px;display:block;margin-bottom:5px}
+.request-fields input,.request-fields textarea,.request-fields select{width:100%;box-sizing:border-box}
+.priority-chips,.status-chips{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.priority-chip,.status-chip{border:2px solid #dbe2ea;background:#fff;border-radius:999px;padding:9px 14px;font-weight:800;cursor:pointer}
+.priority-chip.selected,.status-chip.selected{border-color:#2563eb;background:#eff6ff}
+.request-card{border:1px solid #e2e8f0;border-left:8px solid #3b82f6;border-radius:18px;background:#fff;padding:16px;margin:12px 0;box-shadow:0 3px 12px rgba(15,23,42,.05)}
+.request-card .request-top{display:flex;gap:10px;justify-content:space-between;align-items:flex-start;flex-wrap:wrap}
+.request-card .request-title{font-weight:900;font-size:18px}.request-meta{font-size:12px;color:#64748b;line-height:1.5}
+.request-work{background:#f8fafc;border-radius:12px;padding:12px;margin:12px 0;font-size:15px}
+.request-badges{display:flex;gap:6px;flex-wrap:wrap}.request-badge{padding:5px 9px;border-radius:999px;background:#eef2ff;font-size:11px;font-weight:800}
+.request-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.request-toolbar button{margin:0}
+.admin-manager-card{display:flex;justify-content:space-between;gap:12px;align-items:center;border:1px solid #e2e8f0;border-radius:14px;padding:12px;margin:8px 0;background:#fff}
+.admin-manager-card .who{min-width:0}.admin-manager-card .who strong{display:block}.admin-manager-card .who span{font-size:11px;color:#64748b;overflow-wrap:anywhere}
+.toggle-manager{min-width:120px}
+@media(max-width:640px){.quick-actions-grid{grid-template-columns:1fr 1fr}.quick-action-card{padding:14px}.request-fields{grid-template-columns:1fr}.request-people{grid-template-columns:1fr 1fr}}
+</style>
+
+<style>
+/* ===== MENDIcar v6.6 · navegación visual y flujo flexible ===== */
+.global-nav-panel,.topbar-actions{display:none!important}
+.nf-hero{background:linear-gradient(135deg,#0f172a,#1e3a8a);color:#fff;border-radius:24px;padding:20px;margin:0 0 16px;box-shadow:0 14px 30px rgba(15,23,42,.16)}
+.nf-hero h2{margin:0 0 6px;font-size:24px}.nf-hero p{margin:0;color:#dbeafe;font-weight:700;line-height:1.35}
+.nf-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:14px 0 24px}
+.nf-card{display:flex;flex-direction:column;align-items:flex-start;gap:5px;text-align:left;border:1px solid #e2e8f0!important;background:#fff!important;color:#0f172a!important;border-radius:20px!important;padding:16px!important;min-height:118px;box-shadow:0 8px 20px rgba(15,23,42,.06);cursor:pointer}
+.nf-card:hover{transform:translateY(-1px);box-shadow:0 12px 26px rgba(15,23,42,.10)}.nf-card .i{font-size:28px}.nf-card .t{font-size:17px;font-weight:950}.nf-card .s{font-size:12px;color:#64748b;font-weight:800;line-height:1.3}
+.nf-card.primary{background:#eff6ff!important;border-color:#bfdbfe!important}.nf-card.warn{background:#fff7ed!important;border-color:#fed7aa!important}.nf-card.admin{background:#f5f3ff!important;border-color:#ddd6fe!important}
+.nf-badge{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:24px;padding:0 7px;border-radius:999px;background:#dc2626;color:#fff;font-size:12px;font-weight:950;margin-left:auto}
+.nf-section-title{font-size:20px;font-weight:950;color:#0f172a;margin:20px 0 10px}.nf-muted{color:#64748b;font-weight:700;font-size:13px;line-height:1.4}
+.nf-chooser{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}.nf-choice{border:2px solid #e2e8f0!important;background:#fff!important;color:#0f172a!important;border-radius:18px!important;padding:14px!important;text-align:left;font-weight:900;min-height:86px}.nf-choice.selected{border-color:#2563eb!important;background:#eff6ff!important;box-shadow:0 0 0 3px rgba(37,99,235,.10)}.nf-choice .big{font-size:24px;display:block;margin-bottom:5px}.nf-choice small{display:block;color:#64748b;font-weight:700;margin-top:4px}
+.nf-step{border:1px solid #e2e8f0;border-radius:20px;padding:16px;margin:12px 0;background:#fff}.nf-step h3{margin:0 0 10px;font-size:17px}.nf-step-number{display:inline-flex;width:26px;height:26px;border-radius:999px;align-items:center;justify-content:center;background:#1d4ed8;color:#fff;font-weight:950;margin-right:7px}
+.nf-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}.nf-fields label{font-weight:900;font-size:13px;color:#334155}.nf-fields input,.nf-fields select,.nf-fields textarea,.nf-step textarea,.nf-step input,.nf-step select{width:100%;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:13px;padding:10px 11px;background:#fff;font:inherit}
+.nf-action{width:100%;padding:14px!important;border-radius:16px!important;font-size:17px!important;font-weight:950!important}.nf-action.secondary{background:#e2e8f0!important;color:#0f172a!important}.nf-action.success{background:#166534!important;color:#fff!important}.nf-action.danger{background:#b91c1c!important;color:#fff!important}
+.nf-work-card{border:1px solid #e2e8f0;border-left:8px solid #2563eb;border-radius:20px;padding:15px;margin:12px 0;background:#fff;box-shadow:0 8px 20px rgba(15,23,42,.05)}.nf-work-card.auto{border-left-color:#7c3aed}.nf-work-card.electro{border-left-color:#0284c7}.nf-work-head{display:flex;gap:10px;justify-content:space-between;align-items:flex-start;flex-wrap:wrap}.nf-work-title{font-weight:950;font-size:18px}.nf-work-meta{font-size:12px;color:#64748b;font-weight:750;line-height:1.45}.nf-pills{display:flex;gap:6px;flex-wrap:wrap}.nf-pill{display:inline-flex;padding:5px 9px;border-radius:999px;background:#f1f5f9;color:#334155;font-size:11px;font-weight:950}.nf-pill.auto{background:#ede9fe;color:#6d28d9}.nf-pill.electro{background:#e0f2fe;color:#0369a1}.nf-pill.urgent{background:#fee2e2;color:#b91c1c}.nf-pill.ok{background:#dcfce7;color:#166534}.nf-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.nf-toolbar button{width:auto!important;min-width:120px;padding:10px 12px!important;border-radius:12px!important;font-size:13px!important}
+.nf-vehicle-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}.nf-vehicle{border:1px solid #e2e8f0;border-radius:20px;background:#fff;padding:14px;box-shadow:0 6px 16px rgba(15,23,42,.05)}.nf-vehicle.fault{border-left:8px solid #dc2626}.nf-vehicle.warn{border-left:8px solid #d97706}.nf-vehicle.ok{border-left:8px solid #16a34a}.nf-vehicle.blocked{border-left:8px solid #111827}.nf-vehicle .name{font-size:17px;font-weight:950}.nf-vehicle .status{font-size:13px;font-weight:850;margin:6px 0}.nf-vehicle .notes{font-size:12px;color:#64748b;line-height:1.4;min-height:34px}
+.nf-filterbar{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 16px}.nf-filterbar button{width:auto!important;border-radius:999px!important;padding:8px 12px!important;font-size:12px!important}.nf-filterbar button.selected{background:#0f172a!important;color:#fff!important}
+.nf-bottom-nav{position:fixed;left:50%;transform:translateX(-50%);bottom:10px;z-index:9998;width:min(760px,calc(100% - 20px));display:grid;grid-template-columns:repeat(5,1fr);gap:6px;padding:7px;background:rgba(15,23,42,.96);border-radius:18px;box-shadow:0 12px 34px rgba(15,23,42,.28)}.nf-bottom-nav button{background:transparent!important;color:#fff!important;border:0!important;border-radius:12px!important;padding:8px 3px!important;font-size:10px!important;font-weight:850!important}.nf-bottom-nav button span{display:block;font-size:19px;margin-bottom:2px}.nf-bottom-spacer{height:78px}
+.nf-manager-table{display:grid;gap:10px}.nf-manager-row{display:grid;grid-template-columns:minmax(180px,1fr) auto auto auto;gap:8px;align-items:center;border:1px solid #e2e8f0;border-radius:16px;padding:10px;background:#fff}.nf-manager-row .who{min-width:0}.nf-manager-row .who strong{display:block}.nf-manager-row .who small{display:block;overflow:hidden;text-overflow:ellipsis;color:#64748b}.nf-toggle{width:auto!important;padding:8px 10px!important;border-radius:999px!important;font-size:11px!important}.nf-toggle.on{background:#166534!important}.nf-toggle.off{background:#e2e8f0!important;color:#334155!important}
+.nf-students{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:7px;max-height:280px;overflow:auto;padding:4px}.nf-student{border:1px solid #cbd5e1!important;background:#fff!important;color:#0f172a!important;border-radius:12px!important;padding:9px!important;text-align:left;font-size:12px!important}.nf-student.selected{border-color:#2563eb!important;background:#eff6ff!important}
+.nf-inline-note{padding:10px 12px;border-radius:14px;background:#f8fafc;border:1px solid #e2e8f0;color:#475569;font-size:12px;font-weight:750;line-height:1.4}
+@media(max-width:700px){.nf-manager-row{grid-template-columns:1fr 1fr 1fr}.nf-manager-row .who{grid-column:1/-1}.nf-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.nf-card{min-height:104px;padding:13px!important}.nf-card .t{font-size:15px}.nf-card .s{font-size:11px}.topbar-actions{display:none!important}.global-nav-panel{display:none!important}.content{padding-bottom:86px!important}}
+@media(min-width:701px){.nf-bottom-nav{max-width:760px}.nf-bottom-spacer{display:block}}
+@media print{.nf-bottom-nav,.nf-bottom-spacer{display:none!important}}
+
+</style>
 </head>
 <body>
 <div id="loginView" class="box"><div class="header"><div class="header-logo"><img src="icono-512.png" alt="MENDIcar"><div><h2>MENDIcar</h2><p>Automozioaren kudeaketa digitala</p></div></div></div><div class="content"><input id="username" type="text" placeholder="Erabiltzailea / posta"><input id="password" type="password" placeholder="Pasahitza"><button type="button" onclick="login()">Sartu</button><div id="loginError" class="msg error hidden"></div></div><div class="footer-credit">Aplikazioa sortzailea: <strong>Alain Urionabarrenetxea</strong></div></div>
@@ -886,7 +943,7 @@ if(entry.qrHarrera || entry.id || entry.trabajo){
 }else if(currentUser.role==='administrador'){
   currentArea='TODO'; currentTeachingContext=null; currentTeachingAccess=[]; showHomeDashboard();
 }else if(currentUser.role==='profesor'){
-  startTeacherAccessFlow();
+  currentArea=null; currentTeachingContext=null; currentTeachingAccess=[]; showHomeDashboard();
 }else{
   showHomeDashboard();
 }
@@ -1260,7 +1317,13 @@ function loadVehiclesJSONP(){
         blokeoZergatia:value(r['BLOKEO ZERGATIA'])
       })).filter(v=>v.id!=='');
 
-      routeAfterLoad();
+      if(typeof window.__MENDICAR_AFTER_VEHICLES_LOAD === 'function'){
+        const fn=window.__MENDICAR_AFTER_VEHICLES_LOAD;
+        window.__MENDICAR_AFTER_VEHICLES_LOAD=null;
+        fn();
+      }else{
+        routeAfterLoad();
+      }
     }catch(e){
       showMessage('Error procesando la hoja:\n'+e.message,'error');
     }
@@ -6957,6 +7020,562 @@ if(__oldRenderReceptionDetail){
     renderGlobalNav();
   };
 }
+
+
+// ===== MENDIcar v6.4.1 - FLUJO RÁPIDO DE PETICIONES =====
+(function(){
+  const QTXT={
+    EU:{
+      main:'Menu nagusia',hello:'Ongi etorri',admin:'Administrazioa',newReq:'Eskaera berria',newReqSub:'Lana beste irakasle bati bidali',
+      inbox:'Jasotako eskaerak',inboxSub:'Ikusi, onartu edo itxaron',myWorks:'Lanak',myWorksSub:'Lan aktiboak',
+      calendar:'Egutegia',calendarSub:'Plangintza',vehicles:'Ibilgailuak',vehiclesSub:'Ikastetxeko ibilgailuak',
+      practices:'Praktikak',practicesSub:'Planifikatu eta esleitu',history:'Historia',historySub:'Bilatu autoa, QR edo matrikula',
+      reports:'Txostenak',reportsSub:'Ikaslea, lana eta data',settings:'Ezarpenak',settingsSub:'Hizkuntza eta konfigurazioa',
+      logout:'Saioa itxi',back:'Itzuli menu nagusira',who:'Nori bidali?',whoHelp:'Hautatu lana jasoko duen irakasle bat edo gehiago.',
+      vehicleData:'Ibilgailuaren datuak',owner:'Bezeroa / erreferentzia',phone:'Telefonoa',email:'Emaila',plate:'Matrikula',
+      make:'Marka',model:'Modeloa',km:'Km',work:'Egin beharreko lana',notes:'Oharrak',priority:'Lehentasuna',
+      low:'Baxua',normal:'Normala',high:'Handia',urgent:'Premiazkoa',send:'Eskaera bidali',sending:'Eskaera bidaltzen...',
+      sent:'Eskaera bidali da',seeInbox:'Eskaerak ikusi',another:'Beste eskaera bat',loading:'Kargatzen...',
+      noReq:'Ez dago eskaerarik erakusteko.',requester:'Eskatzailea',recipients:'Hartzaileak',state:'Egoera',
+      new:'Berria',review:'Aztertzen',accepted:'Onartua',waiting:'Itxaron',rejected:'Baztertua',finished:'Amaitua',
+      accept:'Onartu',wait:'Itxaron',reject:'Baztertu',finish:'Amaitu',reviewBtn:'Aztertzen',changeRecipients:'Hartzaileak aldatu',
+      saveRecipients:'Hartzaileak gorde',adminTitle:'MENDIcar administrazioa',managers:'Eskaeren kudeatzaileak',
+      managersHelp:'Aktibatu edo desaktibatu eskaera guztiak kudea ditzaketen irakasleak.',managerOn:'Kudeatzailea',managerOff:'Ez da kudeatzailea',
+      reset:'Ikasturtea berrabiarazi',resetHelp:'Lehenik kalkulu-orriaren kopia osoa sortzen da. Kopiarik gabe ez da ezer ezabatzen.',
+      typeReset:'Idatzi REINICIAR berresteko',resetBtn:'IKASTURTEA BERRABIARAZI',rolesNote:'Administratzaile rola eta egiturazko rolak ERABILTZAILEAK orrian soilik aldatzen dira.',
+      allGlobal:'Sarbide globala',requiredRecipient:'Hautatu gutxienez hartzaile bat.',requiredWork:'Adierazi egin beharreko lana.',
+      error:'Errorea',updated:'Eguneratuta'
+    },
+    ES:{
+      main:'Menú principal',hello:'Bienvenido',admin:'Administración',newReq:'Nueva petición',newReqSub:'Pasar un trabajo a otro profesor',
+      inbox:'Peticiones recibidas',inboxSub:'Ver, aceptar o dejar en espera',myWorks:'Trabajos',myWorksSub:'Trabajos activos',
+      calendar:'Calendario',calendarSub:'Planificación',vehicles:'Vehículos',vehiclesSub:'Vehículos del centro',
+      practices:'Prácticas',practicesSub:'Planificar y asignar',history:'Historial',historySub:'Buscar coche, QR o matrícula',
+      reports:'Informes',reportsSub:'Alumno, tarea y fecha',settings:'Ajustes',settingsSub:'Idioma y configuración',
+      logout:'Cerrar sesión',back:'Volver al menú principal',who:'¿A quién se lo pasas?',whoHelp:'Selecciona uno o varios profesores que recibirán el trabajo.',
+      vehicleData:'Datos del vehículo',owner:'Cliente / referencia',phone:'Teléfono',email:'Correo electrónico',plate:'Matrícula',
+      make:'Marca',model:'Modelo',km:'Km',work:'Trabajo que hay que realizar',notes:'Observaciones',priority:'Prioridad',
+      low:'Baja',normal:'Normal',high:'Alta',urgent:'Urgente',send:'Enviar petición',sending:'Enviando petición...',
+      sent:'Petición enviada correctamente',seeInbox:'Ver peticiones',another:'Crear otra petición',loading:'Cargando...',
+      noReq:'No hay peticiones que mostrar.',requester:'Solicitante',recipients:'Destinatarios',state:'Estado',
+      new:'Nueva',review:'En revisión',accepted:'Aceptada',waiting:'En espera',rejected:'Rechazada',finished:'Finalizada',
+      accept:'Aceptar',wait:'En espera',reject:'Rechazar',finish:'Finalizar',reviewBtn:'En revisión',changeRecipients:'Cambiar destinatarios',
+      saveRecipients:'Guardar destinatarios',adminTitle:'Administración MENDIcar',managers:'Gestores de peticiones',
+      managersHelp:'Activa o desactiva qué profesores pueden gestionar todas las peticiones.',managerOn:'Gestiona peticiones',managerOff:'No gestiona peticiones',
+      reset:'Reiniciar curso',resetHelp:'Primero se crea una copia completa de la hoja. Si falla la copia, no se borra nada.',
+      typeReset:'Escribe REINICIAR para confirmar',resetBtn:'REINICIAR CURSO',rolesNote:'El rol administrador y los roles estructurales se cambian únicamente en ERABILTZAILEAK.',
+      allGlobal:'Acceso global',requiredRecipient:'Selecciona al menos un destinatario.',requiredWork:'Indica el trabajo que hay que realizar.',
+      error:'Error',updated:'Actualizado'
+    },
+    CA:{
+      main:'Menú principal',hello:'Benvingut/da',admin:'Administració',newReq:'Nova petició',newReqSub:'Passar un treball a un altre professor',
+      inbox:'Peticions rebudes',inboxSub:'Veure, acceptar o deixar en espera',myWorks:'Treballs',myWorksSub:'Treballs actius',
+      calendar:'Calendari',calendarSub:'Planificació',vehicles:'Vehicles',vehiclesSub:'Vehicles del centre',
+      practices:'Pràctiques',practicesSub:'Planificar i assignar',history:'Historial',historySub:'Cercar vehicle, QR o matrícula',
+      reports:'Informes',reportsSub:'Alumne, tasca i data',settings:'Configuració',settingsSub:'Idioma i configuració',
+      logout:'Tancar sessió',back:'Tornar al menú principal',who:'A qui ho envies?',whoHelp:'Selecciona un o més professors que rebran el treball.',
+      vehicleData:'Dades del vehicle',owner:'Client / referència',phone:'Telèfon',email:'Correu electrònic',plate:'Matrícula',
+      make:'Marca',model:'Model',km:'Km',work:'Treball que cal realitzar',notes:'Observacions',priority:'Prioritat',
+      low:'Baixa',normal:'Normal',high:'Alta',urgent:'Urgent',send:'Enviar petició',sending:'Enviant petició...',
+      sent:'Petició enviada correctament',seeInbox:'Veure peticions',another:'Crear una altra petició',loading:'Carregant...',
+      noReq:'No hi ha peticions per mostrar.',requester:'Sol·licitant',recipients:'Destinataris',state:'Estat',
+      new:'Nova',review:'En revisió',accepted:'Acceptada',waiting:'En espera',rejected:'Rebutjada',finished:'Finalitzada',
+      accept:'Acceptar',wait:'En espera',reject:'Rebutjar',finish:'Finalitzar',reviewBtn:'En revisió',changeRecipients:'Canviar destinataris',
+      saveRecipients:'Desar destinataris',adminTitle:'Administració MENDIcar',managers:'Gestors de peticions',
+      managersHelp:'Activa o desactiva quins professors poden gestionar totes les peticions.',managerOn:'Gestiona peticions',managerOff:'No gestiona peticions',
+      reset:'Reiniciar curs',resetHelp:'Primer es crea una còpia completa del full. Si falla la còpia, no s’esborra res.',
+      typeReset:'Escriu REINICIAR per confirmar',resetBtn:'REINICIAR CURS',rolesNote:'El rol administrador i els rols estructurals només es canvien a ERABILTZAILEAK.',
+      allGlobal:'Accés global',requiredRecipient:'Selecciona almenys un destinatari.',requiredWork:'Indica el treball que cal realitzar.',
+      error:'Error',updated:'Actualitzat'
+    }
+  };
+  window.QT=function(k){
+    const l=(typeof APP_LANG!=='undefined' && QTXT[APP_LANG])?APP_LANG:'EU';
+    return (QTXT[l]&&QTXT[l][k])||QTXT.EU[k]||k;
+  };
+
+  // Corrige traducciones que antes conservaban euskera al seleccionar ES.
+  if(typeof LANG!=='undefined'){
+    Object.assign(LANG.ES,{
+      subtitle:'Gestión digital de automoción',user:'Usuario / correo',pass:'Contraseña',made:'Aplicación creada por:',
+      main:'Menú principal',loadingCalendar:'Cargando calendario...',loadingData:'Cargando datos...',loadingWorks:'Cargando trabajos activos...',
+      loadingHistory:'Cargando historial...',loadingReports:'Cargando informes...',active:'ACTIVO',clickToExpand:'Pulsa para desplegar',
+      touchToExpand:'Pulsa para abrir/cerrar'
+    });
+    Object.assign(LANG.CA,{main:'Menú principal'});
+    if(typeof addMap==='function'){
+      addMap('main','Menu nagusia','Menú principal','Panell principal');
+      addMap('loadingCalendar','Egutegia kargatzen...','Cargando calendario...','Carregant calendari...');
+      addMap('loadingData','Datuak kargatzen...','Cargando datos...','Carregant dades...');
+      addMap('loadingWorks','Lan aktiboak kargatzen...','Cargando trabajos activos...','Carregant treballs actius...');
+      addMap('loadingHistory','Historia kargatzen...','Cargando historial...','Carregant historial...');
+      addMap('loadingReports','Txostenak kargatzen...','Cargando informes...','Carregant informes...');
+    }
+  }
+
+  function activeTeachers(){
+    return (Array.isArray(USERS)?USERS:[]).filter(u=>{
+      try{
+        const r=normalizeRole(u.rol);
+        return isActive(u.activo) && (r==='profesor' || r==='administrador');
+      }catch(_){return false}
+    }).map(u=>({
+      username:String(u.usuario||'').trim(),
+      name:String(u.nombre||u.usuario||'').trim(),
+      role:normalizeRole(u.rol),
+      manager:isKanpokoKudeatzaileaUser(u)
+    })).filter(x=>x.username);
+  }
+  window.__activeRequestTeachers=activeTeachers;
+
+  function isRequestManagerCurrent(){
+    return !!(currentUser && (currentUser.role==='administrador' || currentUser.kanpokoKudeatzailea));
+  }
+
+  function dashboardTile(icon,title,sub,onclick,cls){
+    return `<button class="quick-action-card ${cls||''}" type="button" onclick="${onclick}">
+      <div class="qa-icon">${icon}</div><div class="qa-title">${escapeHtml(title)}</div><div class="qa-sub">${escapeHtml(sub)}</div>
+    </button>`;
+  }
+
+  window.showHomeDashboard=function(){
+    clearMessage();
+    if(typeof forceHideLoading==='function') forceHideLoading();
+    document.getElementById('viewModeText').textContent=QT('main');
+    document.getElementById('tableContainer').classList.add('hidden');
+
+    const staff=currentUser && (currentUser.role==='profesor'||currentUser.role==='administrador');
+    let tiles='';
+    if(staff){
+      tiles+=dashboardTile('➕',QT('newReq'),QT('newReqSub'),"showQuickRequestPanel()");
+      tiles+=dashboardTile('📥',QT('inbox'),QT('inboxSub'),"showIncomingRequestsPanel()");
+      tiles+=dashboardTile('📋',QT('myWorks'),QT('myWorksSub'),"openDashboardSection('trabajos')");
+      tiles+=dashboardTile('📅',QT('calendar'),QT('calendarSub'),"openDashboardSection('calendario')");
+      tiles+=dashboardTile('🚗',QT('vehicles'),QT('vehiclesSub'),"openDashboardSection('vehiculos')");
+      tiles+=dashboardTile('🔧',QT('practices'),QT('practicesSub'),"openDashboardSection('praktikak')");
+      tiles+=dashboardTile('🕓',QT('history'),QT('historySub'),"openDashboardSection('historial')");
+      tiles+=dashboardTile('🧾',QT('reports'),QT('reportsSub'),"openDashboardSection('informes')");
+      if(currentUser.role==='administrador') tiles+=dashboardTile('🛡️',QT('admin'),QT('allGlobal'),"showAdminPanel()");
+      tiles+=dashboardTile('⚙️',QT('settings'),QT('settingsSub'),"openDashboardSection('ajustes')");
+    } else {
+      tiles+=dashboardTile('🚗',QT('vehicles'),QT('vehiclesSub'),"openDashboardSection('vehiculos')");
+    }
+
+    const roleLabel=currentUser? (currentUser.role==='administrador' ? QT('admin') : (currentUser.role==='profesor' ? (APP_LANG==='EU'?'Irakaslea':APP_LANG==='CA'?'Professor':'Profesor') : (APP_LANG==='EU'?'Ikaslea':APP_LANG==='CA'?'Alumne':'Alumno'))) : '';
+    document.getElementById('vehicleDetail').innerHTML=`
+      <div class="main-dashboard">
+        <div class="dashboard-user">${escapeHtml(QT('hello'))}, <strong>${escapeHtml(currentUser?currentUser.name:'')}</strong><br><span style="font-size:12px;color:#64748b">${escapeHtml(roleLabel)}</span></div>
+        ${languageSelectorHtml()}
+        <div class="quick-actions-grid">${tiles}</div>
+        <button class="dashboard-logout" type="button" onclick="logout()">🚪 ${escapeHtml(QT('logout'))}</button>
+      </div>`;
+    setTimeout(()=>{try{translateAllText(true)}catch(_){}},30);
+  };
+
+  const oldOpen=window.openDashboardSection;
+  window.openDashboardSection=function(section){
+    if(section==='peticion_nueva'){showQuickRequestPanel();return}
+    if(section==='peticiones'){showIncomingRequestsPanel();return}
+    if(section==='administracion'){showAdminPanel();return}
+    if(typeof oldOpen==='function') return oldOpen(section);
+  };
+
+  window.toggleReqPerson=function(btn){
+    btn.classList.toggle('selected');
+    btn.setAttribute('aria-pressed',btn.classList.contains('selected')?'true':'false');
+  };
+  window.selectReqPriority=function(p){
+    document.querySelectorAll('.priority-chip[data-priority]').forEach(b=>b.classList.toggle('selected',b.dataset.priority===p));
+    const el=document.getElementById('reqPriorityValue'); if(el)el.value=p;
+  };
+
+  window.showQuickRequestPanel=function(){
+    if(!currentUser || !['profesor','administrador'].includes(currentUser.role)){showMessage(QT('error'),'error');return}
+    clearMainContent();
+    document.getElementById('viewModeText').textContent=QT('newReq');
+    const people=activeTeachers().filter(x=>x.username.toLowerCase()!==String(currentUser.username||'').toLowerCase());
+    const peopleHtml=people.map(p=>`<button type="button" class="request-person" data-user="${escapeAttr(p.username)}" data-name="${escapeAttr(p.name)}" onclick="toggleReqPerson(this)" aria-pressed="false">
+      <div class="name">👤 ${escapeHtml(p.name)}</div><div class="mail">${escapeHtml(p.username)}</div>
+    </button>`).join('');
+    document.getElementById('vehicleDetail').innerHTML=`
+      <button type="button" class="section-back" onclick="showHomeDashboard()">← ${escapeHtml(QT('back'))}</button>
+      <div class="vehicle-card">
+        <h2 class="vehicle-title">➕ ${escapeHtml(QT('newReq'))}</h2>
+        <div class="request-step"><h3>1 · ${escapeHtml(QT('who'))}</h3><p class="muted">${escapeHtml(QT('whoHelp'))}</p><div class="request-people">${peopleHtml}</div></div>
+        <div class="request-step"><h3>2 · ${escapeHtml(QT('vehicleData'))}</h3>
+          <div class="request-fields">
+            <div><label>${escapeHtml(QT('owner'))}</label><input id="reqCliente"></div>
+            <div><label>${escapeHtml(QT('phone'))}</label><input id="reqTelefono" inputmode="tel"></div>
+            <div><label>${escapeHtml(QT('email'))}</label><input id="reqEmail" inputmode="email"></div>
+            <div><label>${escapeHtml(QT('plate'))}</label><input id="reqMatricula"></div>
+            <div><label>${escapeHtml(QT('make'))}</label><input id="reqMarca"></div>
+            <div><label>${escapeHtml(QT('model'))}</label><input id="reqModelo"></div>
+            <div><label>${escapeHtml(QT('km'))}</label><input id="reqKm" inputmode="numeric"></div>
+          </div>
+        </div>
+        <div class="request-step"><h3>3 · ${escapeHtml(QT('work'))}</h3>
+          <textarea id="reqTrabajo" rows="5" style="width:100%;box-sizing:border-box"></textarea>
+          <div style="margin-top:12px"><strong>${escapeHtml(QT('priority'))}</strong></div>
+          <input type="hidden" id="reqPriorityValue" value="normal">
+          <div class="priority-chips">
+            <button type="button" class="priority-chip" data-priority="baja" onclick="selectReqPriority('baja')">${escapeHtml(QT('low'))}</button>
+            <button type="button" class="priority-chip selected" data-priority="normal" onclick="selectReqPriority('normal')">${escapeHtml(QT('normal'))}</button>
+            <button type="button" class="priority-chip" data-priority="alta" onclick="selectReqPriority('alta')">${escapeHtml(QT('high'))}</button>
+            <button type="button" class="priority-chip" data-priority="urgente" onclick="selectReqPriority('urgente')">${escapeHtml(QT('urgent'))}</button>
+          </div>
+          <label style="font-weight:700">${escapeHtml(QT('notes'))}</label><textarea id="reqObservaciones" rows="3" style="width:100%;box-sizing:border-box"></textarea>
+        </div>
+        <button type="button" onclick="saveQuickRequest()" style="width:100%;font-size:18px;padding:14px">📤 ${escapeHtml(QT('send'))}</button>
+        <div id="reqSaveResult" style="margin-top:12px"></div>
+      </div>`;
+  };
+
+  window.saveQuickRequest=function(){
+    const selected=[...document.querySelectorAll('.request-person.selected')];
+    if(!selected.length){showMessage(QT('requiredRecipient'),'error');return}
+    const trabajo=String(document.getElementById('reqTrabajo')?.value||'').trim();
+    if(!trabajo){showMessage(QT('requiredWork'),'error');return}
+    const users=selected.map(x=>x.dataset.user);
+    const names=selected.map(x=>x.dataset.name);
+    const out=document.getElementById('reqSaveResult');
+    if(out) out.innerHTML=`<div class="ficha-box">${escapeHtml(QT('sending'))}</div>`;
+    callSaveAPI({
+      accion:'crearSolicitudApp',
+      usuario:currentUser.username,
+      rol:currentUser.role,
+      taldea:currentUser.taldea||'',
+      destinatarios:users.join(','),
+      destinatariosNombres:names.join(', '),
+      cliente:String(document.getElementById('reqCliente')?.value||'').trim(),
+      telefono:String(document.getElementById('reqTelefono')?.value||'').trim(),
+      email:String(document.getElementById('reqEmail')?.value||'').trim(),
+      matricula:String(document.getElementById('reqMatricula')?.value||'').trim(),
+      marca:String(document.getElementById('reqMarca')?.value||'').trim(),
+      modelo:String(document.getElementById('reqModelo')?.value||'').trim(),
+      km:String(document.getElementById('reqKm')?.value||'').trim(),
+      trabajoSolicitado:trabajo,
+      observaciones:String(document.getElementById('reqObservaciones')?.value||'').trim(),
+      prioridad:String(document.getElementById('reqPriorityValue')?.value||'normal')
+    },resp=>{
+      if(!resp||!resp.ok){
+        const msg=(resp&&resp.msg)||'No se ha podido enviar la petición.';
+        if(out)out.innerHTML=`<div class="msg error" style="display:block">${escapeHtml(msg)}</div>`;return;
+      }
+      if(out)out.innerHTML=`<div class="msg success" style="display:block"><strong>${escapeHtml(QT('sent'))}</strong><br>${escapeHtml(resp.idRecepcion||'')}</div>
+        <div class="request-toolbar"><button onclick="showIncomingRequestsPanel()">${escapeHtml(QT('seeInbox'))}</button><button onclick="showQuickRequestPanel()">${escapeHtml(QT('another'))}</button></div>`;
+    });
+  };
+
+  function rowField(r,names){ return (typeof getAnyField==='function'?getAnyField(r,names):'') || ''; }
+  function requestStateLabel(v){
+    v=String(v||'nueva').toLowerCase();
+    const m={nueva:'new',berria:'new',en_revision:'review',aceptada:'accepted',en_espera:'waiting',rechazada:'rejected',finalizada:'finished'};
+    return QT(m[v]||'new');
+  }
+  function canSeeRequest(r){
+    if(!currentUser)return false;
+    if(currentUser.role==='administrador'||currentUser.kanpokoKudeatzailea)return true;
+    const me=String(currentUser.username||'').toLowerCase();
+    const ds=String(rowField(r,['DESTINATARIOS'])||'').toLowerCase().split(',').map(x=>x.trim());
+    const from=String(rowField(r,['SOLICITANTE_EMAIL','USUARIO'])||'').toLowerCase();
+    return ds.includes(me)||from===me;
+  }
+  function canEditRequest(r){return canSeeRequest(r)}
+
+  window.showIncomingRequestsPanel=function(){
+    if(!currentUser || !['profesor','administrador'].includes(currentUser.role)){return}
+    clearMainContent(); document.getElementById('viewModeText').textContent=QT('inbox');
+    document.getElementById('vehicleDetail').innerHTML=`<button type="button" class="section-back" onclick="showHomeDashboard()">← ${escapeHtml(QT('back'))}</button>
+      <div class="vehicle-card"><h2 class="vehicle-title">📥 ${escapeHtml(QT('inbox'))}</h2><div id="requestInbox">${escapeHtml(QT('loading'))}</div></div>`;
+    callSaveAPI({accion:'listarHarrera'},resp=>{
+      const box=document.getElementById('requestInbox'); if(!box)return;
+      if(!resp||!resp.ok){box.innerHTML=`<div class="msg error" style="display:block">${escapeHtml((resp&&resp.msg)||QT('error'))}</div>`;return}
+      let rows=(resp.rows||[]).filter(r=>{
+        const src=String(rowField(r,['JATORRIA','ORIGEN'])||'').toUpperCase();
+        return (src==='APP'||src==='FORM') && canSeeRequest(r);
+      });
+      rows.sort((a,b)=>String(rowField(b,['FECHA','DATA'])+' '+rowField(b,['HORA','ORDUA'])).localeCompare(String(rowField(a,['FECHA','DATA'])+' '+rowField(a,['HORA','ORDUA']))));
+      window.__REQUEST_ROWS=rows;
+      box.innerHTML=rows.length?rows.map(renderRequestCard).join(''):`<div class="ficha-box">${escapeHtml(QT('noReq'))}</div>`;
+    });
+  };
+
+  window.renderRequestCard=function(r){
+    const id=String(rowField(r,['ID_RECEPCION'])||'');
+    const marca=String(rowField(r,['MARCA'])||''), modelo=String(rowField(r,['MODELO'])||''), mat=String(rowField(r,['MATRICULA'])||'');
+    const title=((marca+' '+modelo).trim()||mat||'Vehículo')+(mat&&((marca+' '+modelo).trim())?' · '+mat:'');
+    const trabajo=String(rowField(r,['TRABAJO_SOLICITADO','QUEJA_CLIENTE'])||'');
+    const solicitante=String(rowField(r,['SOLICITANTE_NOMBRE','USUARIO'])||'');
+    const destinatarios=String(rowField(r,['DESTINATARIOS_NOMBRES','DESTINATARIOS'])||'');
+    const prioridad=String(rowField(r,['LEHENTASUNA','PRIORIDAD'])||'normal').toLowerCase();
+    const estado=String(rowField(r,['ESTADO_RECEPCION'])||'nueva').toLowerCase();
+    const src=String(rowField(r,['JATORRIA','ORIGEN'])||'FORM').toUpperCase();
+    const editable=canEditRequest(r);
+    const prLabels={baja:QT('low'),normal:QT('normal'),alta:QT('high'),urgente:QT('urgent')};
+    return `<div class="request-card" id="reqcard_${escapeAttr(id)}">
+      <div class="request-top"><div><div class="request-title">🚗 ${escapeHtml(title)}</div>
+        <div class="request-meta">${escapeHtml(id)} · ${escapeHtml(src)} · ${escapeHtml(rowField(r,['FECHA'])||'')} ${escapeHtml(rowField(r,['HORA'])||'')}</div></div>
+        <div class="request-badges"><span class="request-badge">${escapeHtml(requestStateLabel(estado))}</span><span class="request-badge">${escapeHtml(prLabels[prioridad]||prioridad)}</span></div>
+      </div>
+      <div class="request-work"><strong>${escapeHtml(QT('work'))}</strong><br>${escapeHtml(trabajo||'-')}</div>
+      <div class="request-meta"><strong>${escapeHtml(QT('requester'))}:</strong> ${escapeHtml(solicitante||'-')}<br><strong>${escapeHtml(QT('recipients'))}:</strong> ${escapeHtml(destinatarios||'-')}</div>
+      ${editable?`<div class="request-toolbar">
+        <button onclick="updateRequestState('${escapeJs(id)}','en_revision')">${escapeHtml(QT('reviewBtn'))}</button>
+        <button onclick="updateRequestState('${escapeJs(id)}','aceptada')">✅ ${escapeHtml(QT('accept'))}</button>
+        <button onclick="updateRequestState('${escapeJs(id)}','en_espera')">⏸ ${escapeHtml(QT('wait'))}</button>
+        <button onclick="updateRequestState('${escapeJs(id)}','rechazada')">✖ ${escapeHtml(QT('reject'))}</button>
+        <button onclick="updateRequestState('${escapeJs(id)}','finalizada')">🏁 ${escapeHtml(QT('finish'))}</button>
+        <button onclick="openRecipientsEditor('${escapeJs(id)}')">👥 ${escapeHtml(QT('changeRecipients'))}</button>
+      </div>
+      <div class="priority-chips">
+        ${['baja','normal','alta','urgente'].map(p=>`<button class="priority-chip ${p===prioridad?'selected':''}" onclick="updateRequestPriority('${escapeJs(id)}','${p}')">${escapeHtml(prLabels[p])}</button>`).join('')}
+      </div>
+      <div id="recipientsEditor_${escapeAttr(id)}"></div>`:''}
+    </div>`;
+  };
+
+  window.updateRequestState=function(id,state){
+    callSaveAPI({accion:'actualizarSolicitudApp',usuario:currentUser.username,idRecepcion:id,estado:state},resp=>{
+      if(!resp||!resp.ok){showMessage((resp&&resp.msg)||QT('error'),'error');return} showIncomingRequestsPanel();
+    });
+  };
+  window.updateRequestPriority=function(id,p){
+    callSaveAPI({accion:'actualizarSolicitudApp',usuario:currentUser.username,idRecepcion:id,prioridad:p},resp=>{
+      if(!resp||!resp.ok){showMessage((resp&&resp.msg)||QT('error'),'error');return} showIncomingRequestsPanel();
+    });
+  };
+
+  window.openRecipientsEditor=function(id){
+    const box=document.getElementById('recipientsEditor_'+id); if(!box)return;
+    const row=(window.__REQUEST_ROWS||[]).find(r=>String(rowField(r,['ID_RECEPCION'])||'')===id); if(!row)return;
+    const current=String(rowField(row,['DESTINATARIOS'])||'').toLowerCase().split(',').map(x=>x.trim()).filter(Boolean);
+    box.innerHTML=`<div class="request-step"><h3>${escapeHtml(QT('recipients'))}</h3><div class="request-people">
+      ${activeTeachers().map(p=>`<button type="button" class="request-person ${current.includes(p.username.toLowerCase())?'selected':''}" data-user="${escapeAttr(p.username)}" data-name="${escapeAttr(p.name)}" onclick="toggleReqPerson(this)"><div class="name">👤 ${escapeHtml(p.name)}</div><div class="mail">${escapeHtml(p.username)}</div></button>`).join('')}
+      </div><button onclick="saveRequestRecipients('${escapeJs(id)}')">${escapeHtml(QT('saveRecipients'))}</button></div>`;
+  };
+  window.saveRequestRecipients=function(id){
+    const box=document.getElementById('recipientsEditor_'+id); if(!box)return;
+    const sel=[...box.querySelectorAll('.request-person.selected')];
+    if(!sel.length){showMessage(QT('requiredRecipient'),'error');return}
+    callSaveAPI({accion:'actualizarSolicitudApp',usuario:currentUser.username,idRecepcion:id,destinatarios:sel.map(x=>x.dataset.user).join(','),destinatariosNombres:sel.map(x=>x.dataset.name).join(', ')},resp=>{
+      if(!resp||!resp.ok){showMessage((resp&&resp.msg)||QT('error'),'error');return} showIncomingRequestsPanel();
+    });
+  };
+
+  window.showAdminPanel=function(){
+    if(!currentUser||currentUser.role!=='administrador'){showMessage(QT('error'),'error');return}
+    clearMainContent(); document.getElementById('viewModeText').textContent=QT('admin');
+    const managers=activeTeachers().filter(x=>x.role==='profesor');
+    document.getElementById('vehicleDetail').innerHTML=`
+      <button type="button" class="section-back" onclick="showHomeDashboard()">← ${escapeHtml(QT('back'))}</button>
+      <div class="vehicle-card">
+        <h2 class="vehicle-title">🛡️ ${escapeHtml(QT('adminTitle'))}</h2>
+        <div class="ficha-box"><strong>${escapeHtml(QT('rolesNote'))}</strong></div>
+        <h3 style="margin-top:20px">👥 ${escapeHtml(QT('managers'))}</h3><p class="muted">${escapeHtml(QT('managersHelp'))}</p>
+        <div id="managerAdminList">${managers.map(p=>`<div class="admin-manager-card"><div class="who"><strong>${escapeHtml(p.name)}</strong><span>${escapeHtml(p.username)}</span></div>
+          <button class="toggle-manager ${p.manager?'':'secondary'}" onclick="toggleManagerUser('${escapeJs(p.username)}',${p.manager?'false':'true'})">${escapeHtml(p.manager?QT('managerOn'):QT('managerOff'))}</button></div>`).join('')}</div>
+        <h3 style="margin-top:24px">🗑️ ${escapeHtml(QT('reset'))}</h3>
+        <p class="muted">${escapeHtml(QT('resetHelp'))}</p>
+        <input id="resetCursoConfirm" autocomplete="off" placeholder="${escapeAttr(QT('typeReset'))}" style="margin:8px 0 12px">
+        <button class="danger-btn" type="button" onclick="resetCursoMendicarSafe()">🗑️ ${escapeHtml(QT('resetBtn'))}</button>
+        <div id="resetCursoResult" class="ficha-box" style="margin-top:12px"></div>
+      </div>`;
+  };
+
+  window.toggleManagerUser=function(username,enable){
+    callSaveAPI({accion:'setHarreraKudeatzailea',usuario:currentUser.username,target:username,valor:enable?'BAI':'EZ'},resp=>{
+      if(!resp||!resp.ok){showMessage((resp&&resp.msg)||QT('error'),'error');return}
+      const u=(USERS||[]).find(x=>String(x.usuario||'').trim().toLowerCase()===String(username).toLowerCase());
+      if(u)u.HARRERA_KUDEATZAILEA=enable?'BAI':'EZ';
+      showAdminPanel();
+    });
+  };
+
+  window.resetCursoMendicarSafe=function(){
+    const val=String(document.getElementById('resetCursoConfirm')?.value||'').trim().toUpperCase();
+    if(val!=='REINICIAR'){showMessage(QT('typeReset'),'error');return}
+    if(!confirm(QT('resetHelp')))return;
+    const out=document.getElementById('resetCursoResult'); if(out)out.textContent=QT('loading');
+    callSaveAPI({accion:'resetCurso',usuario:currentUser.username,confirmacion:'REINICIAR'},resp=>{
+      if(!resp||!resp.ok){if(out)out.textContent=(resp&&resp.msg)||QT('error');return}
+      if(out)out.innerHTML=`<strong>${escapeHtml(resp.msg||QT('updated'))}</strong>${resp.backupUrl?`<br><a href="${escapeAttr(resp.backupUrl)}" target="_blank" rel="noopener">${escapeHtml(resp.backupNombre||'Copia de seguridad')}</a>`:''}`;
+    });
+  };
+
+  const originalSetLanguage=window.setLanguage;
+  if(typeof originalSetLanguage==='function'){
+    window.setLanguage=function(lang){
+      const r=originalSetLanguage(lang);
+      setTimeout(()=>{try{showHomeDashboard()}catch(_){}},20);
+      return r;
+    };
+  }
+})();
+
+</script>
+
+<script>
+// ===== MENDIcar v6.6 · casi final · flujo flexible =====
+(function(){
+  const DEFAULT_AUTO_MANAGER='raulmartinez@mendizabala.eus';
+  const NF={
+    EU:{
+      home:'Hasiera',classes:'Nire eskolak',classesSub:'Ordutegia, taldea eta ikasgelako lana',vehicleState:'Ibilgailuen egoera',vehicleStateSub:'Begiratu eta eguneratu tailerreko autoen egoera',external:'Kanpoko lanak',externalSub:'Sarrera, esleipena eta jarraipena',shopWorks:'Tailerreko lanak',shopWorksSub:'Lan aktiboak eta aginduak',practices:'Praktikak',practicesSub:'Planifikatu eta esleitu',history:'Historia',historySub:'Autoa, QR edo matrikula bilatu',calendar:'Egutegia',calendarSub:'Aukerakoa: data eta orduen plangintza',settings:'Nire lan modua',settingsSub:'Mugikorra, papera edo irakaslearen kontrola',admin:'Administrazioa',adminSub:'Kudeatzaileak, baimenak eta ikasturte aldaketa',
+      hello:'Zer egin nahi duzu?',homeHint:'Aukeratu ekintza bat. Ez da beharrezkoa beti bide bera jarraitzea.',newExternal:'Kanpoko lan berria',newExternalSub:'Ibilgailu edo bezero baten eskaera sartu',inboxExternal:'Kanpoko lanen sarrera',inboxExternalSub:'Sailkatu, onartu eta banatu',myAssigned:'Nire esleitutako lanak',myAssignedSub:'Niri esleitutako lanak prestatu eta amaitu',
+      chooseArea:'Zein arlotara doa?',autoArea:'Automozioa',autoAreaSub:'Raúl edo Automozio arloko kudeatzaileak jasoko du',electroArea:'Elektromekanika',electroAreaSub:'Elektromekanikako kudeatzaileek jasoko dute',vehicle:'Ibilgailua',client:'Bezeroa / erreferentzia',phone:'Telefonoa',email:'Posta',plate:'Matrikula',make:'Marka',model:'Modeloa',km:'Km',work:'Eskatutako lana',notes:'Oharrak',priority:'Lehentasuna',send:'Eskaera bidali',requiredArea:'Aukeratu Automozioa edo Elektromekanika.',requiredWork:'Idatzi egin beharreko lana.',sent:'Eskaera bidalita',routed:'Bidalia hona',
+      all:'Guztiak',pending:'Egiteke',assigned:'Esleituta',finished:'Amaituta',area:'Arloa',requester:'Eskatzailea',manager:'Kudeatzailea',teachers:'Irakasleak',prepare:'Lana prestatu',classify:'Arloa aukeratu',assign:'Esleitu / prestatu',printSheet:'Fitxa inprimatu',finish:'Amaitu',state:'Egoera',noItems:'Ez dago elementurik.',loading:'Kargatzen...',
+      workMode:'Lan egiteko modua',mobile:'Mugikorra / QR',mobileSub:'Ikasleak aplikazioa eta QR erabil ditzake',paper:'Fitxa inprimatua',paperSub:'Ikasle bakoitzarentzat paperezko fitxa',teacherOnly:'Irakaslearen kontrola',teacherOnlySub:'Ikasleek ez dute aplikazioa erabiltzen',askEvery:'Aldi bakoitzean aukeratu',askEverySub:'Lan bakoitzean modua erabaki',savePreference:'Nire hobespena gorde',preferenceSaved:'Hobespena gordeta.',
+      optionalSchedule:'Data eta ordua (aukerakoa)',date:'Data',time:'Ordua',group:'Taldea',students:'Ikasleak',selectGroup:'Lehenik taldea aukeratu',noStudents:'Ez dago ikaslerik talde honetan.',saveAssignment:'Esleipena gorde',saved:'Gordeta',
+      statusBoard:'Ibilgailuen egoera',operational:'Erabilgarri',fault:'Matxuratuta',warning:'Berrikusteko',blocked:'Blokeatuta',unknown:'Egoera ezezaguna',editState:'Egoera eguneratu',back:'Itzuli',saveChanges:'Aldaketak gorde',vehicleStatus:'Egoera',vehicleNotes:'Oharrak / falta dena',starts:'Abiarazten da',shouldStart:'Abiarazi behar du',block:'Blokeatu',blockReason:'Blokeoaren arrazoia',quickStatus:'Egoera azkarra',
+      adminTitle:'MENDIcar administrazioa',areaManagers:'Arloko kudeatzaileak',areaManagersHelp:'Hautatu nork jasotzen eta banatzen dituen arlo bakoitzeko kanpoko lanak.',generalManager:'Orokorra',autoManager:'Automozioa',electroManager:'Elektromekanika',on:'BAI',off:'EZ',raulFallback:'Automozioan kudeatzailerik ez badago, Raúl Martínez erabiliko da lehenetsita.',reset:'Ikasturtea berrabiarazi',
+      search:'Bilatu',filter:'Iragazi',myClasses:'Nire eskolak',logout:'Saioa itxi',more:'Gehiago',start:'Hasiera',vehicleShort:'Autoak',externalShort:'Kanpokoa',classesShort:'Eskolak',settingsShort:'Aukerak',
+      sheetTitle:'TAILERREKO LAN-FITXA',student:'Ikaslea',teacher:'Irakaslea',check1:'Hasierako egoera / diagnostikoa',check2:'Egin beharreko urratsak',check3:'Erabilitako tresnak eta materiala',check4:'Egindako egiaztapenak',check5:'Gorabeherak / oharrak',check6:'Amaierako egoera',studentSign:'Ikaslearen sinadura',teacherReview:'Irakaslearen berrikuspena'
+    },
+    ES:{
+      home:'Inicio',classes:'Mis clases',classesSub:'Horario, grupo y trabajo de aula',vehicleState:'Estado de vehículos',vehicleStateSub:'Consultar y actualizar cómo está cada coche',external:'Trabajos externos',externalSub:'Entrada, reparto y seguimiento',shopWorks:'Trabajos de taller',shopWorksSub:'Órdenes y trabajos activos',practices:'Prácticas',practicesSub:'Planificar y asignar',history:'Historial',historySub:'Buscar coche, QR o matrícula',calendar:'Calendario',calendarSub:'Opcional: planificación por día y hora',settings:'Mi forma de trabajar',settingsSub:'Móvil, ficha impresa o control del profesor',admin:'Administración',adminSub:'Gestores, permisos y cambio de curso',
+      hello:'¿Qué quieres hacer?',homeHint:'Elige una acción. No es obligatorio trabajar siempre con el mismo flujo.',newExternal:'Nuevo trabajo externo',newExternalSub:'Introducir una petición de vehículo o cliente',inboxExternal:'Entrada de trabajos externos',inboxExternalSub:'Clasificar, aceptar y repartir',myAssigned:'Mis trabajos asignados',myAssignedSub:'Preparar y finalizar lo que me han asignado',
+      chooseArea:'¿A qué área va?',autoArea:'Automoción',autoAreaSub:'Lo recibe Raúl o el gestor configurado de Automoción',electroArea:'Electromecánica',electroAreaSub:'Lo reciben los gestores de Electromecánica',vehicle:'Vehículo',client:'Cliente / referencia',phone:'Teléfono',email:'Correo',plate:'Matrícula',make:'Marca',model:'Modelo',km:'Km',work:'Trabajo solicitado',notes:'Observaciones',priority:'Prioridad',send:'Enviar petición',requiredArea:'Selecciona Automoción o Electromecánica.',requiredWork:'Indica el trabajo que hay que realizar.',sent:'Petición enviada',routed:'Enviada a',
+      all:'Todos',pending:'Pendientes',assigned:'Asignados',finished:'Finalizados',area:'Área',requester:'Solicitante',manager:'Gestor',teachers:'Profesores',prepare:'Preparar trabajo',classify:'Elegir área',assign:'Asignar / preparar',printSheet:'Imprimir ficha',finish:'Finalizar',state:'Estado',noItems:'No hay elementos.',loading:'Cargando...',
+      workMode:'Forma de trabajo',mobile:'Móvil / QR',mobileSub:'El alumnado puede usar la aplicación y los QR',paper:'Ficha impresa',paperSub:'Una ficha en papel para cada alumno',teacherOnly:'Solo profesor',teacherOnlySub:'El alumnado no utiliza la aplicación',askEvery:'Preguntar cada vez',askEverySub:'Decidir el modo en cada trabajo',savePreference:'Guardar mi preferencia',preferenceSaved:'Preferencia guardada.',
+      optionalSchedule:'Fecha y hora (opcional)',date:'Fecha',time:'Hora',group:'Grupo',students:'Alumnos',selectGroup:'Selecciona primero un grupo',noStudents:'No hay alumnos en este grupo.',saveAssignment:'Guardar asignación',saved:'Guardado',
+      statusBoard:'Estado de vehículos',operational:'Operativo',fault:'Averiado',warning:'Revisar',blocked:'Bloqueado',unknown:'Sin estado claro',editState:'Actualizar estado',back:'Volver',saveChanges:'Guardar cambios',vehicleStatus:'Estado',vehicleNotes:'Observaciones / qué le falta',starts:'Arranca',shouldStart:'Debe arrancar',block:'Bloqueado',blockReason:'Motivo del bloqueo',quickStatus:'Estado rápido',
+      adminTitle:'Administración MENDIcar',areaManagers:'Gestores por área',areaManagersHelp:'Selecciona quién recibe y distribuye los trabajos externos de cada área.',generalManager:'General',autoManager:'Automoción',electroManager:'Electromecánica',on:'SÍ',off:'NO',raulFallback:'Si no se configura un gestor de Automoción, Raúl Martínez se usa como gestor por defecto.',reset:'Reiniciar curso',
+      search:'Buscar',filter:'Filtrar',myClasses:'Mis clases',logout:'Cerrar sesión',more:'Más',start:'Inicio',vehicleShort:'Vehículos',externalShort:'Externos',classesShort:'Clases',settingsShort:'Opciones',
+      sheetTitle:'FICHA DE TRABAJO DE TALLER',student:'Alumno',teacher:'Profesor',check1:'Estado inicial / diagnóstico',check2:'Pasos a realizar',check3:'Herramientas y material utilizado',check4:'Comprobaciones realizadas',check5:'Incidencias / observaciones',check6:'Estado final',studentSign:'Firma del alumno',teacherReview:'Revisión del profesor'
+    },
+    CA:{
+      home:'Inici',classes:'Les meves classes',classesSub:'Horari, grup i treball d’aula',vehicleState:'Estat dels vehicles',vehicleStateSub:'Consultar i actualitzar com està cada vehicle',external:'Treballs externs',externalSub:'Entrada, repartiment i seguiment',shopWorks:'Treballs de taller',shopWorksSub:'Ordres i treballs actius',practices:'Pràctiques',practicesSub:'Planificar i assignar',history:'Historial',historySub:'Cercar vehicle, QR o matrícula',calendar:'Calendari',calendarSub:'Opcional: planificació per dia i hora',settings:'La meva manera de treballar',settingsSub:'Mòbil, fitxa impresa o control del professor',admin:'Administració',adminSub:'Gestors, permisos i canvi de curs',
+      hello:'Què vols fer?',homeHint:'Tria una acció. No és obligatori treballar sempre amb el mateix flux.',newExternal:'Nou treball extern',newExternalSub:'Introduir una petició de vehicle o client',inboxExternal:'Entrada de treballs externs',inboxExternalSub:'Classificar, acceptar i repartir',myAssigned:'Els meus treballs assignats',myAssignedSub:'Preparar i finalitzar el que m’han assignat',
+      chooseArea:'A quina àrea va?',autoArea:'Automoció',autoAreaSub:'Ho rep Raúl o el gestor configurat d’Automoció',electroArea:'Electromecànica',electroAreaSub:'Ho reben els gestors d’Electromecànica',vehicle:'Vehicle',client:'Client / referència',phone:'Telèfon',email:'Correu',plate:'Matrícula',make:'Marca',model:'Model',km:'Km',work:'Treball sol·licitat',notes:'Observacions',priority:'Prioritat',send:'Enviar petició',requiredArea:'Selecciona Automoció o Electromecànica.',requiredWork:'Indica el treball que cal realitzar.',sent:'Petició enviada',routed:'Enviada a',
+      all:'Tots',pending:'Pendents',assigned:'Assignats',finished:'Finalitzats',area:'Àrea',requester:'Sol·licitant',manager:'Gestor',teachers:'Professors',prepare:'Preparar treball',classify:'Triar àrea',assign:'Assignar / preparar',printSheet:'Imprimir fitxa',finish:'Finalitzar',state:'Estat',noItems:'No hi ha elements.',loading:'Carregant...',
+      workMode:'Forma de treball',mobile:'Mòbil / QR',mobileSub:'L’alumnat pot utilitzar l’aplicació i els QR',paper:'Fitxa impresa',paperSub:'Una fitxa en paper per a cada alumne',teacherOnly:'Només professor',teacherOnlySub:'L’alumnat no utilitza l’aplicació',askEvery:'Preguntar cada vegada',askEverySub:'Decidir el mode en cada treball',savePreference:'Desar la meva preferència',preferenceSaved:'Preferència desada.',
+      optionalSchedule:'Data i hora (opcional)',date:'Data',time:'Hora',group:'Grup',students:'Alumnes',selectGroup:'Selecciona primer un grup',noStudents:'No hi ha alumnes en aquest grup.',saveAssignment:'Desar assignació',saved:'Desat',
+      statusBoard:'Estat dels vehicles',operational:'Operatiu',fault:'Averiat',warning:'Revisar',blocked:'Bloquejat',unknown:'Sense estat clar',editState:'Actualitzar estat',back:'Tornar',saveChanges:'Desar canvis',vehicleStatus:'Estat',vehicleNotes:'Observacions / què li falta',starts:'Arrenca',shouldStart:'Ha d’arrencar',block:'Bloquejat',blockReason:'Motiu del bloqueig',quickStatus:'Estat ràpid',
+      adminTitle:'Administració MENDIcar',areaManagers:'Gestors per àrea',areaManagersHelp:'Selecciona qui rep i distribueix els treballs externs de cada àrea.',generalManager:'General',autoManager:'Automoció',electroManager:'Electromecànica',on:'SÍ',off:'NO',raulFallback:'Si no es configura un gestor d’Automoció, Raúl Martínez s’utilitza com a gestor per defecte.',reset:'Reiniciar curs',
+      search:'Cercar',filter:'Filtrar',myClasses:'Les meves classes',logout:'Tancar sessió',more:'Més',start:'Inici',vehicleShort:'Vehicles',externalShort:'Externs',classesShort:'Classes',settingsShort:'Opcions',
+      sheetTitle:'FITXA DE TREBALL DE TALLER',student:'Alumne',teacher:'Professor',check1:'Estat inicial / diagnòstic',check2:'Passos a realitzar',check3:'Eines i material utilitzat',check4:'Comprovacions realitzades',check5:'Incidències / observacions',check6:'Estat final',studentSign:'Signatura de l’alumne',teacherReview:'Revisió del professor'
+    }
+  };
+  function T(k){const l=(typeof APP_LANG!=='undefined'&&NF[APP_LANG])?APP_LANG:'ES';return (NF[l]&&NF[l][k])||NF.ES[k]||k}
+  window.NFT=T;
+  function esc(v){return typeof escapeHtml==='function'?escapeHtml(v):String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+  function attr(v){return typeof escapeAttr==='function'?escapeAttr(v):esc(v)}
+  function js(v){return typeof escapeJs==='function'?escapeJs(v):String(v??'').replace(/\\/g,'\\\\').replace(/'/g,"\\'")}
+  function nkey(v){return String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toUpperCase().replace(/\s+/g,'_')}
+  function uf(u,key){const target=nkey(key);for(const k of Object.keys(u||{})){if(nkey(k)===target)return String(u[k]??'').trim()}return ''}
+  function yes(v){return ['BAI','SI','SÍ','YES','TRUE','1','ON'].includes(String(v||'').trim().toUpperCase())}
+  function activeTeachersNF(){return (Array.isArray(USERS)?USERS:[]).filter(u=>{try{const r=normalizeRole(u.rol);return isActive(u.activo)&&(r==='profesor'||r==='administrador')}catch(_){return false}}).map(u=>({u:String(u.usuario||'').trim(),name:String(u.nombre||u.usuario||'').trim(),role:normalizeRole(u.rol),row:u,general:yes(uf(u,'HARRERA_KUDEATZAILEA')),auto:yes(uf(u,'GESTOR_AUTOMOCION')),electro:yes(uf(u,'GESTOR_ELECTROMECANICA')),mode:(uf(u,'MODO_TRABAJO')||'PREGUNTAR').toUpperCase()})).filter(x=>x.u)}
+  function activeStudentsNF(group){return (Array.isArray(USERS)?USERS:[]).filter(u=>{try{return normalizeRole(u.rol)==='alumno'&&isActive(u.activo)&&(!group||String(u.taldea||'').trim()===group)}catch(_){return false}}).map(u=>({u:String(u.usuario||'').trim(),name:String(u.nombre||u.usuario||'').trim(),group:String(u.taldea||'').trim()})).filter(x=>x.u)}
+  function groupsNF(){return [...new Set(activeStudentsNF('').map(x=>x.group).filter(Boolean))].sort((a,b)=>a.localeCompare(b))}
+  function areaManagersClient(area){const all=activeTeachersNF().filter(x=>x.role==='profesor');if(area==='AUTOMOCION'){const explicit=all.filter(x=>x.auto);if(explicit.length)return explicit;const raul=all.find(x=>x.u.toLowerCase()===DEFAULT_AUTO_MANAGER);return raul?[raul]:[]}const explicit=all.filter(x=>x.electro);if(explicit.length)return explicit;return all.filter(x=>x.general)}
+  function meTeacher(){return activeTeachersNF().find(x=>currentUser&&x.u.toLowerCase()===String(currentUser.username||'').toLowerCase())}
+  function myMode(){return (meTeacher()?.mode||'PREGUNTAR').toUpperCase()}
+  function field(r,names){for(const name of names){for(const k of Object.keys(r||{})){if(nkey(k)===nkey(name)){const v=r[k];if(v!==undefined&&v!==null&&String(v).trim()!=='')return String(v).trim()}}}return ''}
+  function areaOf(r){const a=nkey(field(r,['AREA_DESTINO','AREA','DESTINO_AREA']));if(a.includes('AUTO'))return'AUTOMOCION';if(a.includes('ELECTRO'))return'ELECTROMECANICA';return''}
+  function stateOf(r){return String(field(r,['ESTADO_RECEPCION'])||'nueva').toLowerCase()}
+  function assignedList(r){return String(field(r,['ASIGNADOS','PROFESORES_ASIGNADOS'])||'').toLowerCase().split(',').map(x=>x.trim()).filter(Boolean)}
+  function managerList(r){return String(field(r,['DESTINATARIOS'])||'').toLowerCase().split(',').map(x=>x.trim()).filter(Boolean)}
+  function canManageArea(r){if(!currentUser)return false;if(currentUser.role==='administrador')return true;const me=String(currentUser.username||'').toLowerCase();const a=areaOf(r);return areaManagersClient(a).some(x=>x.u.toLowerCase()===me)||managerList(r).includes(me)||!!currentUser.kanpokoKudeatzailea}
+  function canSeeExternal(r){if(!currentUser)return false;if(currentUser.role==='administrador')return true;const me=String(currentUser.username||'').toLowerCase();const creator=String(field(r,['SOLICITANTE_EMAIL','USUARIO'])||'').toLowerCase();return canManageArea(r)||assignedList(r).includes(me)||managerList(r).includes(me)||creator===me}
+  function sourceIsExternal(r){const s=nkey(field(r,['JATORRIA','ORIGEN']));return ['APP','APP_EXT','FORM','FORMULARIO'].includes(s)||String(field(r,['ID_RECEPCION'])).startsWith('APP-')}
+  function areaLabel(a){return a==='AUTOMOCION'?T('autoArea'):a==='ELECTROMECANICA'?T('electroArea'):'—'}
+  function modeLabel(m){m=String(m||'').toUpperCase();return m==='MOVIL'?T('mobile'):m==='FICHA'?T('paper'):m==='PROFESOR'?T('teacherOnly'):T('askEvery')}
+  function stateLabelNF(st){st=String(st||'nueva').toLowerCase();const k={nueva:'new',berria:'new',en_revision:'review',aceptada:'accepted',en_espera:'waiting',rechazada:'rejected',finalizada:'finished'}[st];return (k&&typeof QT==='function')?QT(k):st.replaceAll('_',' ')}
+  function priorityLabelNF(pr){pr=String(pr||'normal').toLowerCase();const k={baja:'low',normal:'normal',alta:'high',urgente:'urgent'}[pr];return (k&&typeof QT==='function')?QT(k):pr}
+
+  function ensureBottomNav(){if(!currentUser||!['profesor','administrador'].includes(currentUser.role))return;const app=document.getElementById('appView');if(!app)return;let nav=document.getElementById('nfBottomNav');if(!nav){nav=document.createElement('div');nav.id='nfBottomNav';nav.className='nf-bottom-nav no-print';app.appendChild(nav)}nav.innerHTML=`<button onclick="showHomeDashboard()"><span>🏠</span>${esc(T('start'))}</button><button onclick="startTeacherAccessFlow()"><span>🎓</span>${esc(T('classesShort'))}</button><button onclick="showVehicleStatusBoard()"><span>🚦</span>${esc(T('vehicleShort'))}</button><button onclick="showExternalWorkHub()"><span>📥</span>${esc(T('externalShort'))}</button><button onclick="showSettingsPanel()"><span>⚙️</span>${esc(T('settingsShort'))}</button>`}
+  function finishScreen(){ensureBottomNav();const d=document.getElementById('vehicleDetail');if(d&&!d.querySelector('.nf-bottom-spacer'))d.insertAdjacentHTML('beforeend','<div class="nf-bottom-spacer"></div>');setTimeout(()=>{try{translateAllText(true)}catch(_){}},20)}
+
+  window.showHomeDashboard=function(){
+    clearMessage();if(typeof forceHideLoading==='function')forceHideLoading();document.getElementById('viewModeText').textContent=T('home');document.getElementById('tableContainer').classList.add('hidden');
+    if(!currentUser){return}
+    const staff=['profesor','administrador'].includes(currentUser.role);
+    if(!staff){document.getElementById('vehicleDetail').innerHTML=`<div class="nf-hero"><h2>${esc(T('home'))}</h2><p>${esc(T('vehicleStateSub'))}</p></div>`;finishScreen();return}
+    let cards=`
+      <button class="nf-card primary" onclick="startTeacherAccessFlow()"><span class="i">🎓</span><span class="t">${esc(T('classes'))}</span><span class="s">${esc(T('classesSub'))}</span></button>
+      <button class="nf-card" onclick="showVehicleStatusBoard()"><span class="i">🚦</span><span class="t">${esc(T('vehicleState'))}</span><span class="s">${esc(T('vehicleStateSub'))}</span></button>
+      <button class="nf-card warn" onclick="showExternalWorkHub()"><span class="i">📥</span><span class="t">${esc(T('external'))}</span><span class="s">${esc(T('externalSub'))}</span><span id="nfExtBadge"></span></button>
+      <button class="nf-card" onclick="openDashboardSection('trabajos')"><span class="i">🧰</span><span class="t">${esc(T('shopWorks'))}</span><span class="s">${esc(T('shopWorksSub'))}</span></button>
+      <button class="nf-card" onclick="openDashboardSection('praktikak')"><span class="i">🔧</span><span class="t">${esc(T('practices'))}</span><span class="s">${esc(T('practicesSub'))}</span></button>
+      <button class="nf-card" onclick="openDashboardSection('historial')"><span class="i">🕓</span><span class="t">${esc(T('history'))}</span><span class="s">${esc(T('historySub'))}</span></button>
+      <button class="nf-card" onclick="openDashboardSection('calendario')"><span class="i">📅</span><span class="t">${esc(T('calendar'))}</span><span class="s">${esc(T('calendarSub'))}</span></button>
+      <button class="nf-card" onclick="showSettingsPanel()"><span class="i">⚙️</span><span class="t">${esc(T('settings'))}</span><span class="s">${esc(T('settingsSub'))}</span></button>`;
+    if(currentUser.role==='administrador')cards+=`<button class="nf-card admin" onclick="showAdminPanel()"><span class="i">🛡️</span><span class="t">${esc(T('admin'))}</span><span class="s">${esc(T('adminSub'))}</span></button>`;
+    document.getElementById('vehicleDetail').innerHTML=`<div class="nf-hero"><h2>${esc(T('hello'))}</h2><p>${esc(T('homeHint'))}</p></div>${typeof languageSelectorHtml==='function'?languageSelectorHtml():''}<div class="nf-grid">${cards}</div><button class="dashboard-logout" type="button" onclick="logout()">🚪 ${esc(T('logout'))}</button>`;
+    finishScreen();nfUpdateExternalBadge();
+  };
+
+  function nfUpdateExternalBadge(){if(!currentUser||!['profesor','administrador'].includes(currentUser.role))return;callSaveAPI({accion:'listarHarrera'},resp=>{if(!resp||!resp.ok)return;const n=(resp.rows||[]).filter(r=>sourceIsExternal(r)&&canSeeExternal(r)&&!['finalizada','rechazada','cerrada','cerrado'].includes(stateOf(r))).length;const b=document.getElementById('nfExtBadge');if(b&&n)b.innerHTML=`<span class="nf-badge">${n}</span>`})}
+
+  window.showExternalWorkHub=function(){
+    clearMainContent();document.getElementById('viewModeText').textContent=T('external');
+    document.getElementById('vehicleDetail').innerHTML=`<button class="section-back" onclick="showHomeDashboard()">← ${esc(T('back'))}</button><div class="nf-hero"><h2>📥 ${esc(T('external'))}</h2><p>${esc(T('externalSub'))}</p></div><div class="nf-grid"><button class="nf-card primary" onclick="showNewExternalRequest()"><span class="i">➕</span><span class="t">${esc(T('newExternal'))}</span><span class="s">${esc(T('newExternalSub'))}</span></button><button class="nf-card" onclick="showExternalInbox()"><span class="i">📨</span><span class="t">${esc(T('inboxExternal'))}</span><span class="s">${esc(T('inboxExternalSub'))}</span></button><button class="nf-card" onclick="showMyAssignedExternal()"><span class="i">👨‍🏫</span><span class="t">${esc(T('myAssigned'))}</span><span class="s">${esc(T('myAssignedSub'))}</span></button></div>`;finishScreen();
+  };
+
+  window.nfSelectArea=function(area){document.querySelectorAll('[data-nf-area]').forEach(b=>b.classList.toggle('selected',b.dataset.nfArea===area));const i=document.getElementById('nfArea');if(i)i.value=area}
+  window.nfSelectPriority=function(p){document.querySelectorAll('[data-nf-prio]').forEach(b=>b.classList.toggle('selected',b.dataset.nfPrio===p));const i=document.getElementById('nfPrio');if(i)i.value=p}
+  window.showNewExternalRequest=function(){
+    clearMainContent();document.getElementById('viewModeText').textContent=T('newExternal');
+    document.getElementById('vehicleDetail').innerHTML=`<button class="section-back" onclick="showExternalWorkHub()">← ${esc(T('back'))}</button><div class="vehicle-card"><h2 class="vehicle-title">➕ ${esc(T('newExternal'))}</h2>
+      <div class="nf-step"><h3><span class="nf-step-number">1</span>${esc(T('chooseArea'))}</h3><input type="hidden" id="nfArea"><div class="nf-chooser"><button class="nf-choice" data-nf-area="AUTOMOCION" onclick="nfSelectArea('AUTOMOCION')"><span class="big">🚘</span>${esc(T('autoArea'))}<small>${esc(T('autoAreaSub'))}</small></button><button class="nf-choice" data-nf-area="ELECTROMECANICA" onclick="nfSelectArea('ELECTROMECANICA')"><span class="big">⚡</span>${esc(T('electroArea'))}<small>${esc(T('electroAreaSub'))}</small></button></div></div>
+      <div class="nf-step"><h3><span class="nf-step-number">2</span>${esc(T('vehicle'))}</h3><div class="nf-fields"><div><label>${esc(T('client'))}</label><input id="nfClient"></div><div><label>${esc(T('phone'))}</label><input id="nfPhone"></div><div><label>${esc(T('email'))}</label><input id="nfEmail"></div><div><label>${esc(T('plate'))}</label><input id="nfPlate"></div><div><label>${esc(T('make'))}</label><input id="nfMake"></div><div><label>${esc(T('model'))}</label><input id="nfModel"></div><div><label>${esc(T('km'))}</label><input id="nfKm"></div></div></div>
+      <div class="nf-step"><h3><span class="nf-step-number">3</span>${esc(T('work'))}</h3><textarea id="nfWork" rows="5"></textarea><div class="nf-section-title" style="font-size:15px">${esc(T('priority'))}</div><input type="hidden" id="nfPrio" value="normal"><div class="nf-chooser"><button class="nf-choice selected" data-nf-prio="normal" onclick="nfSelectPriority('normal')">🟢 ${esc(typeof QT==='function'?QT('normal'):'Normal')}</button><button class="nf-choice" data-nf-prio="alta" onclick="nfSelectPriority('alta')">🟠 ${esc(typeof QT==='function'?QT('high'):'Alta')}</button><button class="nf-choice" data-nf-prio="urgente" onclick="nfSelectPriority('urgente')">🔴 ${esc(typeof QT==='function'?QT('urgent'):'Urgente')}</button></div><div style="margin-top:10px"><label><strong>${esc(T('notes'))}</strong></label><textarea id="nfNotes" rows="3"></textarea></div></div>
+      <button class="nf-action" onclick="saveNewExternalRequest()">📤 ${esc(T('send'))}</button><div id="nfReqResult" style="margin-top:10px"></div></div>`;finishScreen();
+  };
+  window.saveNewExternalRequest=function(){const area=String(document.getElementById('nfArea')?.value||'');const work=String(document.getElementById('nfWork')?.value||'').trim();if(!area){showMessage(T('requiredArea'),'error');return}if(!work){showMessage(T('requiredWork'),'error');return}const out=document.getElementById('nfReqResult');if(out)out.innerHTML=`<div class="nf-inline-note">${esc(T('loading'))}</div>`;callSaveAPI({accion:'crearSolicitudApp',usuario:currentUser.username,rol:currentUser.role,taldea:currentUser.taldea||'',areaDestino:area,cliente:String(document.getElementById('nfClient')?.value||'').trim(),telefono:String(document.getElementById('nfPhone')?.value||'').trim(),email:String(document.getElementById('nfEmail')?.value||'').trim(),matricula:String(document.getElementById('nfPlate')?.value||'').trim(),marca:String(document.getElementById('nfMake')?.value||'').trim(),modelo:String(document.getElementById('nfModel')?.value||'').trim(),km:String(document.getElementById('nfKm')?.value||'').trim(),trabajoSolicitado:work,observaciones:String(document.getElementById('nfNotes')?.value||'').trim(),prioridad:String(document.getElementById('nfPrio')?.value||'normal')},resp=>{if(!resp||!resp.ok){if(out)out.innerHTML=`<div class="msg error" style="display:block">${esc((resp&&resp.msg)||'Error')}</div>`;return}if(out)out.innerHTML=`<div class="msg success" style="display:block"><strong>${esc(T('sent'))}</strong><br>${esc(T('routed'))}: ${esc(resp.gestoresNombres||resp.gestores||areaLabel(area))}<br>${esc(resp.idRecepcion||'')}</div><div class="nf-toolbar"><button onclick="showNewExternalRequest()">➕ ${esc(T('newExternal'))}</button><button onclick="showExternalInbox()">📨 ${esc(T('inboxExternal'))}</button></div>`})}
+
+  function requestCardsFilter(mode,r){if(!sourceIsExternal(r)||!canSeeExternal(r))return false;const st=stateOf(r),me=String(currentUser.username||'').toLowerCase();if(mode==='mine')return assignedList(r).includes(me)&&!['finalizada','rechazada'].includes(st);if(mode==='inbox')return canManageArea(r)&&!['finalizada','rechazada'].includes(st);return true}
+  window.showExternalInbox=function(){loadExternalList('inbox')};window.showMyAssignedExternal=function(){loadExternalList('mine')};
+  function loadExternalList(mode){clearMainContent();document.getElementById('viewModeText').textContent=mode==='mine'?T('myAssigned'):T('inboxExternal');const title=mode==='mine'?T('myAssigned'):T('inboxExternal');document.getElementById('vehicleDetail').innerHTML=`<button class="section-back" onclick="showExternalWorkHub()">← ${esc(T('back'))}</button><div class="vehicle-card"><h2 class="vehicle-title">${mode==='mine'?'👨‍🏫':'📨'} ${esc(title)}</h2><div id="nfExternalList">${esc(T('loading'))}</div></div>`;finishScreen();callSaveAPI({accion:'listarHarrera'},resp=>{const box=document.getElementById('nfExternalList');if(!box)return;if(!resp||!resp.ok){box.innerHTML=`<div class="msg error" style="display:block">${esc((resp&&resp.msg)||'Error')}</div>`;return}const rows=(resp.rows||[]).filter(r=>requestCardsFilter(mode,r)).sort((a,b)=>String(field(b,['FECHA'])+' '+field(b,['HORA'])).localeCompare(String(field(a,['FECHA'])+' '+field(a,['HORA']))));window.__NF_EXT_ROWS=rows;box.innerHTML=rows.length?rows.map(r=>renderExternalCard(r,mode)).join(''):`<div class="nf-inline-note">${esc(T('noItems'))}</div>`})}
+  function renderExternalCard(r,mode){const id=field(r,['ID_RECEPCION']);const a=areaOf(r);const title=((field(r,['MARCA'])+' '+field(r,['MODELO'])).trim()||field(r,['MATRICULA'])||T('vehicle'));const mat=field(r,['MATRICULA']);const work=field(r,['TRABAJO_SOLICITADO','QUEJA_CLIENTE']);const st=stateOf(r);const pr=String(field(r,['LEHENTASUNA','PRIORIDAD'])||'normal').toLowerCase();const assN=field(r,['ASIGNADOS_NOMBRES','PROFESORES_ASIGNADOS_NOMBRES']);const modeW=field(r,['MODO_TRABAJO']);const group=field(r,['GRUPO_ASIGNADO']);const manager=field(r,['DESTINATARIOS_NOMBRES']);const can=canManageArea(r);const isMine=assignedList(r).includes(String(currentUser.username||'').toLowerCase());return `<div class="nf-work-card ${a==='AUTOMOCION'?'auto':'electro'}"><div class="nf-work-head"><div><div class="nf-work-title">🚗 ${esc(title)}${mat&&title!==mat?' · '+esc(mat):''}</div><div class="nf-work-meta">${esc(id)} · ${esc(field(r,['FECHA']))} ${esc(field(r,['HORA']))}<br>${esc(T('requester'))}: ${esc(field(r,['SOLICITANTE_NOMBRE','USUARIO'])||'—')}</div></div><div class="nf-pills"><span class="nf-pill ${a==='AUTOMOCION'?'auto':'electro'}">${esc(areaLabel(a))}</span><span class="nf-pill ${pr==='urgente'?'urgent':''}">${esc(priorityLabelNF(pr))}</span><span class="nf-pill ${st==='finalizada'?'ok':''}">${esc(stateLabelNF(st))}</span></div></div><div style="margin-top:10px"><strong>${esc(T('work'))}</strong><br>${esc(work||'—')}</div>${manager?`<div class="nf-work-meta" style="margin-top:8px"><strong>${esc(T('manager'))}:</strong> ${esc(manager)}</div>`:''}${assN?`<div class="nf-work-meta"><strong>${esc(T('teachers'))}:</strong> ${esc(assN)}${group?' · '+esc(T('group'))+': '+esc(group):''}${modeW?' · '+esc(modeLabel(modeW)):''}</div>`:''}<div class="nf-toolbar">${(!a&&can)?`<button onclick="openClassifyExternal('${js(id)}')">🧭 ${esc(T('classify'))}</button>`:''}${can?`<button onclick="openAssignmentEditor('${js(id)}')">👥 ${esc(T('assign'))}</button>`:''}${(isMine||can||currentUser.role==='administrador')?`<button onclick="openAssignmentEditor('${js(id)}')">🧰 ${esc(T('prepare'))}</button>`:''}${(field(r,['MODO_TRABAJO']).toUpperCase()==='FICHA'&&(isMine||can||currentUser.role==='administrador'))?`<button onclick="printExternalWorkSheet('${js(id)}')">🖨️ ${esc(T('printSheet'))}</button>`:''}${(isMine||can||currentUser.role==='administrador')?`<button class="success" onclick="finishExternalWork('${js(id)}')">🏁 ${esc(T('finish'))}</button>`:''}</div><div id="nfEdit_${attr(id)}"></div></div>`}
+
+  window.openClassifyExternal=function(id){const r=(window.__NF_EXT_ROWS||[]).find(x=>field(x,['ID_RECEPCION'])===id);if(!r)return;const box=document.getElementById('nfEdit_'+id);if(!box)return;box.innerHTML=`<div class="nf-step"><h3>${esc(T('chooseArea'))}</h3><div class="nf-chooser"><button class="nf-choice" onclick="classifyExternal('${js(id)}','AUTOMOCION')"><span class="big">🚘</span>${esc(T('autoArea'))}</button><button class="nf-choice" onclick="classifyExternal('${js(id)}','ELECTROMECANICA')"><span class="big">⚡</span>${esc(T('electroArea'))}</button></div></div>`}
+  window.classifyExternal=function(id,area){callSaveAPI({accion:'actualizarSolicitudApp',usuario:currentUser.username,idRecepcion:id,areaDestino:area},resp=>{if(!resp||!resp.ok){showMessage((resp&&resp.msg)||'Error','error');return}showExternalInbox()})}
+
+  function teacherChoices(current){return activeTeachersNF().filter(x=>x.role==='profesor').map(p=>`<button type="button" class="nf-choice ${current.includes(p.u.toLowerCase())?'selected':''}" data-nf-teacher="${attr(p.u)}" data-name="${attr(p.name)}" onclick="this.classList.toggle('selected')"><span class="big">👤</span>${esc(p.name)}<small>${esc(p.u)}</small></button>`).join('')}
+  window.nfSelectMode=function(id,m){const box=document.getElementById('nfEdit_'+id);if(!box)return;box.querySelectorAll('[data-nf-mode]').forEach(b=>b.classList.toggle('selected',b.dataset.nfMode===m));const h=box.querySelector('[data-nf-mode-value]');if(h)h.value=m}
+  window.nfGroupChanged=function(id,group){const box=document.getElementById('nfStudents_'+id);if(!box)return;const students=activeStudentsNF(group);box.innerHTML=students.length?students.map(s=>`<button type="button" class="nf-student" data-nf-student="${attr(s.u)}" data-name="${attr(s.name)}" onclick="this.classList.toggle('selected')">${esc(s.name)}</button>`).join(''):`<div class="nf-inline-note">${esc(T('noStudents'))}</div>`}
+  window.openAssignmentEditor=function(id){const r=(window.__NF_EXT_ROWS||[]).find(x=>field(x,['ID_RECEPCION'])===id);if(!r)return;const box=document.getElementById('nfEdit_'+id);if(!box)return;const curT=assignedList(r);let m=String(field(r,['MODO_TRABAJO'])||myMode()||'PREGUNTAR').toUpperCase();if(m==='PREGUNTAR')m='PROFESOR';const group=field(r,['GRUPO_ASIGNADO']);const curStudents=String(field(r,['ALUMNOS_ASIGNADOS'])||'').toLowerCase().split(',').map(x=>x.trim()).filter(Boolean);const groupOpts=['',...groupsNF()].map(g=>`<option value="${attr(g)}" ${g===group?'selected':''}>${g?esc(g):'—'}</option>`).join('');box.innerHTML=`<div class="nf-step"><h3>👥 ${esc(T('teachers'))}</h3><div class="nf-chooser" id="nfTeachers_${attr(id)}">${teacherChoices(curT)}</div><h3 style="margin-top:16px">🧭 ${esc(T('workMode'))}</h3><input type="hidden" data-nf-mode-value value="${attr(m)}"><div class="nf-chooser"><button type="button" class="nf-choice ${m==='MOVIL'?'selected':''}" data-nf-mode="MOVIL" onclick="nfSelectMode('${js(id)}','MOVIL')"><span class="big">📱</span>${esc(T('mobile'))}<small>${esc(T('mobileSub'))}</small></button><button type="button" class="nf-choice ${m==='FICHA'?'selected':''}" data-nf-mode="FICHA" onclick="nfSelectMode('${js(id)}','FICHA')"><span class="big">🖨️</span>${esc(T('paper'))}<small>${esc(T('paperSub'))}</small></button><button type="button" class="nf-choice ${m==='PROFESOR'?'selected':''}" data-nf-mode="PROFESOR" onclick="nfSelectMode('${js(id)}','PROFESOR')"><span class="big">👨‍🏫</span>${esc(T('teacherOnly'))}<small>${esc(T('teacherOnlySub'))}</small></button></div><h3 style="margin-top:16px">🎓 ${esc(T('group'))} / ${esc(T('students'))}</h3><div class="nf-fields"><div><label>${esc(T('group'))}</label><select id="nfGroup_${attr(id)}" onchange="nfGroupChanged('${js(id)}',this.value)">${groupOpts}</select></div><div><label>${esc(T('date'))}</label><input id="nfDate_${attr(id)}" type="date" value="${attr(field(r,['FECHA_PREVISTA']))}"></div><div><label>${esc(T('time'))}</label><input id="nfTime_${attr(id)}" type="time" value="${attr(field(r,['HORA_PREVISTA']))}"></div></div><div id="nfStudents_${attr(id)}" class="nf-students" style="margin-top:10px"></div><div class="nf-inline-note" style="margin-top:10px">${esc(T('optionalSchedule'))}</div><button class="nf-action" style="margin-top:12px" onclick="saveAssignmentEditor('${js(id)}')">💾 ${esc(T('saveAssignment'))}</button></div>`;nfGroupChanged(id,group);setTimeout(()=>{const sb=document.getElementById('nfStudents_'+id);if(sb)sb.querySelectorAll('[data-nf-student]').forEach(b=>{if(curStudents.includes(String(b.dataset.nfStudent||'').toLowerCase()))b.classList.add('selected')})},0)}
+  window.saveAssignmentEditor=function(id){const box=document.getElementById('nfEdit_'+id);if(!box)return;const ts=[...box.querySelectorAll('[data-nf-teacher].selected')];if(!ts.length){showMessage(T('teachers')+': 0','error');return}const ss=[...box.querySelectorAll('[data-nf-student].selected')];const m=String(box.querySelector('[data-nf-mode-value]')?.value||'PROFESOR');const group=String(document.getElementById('nfGroup_'+id)?.value||'');callSaveAPI({accion:'actualizarSolicitudApp',usuario:currentUser.username,idRecepcion:id,asignados:ts.map(x=>x.dataset.nfTeacher).join(','),asignadosNombres:ts.map(x=>x.dataset.name).join(', '),modoTrabajo:m,grupoAsignado:group,alumnosAsignados:ss.map(x=>x.dataset.nfStudent).join(','),alumnosAsignadosNombres:ss.map(x=>x.dataset.name).join(', '),fechaPrevista:String(document.getElementById('nfDate_'+id)?.value||''),horaPrevista:String(document.getElementById('nfTime_'+id)?.value||''),estado:'aceptada'},resp=>{if(!resp||!resp.ok){showMessage((resp&&resp.msg)||'Error','error');return}showMessage(T('saved'),'success');showExternalInbox()})}
+  window.finishExternalWork=function(id){if(!confirm(T('finish')+'?'))return;callSaveAPI({accion:'actualizarSolicitudApp',usuario:currentUser.username,idRecepcion:id,estado:'finalizada'},resp=>{if(!resp||!resp.ok){showMessage((resp&&resp.msg)||'Error','error');return}showExternalInbox()})}
+
+  window.printExternalWorkSheet=function(id){let r=(window.__NF_EXT_ROWS||[]).find(x=>field(x,['ID_RECEPCION'])===id);if(!r){showMessage('No se ha encontrado el trabajo.','error');return}const names=String(field(r,['ALUMNOS_ASIGNADOS_NOMBRES'])||'').split(',').map(x=>x.trim()).filter(Boolean);const emails=String(field(r,['ALUMNOS_ASIGNADOS'])||'').split(',').map(x=>x.trim()).filter(Boolean);const students=names.length?names:(emails.length?emails:[field(r,['GRUPO_ASIGNADO'])||'']);const teacher=field(r,['ASIGNADOS_NOMBRES'])||currentUser.name||'';const vehicle=((field(r,['MARCA'])+' '+field(r,['MODELO'])).trim()+' '+field(r,['MATRICULA'])).trim();const work=field(r,['TRABAJO_SOLICITADO','QUEJA_CLIENTE']);const pages=students.map((student,i)=>`<section class="sheet"><header><h1>${esc(T('sheetTitle'))}</h1><div class="code">${esc(id)}</div></header><div class="grid"><div><b>${esc(T('student'))}</b><span>${esc(student||'')}</span></div><div><b>${esc(T('teacher'))}</b><span>${esc(teacher)}</span></div><div><b>${esc(T('group'))}</b><span>${esc(field(r,['GRUPO_ASIGNADO']))}</span></div><div><b>${esc(T('date'))}</b><span>${esc(field(r,['FECHA_PREVISTA'])||field(r,['FECHA']))}</span></div><div><b>${esc(T('vehicle'))}</b><span>${esc(vehicle)}</span></div><div><b>${esc(T('area'))}</b><span>${esc(areaLabel(areaOf(r)))}</span></div></div><div class="job"><b>${esc(T('work'))}</b><p>${esc(work)}</p></div>${[T('check1'),T('check2'),T('check3'),T('check4'),T('check5'),T('check6')].map(x=>`<div class="write"><b>${esc(x)}</b></div>`).join('')}<div class="sign"><div>${esc(T('studentSign'))}</div><div>${esc(T('teacherReview'))}</div></div></section>`).join('');const w=window.open('','_blank');if(!w)return;w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(T('sheetTitle'))}</title><style>body{font-family:Arial,sans-serif;color:#111827;margin:0}.sheet{padding:14mm;min-height:265mm;box-sizing:border-box;page-break-after:always}.sheet:last-child{page-break-after:auto}header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #111827;padding-bottom:8px;margin-bottom:12px}h1{font-size:22px;margin:0}.code{font-weight:700}.grid{display:grid;grid-template-columns:1fr 1fr;border:1px solid #111827}.grid div{padding:8px;border-right:1px solid #111827;border-bottom:1px solid #111827}.grid b,.grid span{display:block}.grid span{margin-top:4px;min-height:18px}.job{border:1px solid #111827;margin-top:10px;padding:10px;min-height:52px}.job p{white-space:pre-wrap}.write{border:1px solid #111827;border-top:0;min-height:45px;padding:8px}.sign{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:24px}.sign div{border-top:1px solid #111827;padding-top:7px;text-align:center}@media print{button{display:none}}</style></head><body><button onclick="print()" style="margin:10px;padding:10px 18px">🖨️ ${esc(T('printSheet'))}</button>${pages}</body></html>`);w.document.close()}
+
+  window.showVehicleStatusBoard=function(){clearMainContent();document.getElementById('viewModeText').textContent=T('statusBoard');document.getElementById('vehicleDetail').innerHTML=`<button class="section-back" onclick="showHomeDashboard()">← ${esc(T('back'))}</button><div class="vehicle-card"><h2 class="vehicle-title">🚦 ${esc(T('statusBoard'))}</h2><div id="nfVehicleBoard">${esc(T('loading'))}</div></div>`;finishScreen();window.__MENDICAR_AFTER_VEHICLES_LOAD=()=>renderVehicleStatusBoard('ALL');loadVehiclesJSONP()}
+  function vehicleClass(v){const text=nkey((v.estado||'')+' '+(v.observaciones||''));if(v.blokatuta==='Bai')return'blocked';if(v.piztenDu==='Ez'&&v.piztuBeharDu==='Bai')return'fault';if(/AVERI|MATXUR|FALLO|NO_FUNCION|ROTO|APURAT/.test(text))return'fault';if(/REVIS|PENDIENT|FALTA|BEHAR|MANTEN/.test(text))return'warn';if(v.estado||v.observaciones)return'ok';return'warn'}
+  function vehicleClassLabel(c){return c==='blocked'?T('blocked'):c==='fault'?T('fault'):c==='warn'?T('warning'):T('operational')}
+  function vehicleStateDisplay(v){const n=nkey(v);if(n==='OPERATIVO'||n==='ERABILGARRI')return T('operational');if(n==='AVERIADO'||n==='MATXURATUTA')return T('fault');if(n==='REVISAR'||n==='BERRIKUSTEKO')return T('warning');return String(v||'—')}
+  window.nfVehicleFilter=function(f){renderVehicleStatusBoard(f)}
+  function renderVehicleStatusBoard(filter){const box=document.getElementById('nfVehicleBoard');if(!box)return;const vs=(Array.isArray(vehicles)?vehicles:[]);const counts={ALL:vs.length,ok:0,fault:0,warn:0,blocked:0};vs.forEach(v=>counts[vehicleClass(v)]++);const show=filter==='ALL'?vs:vs.filter(v=>vehicleClass(v)===filter);box.innerHTML=`<div class="nf-filterbar"><button class="${filter==='ALL'?'selected':''}" onclick="nfVehicleFilter('ALL')">${esc(T('all'))} (${counts.ALL})</button><button class="${filter==='fault'?'selected':''}" onclick="nfVehicleFilter('fault')">🔴 ${esc(T('fault'))} (${counts.fault})</button><button class="${filter==='warn'?'selected':''}" onclick="nfVehicleFilter('warn')">🟠 ${esc(T('warning'))} (${counts.warn})</button><button class="${filter==='blocked'?'selected':''}" onclick="nfVehicleFilter('blocked')">⚫ ${esc(T('blocked'))} (${counts.blocked})</button><button class="${filter==='ok'?'selected':''}" onclick="nfVehicleFilter('ok')">🟢 ${esc(T('operational'))} (${counts.ok})</button></div><div class="nf-vehicle-grid">${show.map(v=>{const c=vehicleClass(v);return`<div class="nf-vehicle ${c}"><div class="name">${esc(v.autoa||v.id)}</div><div class="nf-work-meta">${esc(v.tailerra||'')} · ${esc(v.id||'')}</div><div class="status">${esc(vehicleClassLabel(c))}: ${esc(vehicleStateDisplay(v.estado))}</div><div class="notes">${esc(v.observaciones||'')}</div><div class="nf-toolbar"><button onclick="openVehicleStatusEdit('${js(v.id)}')">✏️ ${esc(T('editState'))}</button></div></div>`}).join('')}</div>`}
+  window.openVehicleStatusEdit=function(id){const v=(vehicles||[]).find(x=>String(x.id)===String(id));if(v)renderVehicleDetail(v)}
+
+  // Versión limpia de la ficha de vehículo: sin idiomas mezclados en la interfaz.
+  window.renderVehicleDetail=function(vehicle){const staff=currentUser&&['profesor','administrador'].includes(currentUser.role);const blockedStudent=!staff&&vehicle.blokatuta==='Bai';document.getElementById('viewModeText').textContent=T('vehicle');document.getElementById('tableContainer').classList.add('hidden');document.getElementById('vehicleDetail').innerHTML=`<button class="section-back" onclick="showVehicleStatusBoard()">← ${esc(T('back'))}</button>${vehicle.blokatuta==='Bai'?`<div class="danger-banner">🚫 ${esc(T('blocked'))}${vehicle.blokeoZergatia?' · '+esc(vehicle.blokeoZergatia):''}</div>`:''}<div class="vehicle-card"><h2 class="vehicle-title">🚗 ${esc(vehicle.autoa||T('vehicle'))}</h2><div class="vehicle-grid"><div class="field"><div class="field-label">ID</div><div class="field-value">${esc(vehicle.id)}</div></div><div class="field"><div class="field-label">${esc((APP_LANG==='EU'?'Tailerra':APP_LANG==='CA'?'Taller':'Taller'))}</div><div class="field-value">${esc(vehicle.tailerra)}</div></div><div class="field"><div class="field-label">VIN</div><div class="field-value">${esc(vehicle.vin)}</div></div></div><div class="edit-box"><div id="saveStatus" class="save-status"></div><div class="nf-section-title" style="font-size:15px">${esc(T('quickStatus'))}</div><div class="nf-filterbar"><button type="button" onclick="document.getElementById('estadoInput').value='OPERATIVO'">🟢 ${esc(T('operational'))}</button><button type="button" onclick="document.getElementById('estadoInput').value='AVERIADO'">🔴 ${esc(T('fault'))}</button><button type="button" onclick="document.getElementById('estadoInput').value='REVISAR'">🟠 ${esc(T('warning'))}</button></div><div class="form-grid"><div><label><strong>${esc(T('vehicleStatus'))}</strong></label><textarea id="estadoInput" ${blockedStudent?'disabled':''}>${esc(vehicle.estado)}</textarea></div><div><label><strong>${esc(T('vehicleNotes'))}</strong></label><textarea id="observacionesInput" ${blockedStudent?'disabled':''}>${esc(vehicle.observaciones||'')}</textarea></div><div><label><strong>${esc(T('starts'))}</strong></label><select id="piztenDuInput" ${blockedStudent?'disabled':''}><option value="Bai" ${vehicle.piztenDu==='Bai'?'selected':''}>${esc(T('on'))}</option><option value="Ez" ${vehicle.piztenDu==='Ez'?'selected':''}>${esc(T('off'))}</option></select></div><div><label><strong>${esc(T('shouldStart'))}</strong></label><select id="piztuBeharDuInput" ${blockedStudent?'disabled':''}><option value="Bai" ${vehicle.piztuBeharDu==='Bai'?'selected':''}>${esc(T('on'))}</option><option value="Ez" ${vehicle.piztuBeharDu==='Ez'?'selected':''}>${esc(T('off'))}</option></select></div>${staff?`<div><label><strong>${esc(T('block'))}</strong></label><select id="blokatutaInput"><option value="Bai" ${vehicle.blokatuta==='Bai'?'selected':''}>${esc(T('on'))}</option><option value="Ez" ${vehicle.blokatuta==='Ez'?'selected':''}>${esc(T('off'))}</option></select></div><div><label><strong>${esc(T('blockReason'))}</strong></label><textarea id="blokeoZergatiaInput">${esc(vehicle.blokeoZergatia||'')}</textarea></div>`:''}</div>${!blockedStudent?`<button class="nf-action" type="button" onclick="saveVehicleChanges('${js(vehicle.id)}')">💾 ${esc(T('saveChanges'))}</button>`:''}</div>${typeof renderFichaTecnica==='function'?renderFichaTecnica(vehicle.fitxaTeknika):''}${typeof renderRTA==='function'?renderRTA(vehicle.rta):''}</div>`;finishScreen()}
+
+  window.showSettingsPanel=function(){if(!currentUser)return;clearMainContent();document.getElementById('viewModeText').textContent=T('settings');let mode=myMode();document.getElementById('vehicleDetail').innerHTML=`<button class="section-back" onclick="showHomeDashboard()">← ${esc(T('back'))}</button><div class="vehicle-card"><h2 class="vehicle-title">⚙️ ${esc(T('settings'))}</h2><p class="nf-muted">${esc(T('settingsSub'))}</p><input type="hidden" id="nfMyMode" value="${attr(mode)}"><div class="nf-chooser"><button class="nf-choice ${mode==='MOVIL'?'selected':''}" data-pref="MOVIL" onclick="nfChooseMyMode('MOVIL')"><span class="big">📱</span>${esc(T('mobile'))}<small>${esc(T('mobileSub'))}</small></button><button class="nf-choice ${mode==='FICHA'?'selected':''}" data-pref="FICHA" onclick="nfChooseMyMode('FICHA')"><span class="big">🖨️</span>${esc(T('paper'))}<small>${esc(T('paperSub'))}</small></button><button class="nf-choice ${mode==='PROFESOR'?'selected':''}" data-pref="PROFESOR" onclick="nfChooseMyMode('PROFESOR')"><span class="big">👨‍🏫</span>${esc(T('teacherOnly'))}<small>${esc(T('teacherOnlySub'))}</small></button><button class="nf-choice ${mode==='PREGUNTAR'?'selected':''}" data-pref="PREGUNTAR" onclick="nfChooseMyMode('PREGUNTAR')"><span class="big">🔀</span>${esc(T('askEvery'))}<small>${esc(T('askEverySub'))}</small></button></div><button class="nf-action" style="margin-top:14px" onclick="saveMyWorkMode()">💾 ${esc(T('savePreference'))}</button><div id="nfPrefOut" style="margin-top:10px"></div>${typeof languageSelectorHtml==='function'?languageSelectorHtml():''}</div>`;finishScreen()}
+  window.nfChooseMyMode=function(m){document.querySelectorAll('[data-pref]').forEach(b=>b.classList.toggle('selected',b.dataset.pref===m));const i=document.getElementById('nfMyMode');if(i)i.value=m}
+  window.saveMyWorkMode=function(){const m=String(document.getElementById('nfMyMode')?.value||'PREGUNTAR');callSaveAPI({accion:'setPreferenciaTrabajo',usuario:currentUser.username,target:currentUser.username,modo:m},resp=>{if(!resp||!resp.ok){showMessage((resp&&resp.msg)||'Error','error');return}const u=(USERS||[]).find(x=>String(x.usuario||'').toLowerCase()===String(currentUser.username||'').toLowerCase());if(u)u.MODO_TRABAJO=m;const out=document.getElementById('nfPrefOut');if(out)out.innerHTML=`<div class="msg success" style="display:block">${esc(T('preferenceSaved'))}</div>`})}
+
+  window.showAdminPanel=function(){if(!currentUser||currentUser.role!=='administrador'){showMessage('Acceso restringido','error');return}clearMainContent();document.getElementById('viewModeText').textContent=T('admin');const teachers=activeTeachersNF().filter(x=>x.role==='profesor');document.getElementById('vehicleDetail').innerHTML=`<button class="section-back" onclick="showHomeDashboard()">← ${esc(T('back'))}</button><div class="vehicle-card"><h2 class="vehicle-title">🛡️ ${esc(T('adminTitle'))}</h2><h3>👥 ${esc(T('areaManagers'))}</h3><p class="nf-muted">${esc(T('areaManagersHelp'))}</p><div class="nf-inline-note">${esc(T('raulFallback'))}</div><div class="nf-manager-table" style="margin-top:12px">${teachers.map(p=>`<div class="nf-manager-row"><div class="who"><strong>${esc(p.name)}</strong><small>${esc(p.u)}</small></div><button class="nf-toggle ${p.general?'on':'off'}" onclick="nfSetManager('${js(p.u)}','GENERAL',${p.general?'false':'true'})">${esc(T('generalManager'))}: ${p.general?esc(T('on')):esc(T('off'))}</button><button class="nf-toggle ${(p.auto||p.u.toLowerCase()===DEFAULT_AUTO_MANAGER)?'on':'off'}" onclick="nfSetManager('${js(p.u)}','AUTOMOCION',${p.auto?'false':'true'})">${esc(T('autoManager'))}: ${(p.auto||p.u.toLowerCase()===DEFAULT_AUTO_MANAGER)?esc(T('on')):esc(T('off'))}</button><button class="nf-toggle ${p.electro?'on':'off'}" onclick="nfSetManager('${js(p.u)}','ELECTROMECANICA',${p.electro?'false':'true'})">${esc(T('electroManager'))}: ${p.electro?esc(T('on')):esc(T('off'))}</button></div>`).join('')}</div><h3 style="margin-top:24px">🗑️ ${esc(T('reset'))}</h3><div class="nf-inline-note">${esc(typeof QT==='function'?QT('resetHelp'):'')}</div><input id="resetCursoConfirm" autocomplete="off" placeholder="REINICIAR" style="margin:10px 0"><button class="danger-btn" onclick="resetCursoMendicarSafe()">🗑️ ${esc(T('reset'))}</button><div id="resetCursoResult" class="ficha-box" style="margin-top:10px"></div></div>`;finishScreen()}
+  window.nfSetManager=function(user,area,enable){const action=area==='GENERAL'?'setHarreraKudeatzailea':'setGestorArea';const payload=area==='GENERAL'?{accion:action,usuario:currentUser.username,target:user,valor:enable?'BAI':'EZ'}:{accion:action,usuario:currentUser.username,target:user,area:area,valor:enable?'BAI':'EZ'};callSaveAPI(payload,resp=>{if(!resp||!resp.ok){showMessage((resp&&resp.msg)||'Error','error');return}const u=(USERS||[]).find(x=>String(x.usuario||'').toLowerCase()===String(user).toLowerCase());if(u){if(area==='GENERAL')u.HARRERA_KUDEATZAILEA=enable?'BAI':'EZ';if(area==='AUTOMOCION')u.GESTOR_AUTOMOCION=enable?'BAI':'EZ';if(area==='ELECTROMECANICA')u.GESTOR_ELECTROMECANICA=enable?'BAI':'EZ'}showAdminPanel()})}
+
+  window.renderFichaTecnica=function(link){if(!link)return'';const title=APP_LANG==='EU'?'Fitxa teknikoa':APP_LANG==='CA'?'Fitxa tècnica':'Ficha técnica';const view=APP_LANG==='EU'?'Ikusi fitxa teknikoa':APP_LANG==='CA'?'Veure fitxa tècnica':'Ver ficha técnica';return `<div class="ficha-box"><strong>${esc(title)}</strong><br><br><a class="button-link" href="${attr(link)}" target="_blank" rel="noopener"><button type="button" class="small-btn">${esc(view)}</button></a></div>`};
+  window.renderRTA=function(link){if(!link)return'';const view=APP_LANG==='EU'?'Ikusi RTA':APP_LANG==='CA'?'Veure RTA':'Ver RTA';return `<div class="ficha-box"><strong>RTA</strong><br><br><a class="button-link" href="${attr(link)}" target="_blank" rel="noopener"><button type="button" class="small-btn">${esc(view)}</button></a></div>`};
+
+  // Atajo para la sección nueva desde otras partes.
+  const oldOpen=window.openDashboardSection;window.openDashboardSection=function(section){if(section==='externos'||section==='peticiones'){return showExternalWorkHub()}if(section==='estado_vehiculos'){return showVehicleStatusBoard()}if(section==='ajustes'){return showSettingsPanel()}if(section==='administracion'){return showAdminPanel()}return typeof oldOpen==='function'?oldOpen(section):undefined};
+  // Al cambiar idioma, volver a renderizar la pantalla principal evita textos de dos idiomas.
+  const oldSet=window.setLanguage;if(typeof oldSet==='function'){window.setLanguage=function(lang){const r=oldSet(lang);setTimeout(()=>showHomeDashboard(),25);return r}}
+  // Traducción automática de contenido antiguo renderizado dinámicamente.
+  if(typeof LANG!=='undefined'&&typeof addMap==='function'){
+    Object.assign(LANG.EU,{vehicleStatusLabel:'Egoera',vehicleNotesLabel:'Oharrak',startsLabel:'Abiarazten da',shouldStartLabel:'Abiarazi behar du',lockedLabel:'Blokeatuta',lockReasonLabel:'Blokeoaren arrazoia',saveReady:'Gordetzeko prest.',saveOk:'Aldaketak gordeta.',vehicleSheet:'Ibilgailuaren fitxa'});
+    Object.assign(LANG.ES,{vehicleStatusLabel:'Estado',vehicleNotesLabel:'Observaciones',startsLabel:'Arranca',shouldStartLabel:'Debe arrancar',lockedLabel:'Bloqueado',lockReasonLabel:'Motivo del bloqueo',saveReady:'Listo para guardar.',saveOk:'Cambios guardados.',vehicleSheet:'Ficha del vehículo'});
+    Object.assign(LANG.CA,{vehicleStatusLabel:'Estat',vehicleNotesLabel:'Observacions',startsLabel:'Arrenca',shouldStartLabel:'Ha d’arrencar',lockedLabel:'Bloquejat',lockReasonLabel:'Motiu del bloqueig',saveReady:'Preparat per desar.',saveOk:'Canvis desats.',vehicleSheet:'Fitxa del vehicle'});
+    addMap('vehicleStatusLabel','Estado / Egoera','Egoera','Estado','Estat');addMap('vehicleNotesLabel','Observaciones / Oharrak','Oharrak','Observaciones','Observacions');addMap('startsLabel','Arrankatzen du','Pizten du','Arranca','Arrenca');addMap('shouldStartLabel','Arrankatu behar du','Piztu behar du','Debe arrancar','Ha d’arrencar');addMap('lockedLabel','BLOKATUTA','Bloqueado','Blokeatuta','Bloquejat');addMap('lockReasonLabel','BLOKEO ZERGATIA','Motivo del bloqueo','Blokeoaren arrazoia','Motiu del bloqueig');addMap('saveReady','Lista para guardar.','Gordetzeko prest.','Listo para guardar.','Preparat per desar.');addMap('saveOk','Cambios guardados correctamente.','Aldaketak gordeta.','Cambios guardados.','Canvis desats.');
+  }
+  // Mantener barra inferior al cambiar de vistas antiguas.
+  const mo=new MutationObserver(()=>{if(currentUser&&['profesor','administrador'].includes(currentUser.role))ensureBottomNav()});const app=document.getElementById('appView');if(app)mo.observe(app,{childList:true,subtree:true});
+})();
 
 </script>
 
